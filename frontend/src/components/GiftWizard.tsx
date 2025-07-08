@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useState } from 'react';
 import { ConnectButton, useActiveAccount } from 'thirdweb/react';
 import { client } from '../app/client';
