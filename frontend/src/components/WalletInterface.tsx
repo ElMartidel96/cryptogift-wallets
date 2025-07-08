@@ -29,12 +29,6 @@ export const WalletInterface: React.FC<WalletInterfaceProps> = ({
   const [transactions, setTransactions] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    loadWalletData();
-    const interval = setInterval(loadWalletData, 30000); // Refresh every 30 seconds
-    return () => clearInterval(interval);
-  }, [tbaAddress, loadWalletData]);
-
   const loadWalletData = useCallback(async () => {
     try {
       const response = await fetch(`/api/wallet/${tbaAddress}`);
@@ -50,6 +44,12 @@ export const WalletInterface: React.FC<WalletInterfaceProps> = ({
       setIsLoading(false);
     }
   }, [tbaAddress]);
+
+  useEffect(() => {
+    loadWalletData();
+    const interval = setInterval(loadWalletData, 30000); // Refresh every 30 seconds
+    return () => clearInterval(interval);
+  }, [tbaAddress, loadWalletData]);
 
   const handleWithdraw = () => {
     const contract = getContract({

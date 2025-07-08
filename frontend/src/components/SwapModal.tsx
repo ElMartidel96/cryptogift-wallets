@@ -28,13 +28,6 @@ export const SwapModal: React.FC<SwapModalProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Check if user needs to approve Permit2 first
-  useEffect(() => {
-    if (currentToken !== COMMON_TOKENS.USDC) {
-      checkPermit2Approval();
-    }
-  }, [currentToken, currentBalance, checkPermit2Approval]);
-
   const checkPermit2Approval = useCallback(async () => {
     try {
       // Check if the token has sufficient allowance for Permit2
@@ -55,6 +48,13 @@ export const SwapModal: React.FC<SwapModalProps> = ({
       console.error('Error checking allowance:', err);
     }
   }, [currentToken, tbaAddress, currentBalance]);
+
+  // Check if user needs to approve Permit2 first
+  useEffect(() => {
+    if (currentToken !== COMMON_TOKENS.USDC) {
+      checkPermit2Approval();
+    }
+  }, [currentToken, currentBalance, checkPermit2Approval]);
 
   const getSwapQuote = async () => {
     if (!currentBalance || currentToken === targetToken) return;
