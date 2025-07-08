@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { useActiveAccount, ConnectButton, Web3Button } from 'thirdweb/react';
+import { useActiveAccount, ConnectButton, TransactionButton } from 'thirdweb/react';
 import { client } from '../client';
 
 export default function ReferralsPage() {

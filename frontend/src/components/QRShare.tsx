@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from 'react';
-import QRCode from 'qrcode.react';
+import { QRCodeSVG } from 'qrcode.react';
 
 interface QRShareProps {
   tokenId: number;

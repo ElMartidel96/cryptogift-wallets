@@ -195,7 +195,7 @@ export const SwapModal: React.FC<SwapModalProps> = ({
           {swapData && (
             <div className="p-4 bg-blue-50 rounded-lg">
               <p className="text-sm text-blue-800">
-                Swap quote ready! Click "Execute Swap" to proceed.
+                Swap quote ready! Click &quot;Execute Swap&quot; to proceed.
               </p>
             </div>
           )}
@@ -203,7 +203,7 @@ export const SwapModal: React.FC<SwapModalProps> = ({
           {/* Action Buttons */}
           <div className="flex space-x-2">
             {needsPermit ? (
-              <Web3Button
+              <TransactionButton
                 contractAddress={currentToken}
                 action={handleApprovePermit2}
                 className="flex-1 bg-yellow-500 hover:bg-yellow-600 text-white font-medium py-2 px-4 rounded-lg"
@@ -221,7 +221,7 @@ export const SwapModal: React.FC<SwapModalProps> = ({
                 </button>
                 
                 {swapData && (
-                  <Web3Button
+                  <TransactionButton
                     contractAddress={tbaAddress}
                     action={handleSwap}
                     className="flex-1 bg-green-500 hover:bg-green-600 text-white font-medium py-2 px-4 rounded-lg"

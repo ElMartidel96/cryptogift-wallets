@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { Web3Button } from 'thirdweb/react';
+import { TransactionButton } from 'thirdweb/react';
 import { SwapModal } from './SwapModal';
 import { GuardiansModal } from './GuardiansModal';
 import { COMMON_TOKENS } from '../lib/constants';

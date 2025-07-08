@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from 'react';
-import { Web3Button } from 'thirdweb/react';
+import { TransactionButton } from 'thirdweb/react';
 
 interface GuardiansModalProps {
   isOpen: boolean;

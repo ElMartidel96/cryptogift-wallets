@@ -153,7 +153,7 @@ export const StatsSection: React.FC = () => {
                 <CountingNumber target={47500} />
               </div>
               <div className="text-sm text-blue-200">Wallets Activas</div>
-              <div className="text-xs text-blue-300 mt-1">Con saldo > $1</div>
+              <div className="text-xs text-blue-300 mt-1">Con saldo &gt; $1</div>
             </div>
 
             <div className="text-center">
