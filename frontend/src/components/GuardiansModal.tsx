@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { TransactionButton } from 'thirdweb/react';
-import { ethers } from 'ethers';
+import { keccak256, toUtf8Bytes } from 'ethers';
 
 interface GuardiansModalProps {
   isOpen: boolean;
@@ -44,7 +44,7 @@ export const GuardiansModal: React.FC<GuardiansModalProps> = ({
 
       // Convert emails to hashes (for privacy)
       const guardianHashes = validEmails.map(email => {
-        return ethers.utils.keccak256(ethers.utils.toUtf8Bytes(email.toLowerCase().trim()));
+        return keccak256(toUtf8Bytes(email.toLowerCase().trim()));
       });
 
       // Call the smart contract
