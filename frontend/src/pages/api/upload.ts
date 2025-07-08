@@ -59,7 +59,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         type: 'image/jpeg',
       });
       
-      const filteredCid = await client.storeBlob(filteredFile);
+      const filteredCidResult = await upload({
+        client: { clientId: process.env.NEXT_PUBLIC_TW_CLIENT_ID! },
+        files: [filteredFile],
+      });
+      const filteredCid = filteredCidResult;
       
       // Store the metadata
       const metadata = {
@@ -83,7 +87,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         type: 'application/json',
       });
 
-      const metadataCid = await client.storeBlob(metadataFile);
+      const metadataCidResult = await upload({
+        client: { clientId: process.env.NEXT_PUBLIC_TW_CLIENT_ID! },
+        files: [metadataFile],
+      });
+      const metadataCid = metadataCidResult;
 
       return res.status(200).json({
         success: true,
@@ -101,7 +109,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       success: true,
       ipfsCid: cid,
       ipfsUrl: `ipfs://${cid}`,
-      httpUrl: `https://nftstorage.link/ipfs/${cid}`,
+      httpUrl: `https://gateway.pinata.cloud/ipfs/${cid}`,
     });
 
   } catch (error) {

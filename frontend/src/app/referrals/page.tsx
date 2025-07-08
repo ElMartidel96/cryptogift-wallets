@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useActiveAccount, ConnectButton, TransactionButton } from 'thirdweb/react';
+import { prepareContractCall, getContract } from 'thirdweb';
+import { baseSepolia, base } from 'thirdweb/chains';
 import { client } from '../client';
 
 export default function ReferralsPage() {
@@ -59,19 +61,18 @@ export default function ReferralsPage() {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const handleWithdraw = async (contract: any) => {
-    try {
-      const tx = await contract.call('withdraw');
-      console.log('Withdraw transaction:', tx);
-      
-      // Reload data after withdrawal
-      await loadReferralData();
-      
-      return tx;
-    } catch (error) {
-      console.error('Withdrawal error:', error);
-      throw error;
-    }
+  const handleWithdraw = () => {
+    const contract = getContract({
+      client,
+      chain: process.env.NEXT_PUBLIC_CHAIN_ID === '84532' ? baseSepolia : base,
+      address: process.env.NEXT_PUBLIC_REF_TREASURY_ADDRESS!,
+    });
+
+    return prepareContractCall({
+      contract,
+      method: 'withdraw',
+      params: []
+    });
   };
 
   if (!account) {
@@ -182,6 +183,9 @@ export default function ReferralsPage() {
                 </p>
                 <TransactionButton
                   transaction={handleWithdraw}
+                  onTransactionConfirmed={() => {
+                    loadReferralData();
+                  }}
                   className="bg-white text-green-600 px-8 py-3 rounded-xl font-bold hover:bg-gray-100 transition-colors"
                 >
                   💸 Retirar ${parseFloat(referralData.balance).toFixed(2)}
