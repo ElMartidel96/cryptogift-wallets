@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useState } from 'react';
 import { PHOTO_FILTERS } from '../lib/constants';
 

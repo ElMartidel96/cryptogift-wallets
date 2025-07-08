@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useState } from 'react';
 import { Web3Button } from 'thirdweb/react';
 

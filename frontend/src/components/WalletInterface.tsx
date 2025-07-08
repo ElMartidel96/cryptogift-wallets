@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useState, useEffect } from 'react';
 import { Web3Button } from 'thirdweb/react';
 import { SwapModal } from './SwapModal';

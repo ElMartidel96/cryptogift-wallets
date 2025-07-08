@@ -14,12 +14,10 @@ const nextConfig = {
     NEXT_PUBLIC_NFT_DROP_ADDRESS: process.env.NEXT_PUBLIC_NFT_DROP_ADDRESS,
     NEXT_PUBLIC_CHAIN_ID: process.env.NEXT_PUBLIC_CHAIN_ID,
   },
-  experimental: {
-    serverComponentsExternalPackages: [
-      'thirdweb',
-      'ethers'
-    ]
-  },
+  serverExternalPackages: [
+    'thirdweb',
+    'ethers'
+  ],
   // fixes wallet connect dependency issue https://docs.walletconnect.com/web3modal/nextjs/about#extra-configuration
   webpack: (config) => {
     config.externals.push("pino-pretty", "lokijs", "encoding");
