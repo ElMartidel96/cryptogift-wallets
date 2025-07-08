@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { TransactionButton } from 'thirdweb/react';
+import { ethers } from 'ethers';
 
 interface GuardiansModalProps {
   isOpen: boolean;
