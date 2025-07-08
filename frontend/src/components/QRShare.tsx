@@ -71,7 +71,7 @@ Bienvenid@ al futuro de los regalos 💎✨`;
       <div className="bg-white p-8 rounded-2xl border border-gray-200 text-center">
         <h3 className="font-semibold mb-4">Escanea para Reclamar</h3>
         <div className="flex justify-center mb-4">
-          <QRCode
+          <QRCodeSVG
             value={shareUrl}
             size={200}
             level="M"

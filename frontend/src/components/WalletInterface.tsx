@@ -131,7 +131,7 @@ export const WalletInterface: React.FC<WalletInterfaceProps> = ({
           <span className="text-xs text-blue-600 mt-1">Swap a otros tokens</span>
         </button>
 
-        <Web3Button
+        <TransactionButton
           contractAddress={tbaAddress}
           action={handleWithdraw}
           className="flex flex-col items-center p-4 bg-green-50 rounded-2xl hover:bg-green-100 transition-colors"
@@ -144,7 +144,7 @@ export const WalletInterface: React.FC<WalletInterfaceProps> = ({
           </div>
           <span className="font-medium text-green-700">Retirar</span>
           <span className="text-xs text-green-600 mt-1">A tu wallet personal</span>
-        </Web3Button>
+        </TransactionButton>
       </div>
 
       {/* Security Section */}

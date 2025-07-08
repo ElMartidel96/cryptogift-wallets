@@ -180,13 +180,13 @@ export default function ReferralsPage() {
                 <p className="text-green-100 mb-6">
                   Puedes retirar ${parseFloat(referralData.balance).toFixed(2)} USDC a tu wallet
                 </p>
-                <Web3Button
+                <TransactionButton
                   contractAddress={process.env.NEXT_PUBLIC_REF_TREASURY_ADDRESS!}
                   action={handleWithdraw}
                   className="bg-white text-green-600 px-8 py-3 rounded-xl font-bold hover:bg-gray-100 transition-colors"
                 >
                   💸 Retirar ${parseFloat(referralData.balance).toFixed(2)}
-                </Web3Button>
+                </TransactionButton>
               </div>
             </div>
           )}

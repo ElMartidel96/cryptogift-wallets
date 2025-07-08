@@ -170,7 +170,7 @@ export const GuardiansModal: React.FC<GuardiansModalProps> = ({
               Cancelar
             </button>
             
-            <Web3Button
+            <TransactionButton
               contractAddress={tbaAddress}
               action={handleAddGuardians}
               isDisabled={
@@ -187,7 +187,7 @@ export const GuardiansModal: React.FC<GuardiansModalProps> = ({
               ) : (
                 '🛡️ Configurar Guardianes'
               )}
-            </Web3Button>
+            </TransactionButton>
           </div>
 
           {/* Skip Option */}
