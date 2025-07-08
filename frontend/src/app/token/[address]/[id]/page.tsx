@@ -21,16 +21,6 @@ export default function TokenPage() {
   const contractAddress = params?.address as string;
   const tokenId = params?.id as string;
 
-  useEffect(() => {
-    loadNFTData();
-  }, [loadNFTData]);
-
-  useEffect(() => {
-    if (account && nftData) {
-      checkOwnership();
-    }
-  }, [account, nftData, checkOwnership]);
-
   const loadNFTData = useCallback(async () => {
     setIsLoading(true);
     setError(null);
@@ -73,6 +63,16 @@ export default function TokenPage() {
     }
   }, [account, nftData, contractAddress, tokenId]);
 
+  useEffect(() => {
+    loadNFTData();
+  }, [loadNFTData]);
+
+  useEffect(() => {
+    if (account && nftData) {
+      checkOwnership();
+    }
+  }, [account, nftData, checkOwnership]);
+
   const handleClaim = async () => {
     if (!account) return;
 
@@ -84,7 +84,7 @@ export default function TokenPage() {
         body: JSON.stringify({
           contractAddress,
           tokenId,
-          to: account.address,
+          to: account?.address,
         }),
       });
 
