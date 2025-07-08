@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Web3Button } from '@thirdweb-dev/react';
+import { TransactionButton } from 'thirdweb/react';
 import { PERMIT2_ADDRESS, COMMON_TOKENS } from '../lib/constants';
 
 interface SwapModalProps {

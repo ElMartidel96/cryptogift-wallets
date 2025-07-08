@@ -1,6 +1,7 @@
 import { NextApiRequest, NextApiResponse } from "next";
-import { ThirdwebSDK } from "@thirdweb-dev/sdk";
-import { baseSepolia } from "@thirdweb-dev/chains";
+import { createThirdwebClient, getContract, prepareContractCall, sendTransaction } from "thirdweb";
+import { baseSepolia } from "thirdweb/chains";
+import { privateKeyToAccount } from "thirdweb/wallets";
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
