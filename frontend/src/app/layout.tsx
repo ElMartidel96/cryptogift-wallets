@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
-import { ThirdwebProvider } from "thirdweb/react";
+import { ThirdwebWrapper } from "../components/ThirdwebWrapper";
 import { Navbar } from "../components/Navbar";
 import { Footer } from "../components/Footer";
 import { ErrorBoundary } from "../components/ErrorBoundary";
@@ -13,7 +13,6 @@ export const metadata: Metadata = {
   description: "Regala NFT-wallets con criptomonedas. La forma más fácil de introducir a tus amigos al mundo cripto.",
   keywords: "crypto, NFT, wallet, gift, regalo, blockchain, Base, USDC",
   authors: [{ name: "CryptoGift Wallets Team" }],
-  themeColor: "#3b82f6",
   openGraph: {
     title: "CryptoGift Wallets - Regala el Futuro",
     description: "Regala NFT-wallets con criptomonedas. La forma más fácil de introducir a tus amigos al mundo cripto.",
@@ -36,7 +35,7 @@ export default function RootLayout({
   return (
     <html lang="es">
       <body className={inter.className}>
-        <ThirdwebProvider>
+        <ThirdwebWrapper>
           <ErrorBoundary>
             <div className="min-h-screen flex flex-col">
               <Navbar />
@@ -46,7 +45,7 @@ export default function RootLayout({
               <Footer />
             </div>
           </ErrorBoundary>
-        </ThirdwebProvider>
+        </ThirdwebWrapper>
       </body>
     </html>
   );

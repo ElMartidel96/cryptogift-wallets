@@ -33,7 +33,7 @@ export const SwapModal: React.FC<SwapModalProps> = ({
     if (currentToken !== COMMON_TOKENS.USDC) {
       checkPermit2Approval();
     }
-  }, [currentToken, currentBalance]);
+  }, [currentToken, currentBalance, checkPermit2Approval]);
 
   const checkPermit2Approval = useCallback(async () => {
     try {
