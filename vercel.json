@@ -1,0 +1,46 @@
+{
+  "name": "cryptogift-wallets",
+  "version": 2,
+  "framework": "nextjs",
+  "buildCommand": "cd frontend && npm install && npm run build",
+  "outputDirectory": "frontend/.next",
+  "installCommand": "cd frontend && npm install",
+  "devCommand": "cd frontend && npm run dev",
+  "env": {
+    "NEXT_PUBLIC_TW_CLIENT_ID": "9183b572b02ec88dd4d8f20c3ed847d3",
+    "NEXT_PUBLIC_TEMPLATE_CLIENT_ID": "9183b572b02ec88dd4d8f20c3ed847d3", 
+    "TW_SECRET_KEY": "AUoUv6y69TiDDvfKVOQLTFd8JvFmk0zjPLCTOPGLnh_zbPgmrUmWXCXsYAWPvUrWAU7VhZGvDStMRv6Um3pXZA",
+    "TW_KEY": "AUoUv6y69TiDDvfKVOQLTFd8JvFmk0zjPLCTOPGLnh_zbPgmrUmWXCXsYAWPvUrWAU7VhZGvDStMRv6Um3pXZA",
+    "RPC_URL": "https://base-sepolia.g.alchemy.com/v2/GJfW9U_S-o-boMw93As3e",
+    "NEXT_PUBLIC_RPC_URL": "https://base-sepolia.g.alchemy.com/v2/GJfW9U_S-o-boMw93As3e",
+    "NFT_DROP": "0x8DfCAfB320cBB7bcdbF4cc83A62bccA08B30F5D3",
+    "NEXT_PUBLIC_NFT_DROP_ADDRESS": "0x8DfCAfB320cBB7bcdbF4cc83A62bccA08B30F5D3",
+    "TOKEN_DROP": "0xeFCba1D72B8f053d93BA44b7b15a1BeED515C89b",
+    "EDITION_DROP": "0xBd0169Ac15b9b03D79Bd832AF5E358D4CaCEfb49",
+    "TBA_IMPL": "0x60883bD1549CD618691EE38D838d131d304f2664",
+    "FACTORY_6551": "0x02101dfB77FDE026414827Fdc604ddAF224F0921",
+    "NEXT_PUBLIC_ERC6551_REGISTRY": "0x3cB823E40359B9698b942547D9d2241d531f2708",
+    "NEXT_PUBLIC_USDC_ADDRESS": "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
+    "NEXT_PUBLIC_CHAIN_ID": "84532",
+    "NEXT_PUBLIC_CHAIN_NAME": "base-sepolia",
+    "PRIVATE_KEY_DEPLOY": "870c27f0bc97330a7b2fdfd6ddf41930e721e37a372aa67de6ee38f9fe82760f",
+    "ETHERSCAN_KEY": "25ab3e8b.7e89505e3623421c90e7b8607231f9b6",
+    "NFT_STORAGE_API_KEY": "25ab3e8b.7e89505e3623421c90e7b8607231f9b6",
+    "NEXT_PUBLIC_IPFS_GATEWAY": "https://nftstorage.link/ipfs/",
+    "NEXT_PUBLIC_ZEROX_ENDPOINT": "https://base.api.0x.org/swap/v2",
+    "NEXT_PUBLIC_PERMIT2_ADDRESS": "0x000000000022D473030F116dDEE9F6B43aC78BA3",
+    "NEXT_PUBLIC_PAYMASTER_URL": "https://paymaster.thirdweb.com/v1",
+    "NEXT_PUBLIC_CREATION_FEE_PERCENT": "4"
+  },
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "/frontend/src/pages/api/$1"
+    }
+  ],
+  "functions": {
+    "frontend/src/pages/api/*.ts": {
+      "runtime": "nodejs18.x"
+    }
+  }
+}

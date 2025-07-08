@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.23;
 
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 contract ReferralTreasury is ReentrancyGuard {
     /// @notice Dirección del contrato que dispara los créditos (tu Gift contract)

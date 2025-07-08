@@ -1,0 +1,17 @@
+{
+  "name": "cryptogift-contracts",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "compile": "hardhat compile",
+    "test": "hardhat test"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^6.0.0",
+    "@openzeppelin/contracts": "^5.3.0",
+    "hardhat": "^2.25.0",
+    "solc": "0.8.23",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.3"
+  }
+}
