@@ -209,7 +209,7 @@ export const SwapModal: React.FC<SwapModalProps> = ({
                 className="flex-1 bg-yellow-500 hover:bg-yellow-600 text-white font-medium py-2 px-4 rounded-lg"
               >
                 Approve Permit2
-              </Web3Button>
+              </TransactionButton>
             ) : (
               <>
                 <button
@@ -227,7 +227,7 @@ export const SwapModal: React.FC<SwapModalProps> = ({
                     className="flex-1 bg-green-500 hover:bg-green-600 text-white font-medium py-2 px-4 rounded-lg"
                   >
                     Execute Swap
-                  </Web3Button>
+                  </TransactionButton>
                 )}
               </>
             )}
