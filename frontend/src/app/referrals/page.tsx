@@ -16,13 +16,6 @@ export default function ReferralsPage() {
   const [copied, setCopied] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    if (account) {
-      loadReferralData();
-      generateReferralUrl();
-    }
-  }, [account, loadReferralData, generateReferralUrl]);
-
   const loadReferralData = useCallback(async () => {
     if (!account) return;
 
@@ -52,6 +45,13 @@ export default function ReferralsPage() {
     const referralUrl = `${baseUrl}/?ref=${account.address}`;
     setReferralData(prev => ({ ...prev, referralUrl }));
   }, [account]);
+
+  useEffect(() => {
+    if (account) {
+      loadReferralData();
+      generateReferralUrl();
+    }
+  }, [account, loadReferralData, generateReferralUrl]);
 
   const copyReferralUrl = () => {
     navigator.clipboard.writeText(referralData.referralUrl);
