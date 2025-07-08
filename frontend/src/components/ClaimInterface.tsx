@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from 'react';
+import Link from 'next/link';
 
 interface ClaimInterfaceProps {
   nftData: any;
@@ -224,12 +225,12 @@ export const ClaimInterface: React.FC<ClaimInterfaceProps> = ({
         <p className="text-purple-100 text-sm mb-4">
           Crea tus propios regalos cripto y gana comisiones por cada amigo que invites
         </p>
-        <a
+        <Link
           href="/?ref=nuevo"
           className="inline-block bg-white text-purple-600 px-6 py-2 rounded-lg font-medium hover:bg-gray-100 transition-colors"
         >
           Crear Mi Primer Regalo
-        </a>
+        </Link>
       </div>
     </div>
   );

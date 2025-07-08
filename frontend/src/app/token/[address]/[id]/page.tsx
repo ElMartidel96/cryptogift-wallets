@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
+import Link from 'next/link';
 import { useActiveAccount, ConnectButton } from 'thirdweb/react';
 import { client } from '../../../client';
 import { WalletInterface } from '../../../../components/WalletInterface';
@@ -122,12 +123,12 @@ export default function TokenPage() {
           </div>
           <h1 className="text-2xl font-bold text-gray-800 mb-2">Regalo No Encontrado</h1>
           <p className="text-gray-600 mb-6">{error}</p>
-          <a
+          <Link
             href="/"
             className="inline-block px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
           >
             Crear un Nuevo Regalo
-          </a>
+          </Link>
         </div>
       </div>
     );
