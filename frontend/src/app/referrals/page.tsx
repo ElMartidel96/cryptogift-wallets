@@ -8,7 +8,7 @@ import { client } from '../client';
 
 export default function ReferralsPage() {
   const [mounted, setMounted] = useState(false);
-  const account = mounted ? useActiveAccount() : null;
+  const account = useActiveAccount();
   const [referralData, setReferralData] = useState({
     balance: '0',
     totalEarned: '0',
@@ -24,7 +24,7 @@ export default function ReferralsPage() {
   }, []);
 
   const loadReferralData = useCallback(async () => {
-    if (!account) return;
+    if (!mounted || !account) return;
 
     setIsLoading(true);
     try {
@@ -46,7 +46,7 @@ export default function ReferralsPage() {
   }, [account]);
 
   const generateReferralUrl = useCallback(() => {
-    if (!account) return;
+    if (!mounted || !account) return;
     
     const baseUrl = window.location.origin;
     const referralUrl = `${baseUrl}/?ref=${account?.address}`;
@@ -54,11 +54,11 @@ export default function ReferralsPage() {
   }, [account]);
 
   useEffect(() => {
-    if (account) {
+    if (mounted && account) {
       loadReferralData();
       generateReferralUrl();
     }
-  }, [account, loadReferralData, generateReferralUrl]);
+  }, [mounted, account, loadReferralData, generateReferralUrl]);
 
   const copyReferralUrl = () => {
     navigator.clipboard.writeText(referralData.referralUrl);
@@ -80,7 +80,7 @@ export default function ReferralsPage() {
     });
   };
 
-  if (!account) {
+  if (!mounted || !account) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center max-w-md mx-auto p-6">

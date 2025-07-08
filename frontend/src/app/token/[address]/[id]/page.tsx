@@ -12,7 +12,7 @@ import { ClaimInterface } from '../../../../components/ClaimInterface';
 export default function TokenPage() {
   const params = useParams();
   const [mounted, setMounted] = useState(false);
-  const account = mounted ? useActiveAccount() : null;
+  const account = useActiveAccount();
   const [nftData, setNftData] = useState<any>(null);
   const [tbaAddress, setTbaAddress] = useState<string>('');
   const [isOwner, setIsOwner] = useState(false);
@@ -48,7 +48,7 @@ export default function TokenPage() {
   }, [contractAddress, tokenId]);
 
   const checkOwnership = useCallback(async () => {
-    if (!account || !nftData) return;
+    if (!mounted || !account || !nftData) return;
 
     try {
       const response = await fetch('/api/check-ownership', {
@@ -79,7 +79,7 @@ export default function TokenPage() {
   }, [account, nftData, checkOwnership]);
 
   const handleClaim = async () => {
-    if (!account) return;
+    if (!mounted || !account) return;
 
     setIsLoading(true);
     try {
@@ -197,7 +197,7 @@ export default function TokenPage() {
 
                     {/* Connection Status */}
                     <div className="border-t pt-6">
-                      {!account ? (
+                      {!mounted || !account ? (
                         <div className="text-center">
                           <p className="text-gray-600 mb-4">
                             Conecta tu wallet para {isOwner ? 'gestionar' : 'reclamar'} este regalo

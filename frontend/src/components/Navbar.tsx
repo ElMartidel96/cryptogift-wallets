@@ -8,12 +8,11 @@ import { client } from '../app/client';
 export const Navbar: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const account = useActiveAccount();
   
   useEffect(() => {
     setMounted(true);
   }, []);
-  
-  const account = mounted ? useActiveAccount() : null;
 
   return (
     <nav className="bg-white shadow-lg sticky top-0 z-40">

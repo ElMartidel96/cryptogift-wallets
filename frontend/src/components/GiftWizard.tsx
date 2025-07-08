@@ -28,7 +28,7 @@ enum WizardStep {
 
 export const GiftWizard: React.FC<GiftWizardProps> = ({ isOpen, onClose, referrer }) => {
   const [mounted, setMounted] = useState(false);
-  const account = mounted ? useActiveAccount() : null;
+  const account = useActiveAccount();
   const [currentStep, setCurrentStep] = useState<WizardStep>(WizardStep.CONNECT);
 
   useEffect(() => {
