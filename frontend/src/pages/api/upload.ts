@@ -16,7 +16,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    if (!process.env.NEXT_PUBLIC_TW_CLIENT_ID) {
+    if (!process.env.TW_CLIENT_ID) {
       throw new Error('ThirdWeb client ID not configured');
     }
 
@@ -43,7 +43,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // Upload to ThirdWeb Storage (IPFS)
     const uploadResult = await upload({
-      client: { clientId: process.env.NEXT_PUBLIC_TW_CLIENT_ID! },
+      client: { clientId: process.env.TW_CLIENT_ID! },
       files: [nftFile],
     });
     const cid = uploadResult;
@@ -60,7 +60,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
       
       const filteredCidResult = await upload({
-        client: { clientId: process.env.NEXT_PUBLIC_TW_CLIENT_ID! },
+        client: { clientId: process.env.TW_CLIENT_ID! },
         files: [filteredFile],
       });
       const filteredCid = filteredCidResult;
@@ -88,7 +88,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
 
       const metadataCidResult = await upload({
-        client: { clientId: process.env.NEXT_PUBLIC_TW_CLIENT_ID! },
+        client: { clientId: process.env.TW_CLIENT_ID! },
         files: [metadataFile],
       });
       const metadataCid = metadataCidResult;

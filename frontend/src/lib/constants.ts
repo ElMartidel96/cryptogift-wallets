@@ -31,7 +31,7 @@ export const IPFS_GATEWAY = process.env.NEXT_PUBLIC_IPFS_GATEWAY || "https://gat
 // Validation
 export const validateEnvironment = () => {
   const required = [
-    'NEXT_PUBLIC_TEMPLATE_CLIENT_ID',
+    'NEXT_PUBLIC_TW_CLIENT_ID',
     'NEXT_PUBLIC_NFT_DROP_ADDRESS',
     'NEXT_PUBLIC_REF_TREASURY_ADDRESS',
   ];
