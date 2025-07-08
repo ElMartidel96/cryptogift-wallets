@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ConnectButton, useActiveAccount } from 'thirdweb/react';
 import { client } from '../app/client';
 import { ImageUpload } from './ImageUpload';
@@ -27,10 +27,21 @@ enum WizardStep {
 }
 
 export const GiftWizard: React.FC<GiftWizardProps> = ({ isOpen, onClose, referrer }) => {
-  const account = useActiveAccount();
-  const [currentStep, setCurrentStep] = useState<WizardStep>(
-    account ? WizardStep.UPLOAD : WizardStep.CONNECT
-  );
+  const [mounted, setMounted] = useState(false);
+  const account = mounted ? useActiveAccount() : null;
+  const [currentStep, setCurrentStep] = useState<WizardStep>(WizardStep.CONNECT);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (mounted && account) {
+      setCurrentStep(WizardStep.UPLOAD);
+    } else if (mounted) {
+      setCurrentStep(WizardStep.CONNECT);
+    }
+  }, [mounted, account]);
   
   const [wizardData, setWizardData] = useState({
     imageFile: null as File | null,
@@ -165,13 +176,15 @@ export const GiftWizard: React.FC<GiftWizardProps> = ({ isOpen, onClose, referre
             <p className="text-gray-600 mb-8">
               Necesitamos conectar tu wallet para crear el NFT-wallet regalo
             </p>
-            <ConnectButton
-              client={client}
-              appMetadata={{
-                name: "CryptoGift Wallets",
-                url: "https://cryptogift.gl",
-              }}
-            />
+            {mounted && (
+              <ConnectButton
+                client={client}
+                appMetadata={{
+                  name: "CryptoGift Wallets",
+                  url: "https://cryptogift.gl",
+                }}
+              />
+            )}
           </div>
         );
 

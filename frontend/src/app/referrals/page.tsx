@@ -7,7 +7,8 @@ import { baseSepolia, base } from 'thirdweb/chains';
 import { client } from '../client';
 
 export default function ReferralsPage() {
-  const account = useActiveAccount();
+  const [mounted, setMounted] = useState(false);
+  const account = mounted ? useActiveAccount() : null;
   const [referralData, setReferralData] = useState({
     balance: '0',
     totalEarned: '0',
@@ -17,6 +18,10 @@ export default function ReferralsPage() {
   });
   const [copied, setCopied] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const loadReferralData = useCallback(async () => {
     if (!account) return;
@@ -88,13 +93,15 @@ export default function ReferralsPage() {
           <p className="text-gray-600 mb-8">
             Conecta tu wallet para ver tus comisiones y generar tu link de referido
           </p>
-          <ConnectButton
-            client={client}
-            appMetadata={{
-              name: "CryptoGift Wallets",
-              url: "https://cryptogift.gl",
-            }}
-          />
+          {mounted && (
+            <ConnectButton
+              client={client}
+              appMetadata={{
+                name: "CryptoGift Wallets",
+                url: "https://cryptogift.gl",
+              }}
+            />
+          )}
         </div>
       </div>
     );

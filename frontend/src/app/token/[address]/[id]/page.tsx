@@ -11,12 +11,17 @@ import { ClaimInterface } from '../../../../components/ClaimInterface';
 
 export default function TokenPage() {
   const params = useParams();
-  const account = useActiveAccount();
+  const [mounted, setMounted] = useState(false);
+  const account = mounted ? useActiveAccount() : null;
   const [nftData, setNftData] = useState<any>(null);
   const [tbaAddress, setTbaAddress] = useState<string>('');
   const [isOwner, setIsOwner] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const contractAddress = params?.address as string;
   const tokenId = params?.id as string;
@@ -197,13 +202,15 @@ export default function TokenPage() {
                           <p className="text-gray-600 mb-4">
                             Conecta tu wallet para {isOwner ? 'gestionar' : 'reclamar'} este regalo
                           </p>
-                          <ConnectButton
-                            client={client}
-                            appMetadata={{
-                              name: "CryptoGift Wallets",
-                              url: "https://cryptogift.gl",
-                            }}
-                          />
+                          {mounted && (
+                            <ConnectButton
+                              client={client}
+                              appMetadata={{
+                                name: "CryptoGift Wallets",
+                                url: "https://cryptogift.gl",
+                              }}
+                            />
+                          )}
                         </div>
                       ) : isOwner ? (
                         <WalletInterface

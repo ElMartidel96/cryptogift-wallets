@@ -1,13 +1,19 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useActiveAccount, ConnectButton } from 'thirdweb/react';
 import { client } from '../app/client';
 
 export const Navbar: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const account = useActiveAccount();
+  const [mounted, setMounted] = useState(false);
+  
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+  
+  const account = mounted ? useActiveAccount() : null;
 
   return (
     <nav className="bg-white shadow-lg sticky top-0 z-40">
@@ -44,13 +50,15 @@ export const Navbar: React.FC = () => {
               Docs
             </a>
             
-            <ConnectButton
-              client={client}
-              appMetadata={{
-                name: "CryptoGift Wallets",
-                url: "https://cryptogift.gl",
-              }}
-            />
+            {mounted && (
+              <ConnectButton
+                client={client}
+                appMetadata={{
+                  name: "CryptoGift Wallets",
+                  url: "https://cryptogift.gl",
+                }}
+              />
+            )}
           </div>
 
           {/* Mobile Menu Button */}
