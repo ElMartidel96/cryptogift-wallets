@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { TransactionButton } from 'thirdweb/react';
 import { SwapModal } from './SwapModal';
 import { GuardiansModal } from './GuardiansModal';
@@ -30,9 +30,9 @@ export const WalletInterface: React.FC<WalletInterfaceProps> = ({
     loadWalletData();
     const interval = setInterval(loadWalletData, 30000); // Refresh every 30 seconds
     return () => clearInterval(interval);
-  }, [tbaAddress]);
+  }, [loadWalletData]);
 
-  const loadWalletData = async () => {
+  const loadWalletData = useCallback(async () => {
     try {
       const response = await fetch(`/api/wallet/${tbaAddress}`);
       if (response.ok) {
@@ -46,7 +46,7 @@ export const WalletInterface: React.FC<WalletInterfaceProps> = ({
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [tbaAddress]);
 
   const handleWithdraw = async (contract: any) => {
     try {

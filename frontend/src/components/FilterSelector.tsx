@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from 'react';
+import Image from 'next/image';
 import { PHOTO_FILTERS } from '../lib/constants';
 
 interface FilterSelectorProps {
@@ -97,9 +98,11 @@ export const FilterSelector: React.FC<FilterSelectorProps> = ({
             : 'border-transparent hover:border-gray-300'
         }`}
       >
-        <img
+        <Image
           src={imageUrl}
           alt="Original"
+          width={400}
+          height={192}
           className="w-full h-48 object-cover"
         />
         <div className="absolute inset-0 bg-black bg-opacity-20 flex items-end">
@@ -136,9 +139,11 @@ export const FilterSelector: React.FC<FilterSelectorProps> = ({
               </div>
             )}
 
-            <img
+            <Image
               src={filteredPreviews[filter.id] || imageUrl}
               alt={filter.name}
+              width={400}
+              height={192}
               className={`w-full h-48 object-cover transition-all duration-300 ${
                 filteredPreviews[filter.id] ? '' : 'filter grayscale'
               }`}

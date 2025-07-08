@@ -1,5 +1,6 @@
 import React from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 
 export const Footer: React.FC = () => {
   return (
@@ -103,7 +104,7 @@ export const Footer: React.FC = () => {
           <div className="flex items-center space-x-4 text-sm text-gray-400">
             <span>Construido en</span>
             <div className="flex items-center space-x-2">
-              <img src="/base-logo.svg" alt="Base" className="w-6 h-6" onError={(e) => e.currentTarget.style.display = 'none'} />
+              <Image src="/base-logo.svg" alt="Base" width={24} height={24} className="w-6 h-6" onError={(e) => e.currentTarget.style.display = 'none'} />
               <span>Base</span>
             </div>
           </div>

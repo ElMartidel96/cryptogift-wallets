@@ -65,7 +65,7 @@ export const StatsSection: React.FC = () => {
       }, duration / steps);
 
       return () => clearInterval(timer);
-    }, [isVisible, target]);
+    }, [target]);
 
     return (
       <span>

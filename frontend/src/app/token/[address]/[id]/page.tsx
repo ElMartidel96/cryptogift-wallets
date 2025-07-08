@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useActiveAccount, ConnectButton } from 'thirdweb/react';
 import { client } from '../../../client';
 import { WalletInterface } from '../../../../components/WalletInterface';
@@ -22,15 +23,15 @@ export default function TokenPage() {
 
   useEffect(() => {
     loadNFTData();
-  }, [contractAddress, tokenId]);
+  }, [loadNFTData]);
 
   useEffect(() => {
     if (account && nftData) {
       checkOwnership();
     }
-  }, [account, nftData]);
+  }, [account, nftData, checkOwnership]);
 
-  const loadNFTData = async () => {
+  const loadNFTData = useCallback(async () => {
     setIsLoading(true);
     setError(null);
 
@@ -49,9 +50,9 @@ export default function TokenPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [contractAddress, tokenId]);
 
-  const checkOwnership = async () => {
+  const checkOwnership = useCallback(async () => {
     if (!account || !nftData) return;
 
     try {
@@ -70,7 +71,7 @@ export default function TokenPage() {
     } catch (err) {
       console.error('Error checking ownership:', err);
     }
-  };
+  }, [account, nftData, contractAddress, tokenId]);
 
   const handleClaim = async () => {
     if (!account) return;
@@ -157,9 +158,11 @@ export default function TokenPage() {
               {/* NFT Image and Info */}
               <div className="md:flex">
                 <div className="md:w-1/2 p-8">
-                  <img
+                  <Image
                     src={nftData.image}
                     alt={nftData.name}
+                    width={500}
+                    height={500}
                     className="w-full rounded-2xl shadow-lg"
                   />
                 </div>

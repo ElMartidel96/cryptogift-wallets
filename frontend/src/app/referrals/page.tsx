@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useActiveAccount, ConnectButton, TransactionButton } from 'thirdweb/react';
 import { client } from '../client';
 
@@ -21,9 +21,9 @@ export default function ReferralsPage() {
       loadReferralData();
       generateReferralUrl();
     }
-  }, [account]);
+  }, [account, loadReferralData, generateReferralUrl]);
 
-  const loadReferralData = async () => {
+  const loadReferralData = useCallback(async () => {
     if (!account) return;
 
     setIsLoading(true);
@@ -43,15 +43,15 @@ export default function ReferralsPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [account]);
 
-  const generateReferralUrl = () => {
+  const generateReferralUrl = useCallback(() => {
     if (!account) return;
     
     const baseUrl = window.location.origin;
     const referralUrl = `${baseUrl}/?ref=${account.address}`;
     setReferralData(prev => ({ ...prev, referralUrl }));
-  };
+  }, [account]);
 
   const copyReferralUrl = () => {
     navigator.clipboard.writeText(referralData.referralUrl);
@@ -181,8 +181,7 @@ export default function ReferralsPage() {
                   Puedes retirar ${parseFloat(referralData.balance).toFixed(2)} USDC a tu wallet
                 </p>
                 <TransactionButton
-                  contractAddress={process.env.NEXT_PUBLIC_REF_TREASURY_ADDRESS!}
-                  action={handleWithdraw}
+                  transaction={handleWithdraw}
                   className="bg-white text-green-600 px-8 py-3 rounded-xl font-bold hover:bg-gray-100 transition-colors"
                 >
                   💸 Retirar ${parseFloat(referralData.balance).toFixed(2)}

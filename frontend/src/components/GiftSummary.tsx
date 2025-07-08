@@ -1,4 +1,5 @@
 import React from 'react';
+import Image from 'next/image';
 
 interface GiftSummaryProps {
   data: {
@@ -55,9 +56,11 @@ export const GiftSummary: React.FC<GiftSummaryProps> = ({
       <div className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-2xl p-6">
         <div className="flex flex-col md:flex-row gap-6 items-center">
           <div className="relative">
-            <img
+            <Image
               src={data.filteredImageUrl || data.imageUrl}
               alt="NFT Preview"
+              width={192}
+              height={192}
               className="w-48 h-48 object-cover rounded-2xl shadow-lg"
             />
             <div className="absolute -bottom-2 -right-2 bg-blue-500 text-white px-3 py-1 rounded-full text-sm font-medium">

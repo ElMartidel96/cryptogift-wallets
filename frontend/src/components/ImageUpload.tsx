@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useCallback } from 'react';
+import Image from 'next/image';
 import { useDropzone } from 'react-dropzone';
 
 interface ImageUploadProps {
@@ -113,9 +114,11 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({ onImageUpload, onBack 
       ) : (
         <div className="space-y-4">
           <div className="relative">
-            <img
+            <Image
               src={preview}
               alt="Preview"
+              width={600}
+              height={320}
               className="w-full h-80 object-cover rounded-2xl"
             />
             <button

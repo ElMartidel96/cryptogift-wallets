@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { TransactionButton } from 'thirdweb/react';
 import { PERMIT2_ADDRESS, COMMON_TOKENS } from '../lib/constants';
 
@@ -30,9 +30,9 @@ export const SwapModal: React.FC<SwapModalProps> = ({
     if (currentToken !== COMMON_TOKENS.USDC) {
       checkPermit2Approval();
     }
-  }, [currentToken, currentBalance]);
+  }, [currentToken, currentBalance, checkPermit2Approval]);
 
-  const checkPermit2Approval = async () => {
+  const checkPermit2Approval = useCallback(async () => {
     try {
       // Check if the token has sufficient allowance for Permit2
       const response = await fetch('/api/check-allowance', {
@@ -51,7 +51,7 @@ export const SwapModal: React.FC<SwapModalProps> = ({
     } catch (err) {
       console.error('Error checking allowance:', err);
     }
-  };
+  }, [currentToken, tbaAddress, currentBalance]);
 
   const getSwapQuote = async () => {
     if (!currentBalance || currentToken === targetToken) return;
