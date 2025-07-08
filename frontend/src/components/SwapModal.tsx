@@ -2,6 +2,9 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { TransactionButton } from 'thirdweb/react';
+import { prepareContractCall, getContract } from 'thirdweb';
+import { baseSepolia, base } from 'thirdweb/chains';
+import { client } from '../app/client';
 import { PERMIT2_ADDRESS, COMMON_TOKENS } from '../lib/constants';
 
 interface SwapModalProps {
@@ -30,7 +33,7 @@ export const SwapModal: React.FC<SwapModalProps> = ({
     if (currentToken !== COMMON_TOKENS.USDC) {
       checkPermit2Approval();
     }
-  }, [currentToken, currentBalance, checkPermit2Approval]);
+  }, [currentToken, currentBalance]);
 
   const checkPermit2Approval = useCallback(async () => {
     try {
@@ -83,55 +86,41 @@ export const SwapModal: React.FC<SwapModalProps> = ({
     }
   };
 
-  const handleSwap = async (contract: any) => {
-    if (!swapData) return;
+  const handleSwap = () => {
+    if (!swapData) throw new Error('No swap data available');
 
-    try {
-      // Execute the swap through the Token Bound Account
-      const tx = await contract.call('executeCall', [
+    const contract = getContract({
+      client,
+      chain: process.env.NEXT_PUBLIC_CHAIN_ID === '84532' ? baseSepolia : base,
+      address: tbaAddress,
+    });
+
+    return prepareContractCall({
+      contract,
+      method: 'function executeCall(address dest, uint256 value, bytes calldata data)',
+      params: [
         swapData.dest,
-        swapData.value || '0',
-        swapData.calldata,
-      ]);
-
-      console.log('Swap transaction:', tx);
-      
-      // Close modal and refresh balance
-      onClose();
-      
-      // Show success message
-      alert('Swap completed successfully!');
-      
-      return tx;
-    } catch (err) {
-      console.error('Swap execution error:', err);
-      setError('Swap execution failed. Please try again.');
-      throw err;
-    }
+        BigInt(swapData.value || '0'),
+        swapData.calldata as `0x${string}`,
+      ]
+    });
   };
 
-  const handleApprovePermit2 = async (contract: any) => {
-    try {
-      // Approve Permit2 contract to spend tokens
-      const tx = await contract.call('approve', [
-        PERMIT2_ADDRESS,
-        '0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff', // Max approval
-      ]);
+  const handleApprovePermit2 = () => {
+    const contract = getContract({
+      client,
+      chain: process.env.NEXT_PUBLIC_CHAIN_ID === '84532' ? baseSepolia : base,
+      address: currentToken,
+    });
 
-      console.log('Permit2 approval transaction:', tx);
-      
-      // Update state
-      setNeedsPermit(false);
-      
-      // Get swap quote after approval
-      await getSwapQuote();
-      
-      return tx;
-    } catch (err) {
-      console.error('Permit2 approval error:', err);
-      setError('Approval failed. Please try again.');
-      throw err;
-    }
+    return prepareContractCall({
+      contract,
+      method: 'function approve(address spender, uint256 amount)',
+      params: [
+        PERMIT2_ADDRESS,
+        BigInt('0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff'), // Max approval
+      ]
+    });
   };
 
   if (!isOpen) return null;
@@ -178,7 +167,7 @@ export const SwapModal: React.FC<SwapModalProps> = ({
             </label>
             <select
               value={targetToken}
-              onChange={(e) => setTargetToken(e.target.value)}
+              onChange={(e) => setTargetToken(e.target.value as typeof COMMON_TOKENS.USDC)}
               className="w-full p-2 border border-gray-300 rounded-md"
             >
               {Object.entries(COMMON_TOKENS)
@@ -204,8 +193,11 @@ export const SwapModal: React.FC<SwapModalProps> = ({
           <div className="flex space-x-2">
             {needsPermit ? (
               <TransactionButton
-                contractAddress={currentToken}
-                action={handleApprovePermit2}
+                transaction={handleApprovePermit2}
+                onTransactionConfirmed={() => {
+                  setNeedsPermit(false);
+                  getSwapQuote();
+                }}
                 className="flex-1 bg-yellow-500 hover:bg-yellow-600 text-white font-medium py-2 px-4 rounded-lg"
               >
                 Approve Permit2
@@ -222,8 +214,11 @@ export const SwapModal: React.FC<SwapModalProps> = ({
                 
                 {swapData && (
                   <TransactionButton
-                    contractAddress={tbaAddress}
-                    action={handleSwap}
+                    transaction={handleSwap}
+                    onTransactionConfirmed={() => {
+                      onClose();
+                      alert('Swap completed successfully!');
+                    }}
                     className="flex-1 bg-green-500 hover:bg-green-600 text-white font-medium py-2 px-4 rounded-lg"
                   >
                     Execute Swap

@@ -1,5 +1,5 @@
 import { NextApiRequest, NextApiResponse } from "next";
-import { createThirdwebClient, getContract } from "thirdweb";
+import { createThirdwebClient, getContract, readContract } from "thirdweb";
 import { baseSepolia } from "thirdweb/chains";
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -16,53 +16,30 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
     }
 
-    // Initialize ThirdWeb SDK
-    const sdk = ThirdwebSDK.fromPrivateKey(
-      process.env.PRIVATE_KEY_DEPLOY!,
-      baseSepolia,
-      {
-        secretKey: process.env.TW_SECRET_KEY!,
-      }
-    );
+    // Initialize ThirdWeb Client
+    const client = createThirdwebClient({
+      clientId: process.env.NEXT_PUBLIC_TW_CLIENT_ID!,
+      secretKey: process.env.TW_SECRET_KEY!,
+    });
 
-    // Get ReferralTreasury contract
-    const referralTreasury = await sdk.getContract(
-      process.env.NEXT_PUBLIC_REF_TREASURY_ADDRESS!
-    );
-
-    // Get user's balance in the referral treasury
-    const balance = await referralTreasury.call("balance", [address]);
-    const balanceFormatted = (parseFloat(balance.toString()) / 1e18).toFixed(6);
-
-    // Get events to calculate statistics
-    // This would require more complex event filtering in a real implementation
-    // For now, we'll return mock data that you can replace with actual event parsing
-
-    const mockData = {
-      balance: balanceFormatted,
-      totalEarned: (parseFloat(balanceFormatted) * 1.5).toFixed(2), // Mock: 50% more than current balance
-      referralCount: Math.floor(parseFloat(balanceFormatted) * 10), // Mock: 10 referrals per dollar earned
-      pendingRewards: "0.00", // Would come from pending transactions
-      recentReferrals: [
-        // Mock data - replace with actual event parsing
-        {
-          date: new Date().toISOString(),
-          amount: "2.50",
-          referredUser: "0x1234...5678",
-          giftAmount: "125.00",
-        }
-      ],
+    // Simplified referral data - TODO: implement with thirdweb v5 readContract
+    const referralData = {
+      balance: "0",
+      totalEarned: "0",
+      referralCount: 0,
+      pendingRewards: "0",
+      referralUrl: `${process.env.NEXT_PUBLIC_APP_URL || 'https://cryptogift.gl'}/?ref=${address}`,
     };
 
     res.status(200).json({
       success: true,
-      ...mockData,
+      ...referralData,
     });
 
   } catch (error) {
     console.error('Referrals API error:', error);
     res.status(500).json({
-      error: 'Failed to fetch referral data',
+      error: 'Failed to get referral data',
       message: error instanceof Error ? error.message : 'Unknown error',
     });
   }

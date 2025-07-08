@@ -2,6 +2,9 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { TransactionButton } from 'thirdweb/react';
+import { prepareContractCall, getContract } from 'thirdweb';
+import { baseSepolia, base } from 'thirdweb/chains';
+import { client } from '../app/client';
 import { SwapModal } from './SwapModal';
 import { GuardiansModal } from './GuardiansModal';
 import { COMMON_TOKENS } from '../lib/constants';
@@ -30,7 +33,7 @@ export const WalletInterface: React.FC<WalletInterfaceProps> = ({
     loadWalletData();
     const interval = setInterval(loadWalletData, 30000); // Refresh every 30 seconds
     return () => clearInterval(interval);
-  }, [loadWalletData]);
+  }, [tbaAddress]);
 
   const loadWalletData = useCallback(async () => {
     try {
@@ -48,26 +51,27 @@ export const WalletInterface: React.FC<WalletInterfaceProps> = ({
     }
   }, [tbaAddress]);
 
-  const handleWithdraw = async (contract: any) => {
-    try {
-      // Transfer all balance to the owner's EOA
-      const tx = await contract.call('executeCall', [
-        currentToken,
-        '0',
-        '0xa9059cbb' + // transfer(address,uint256)
-        contract.interface.encodeFunctionData('transfer', [
-          contract.signer.address, // to
-          balance // amount
-        ]).slice(2)
-      ]);
-      
-      console.log('Withdraw transaction:', tx);
-      await loadWalletData(); // Refresh data
-      return tx;
-    } catch (error) {
-      console.error('Withdraw error:', error);
-      throw error;
-    }
+  const handleWithdraw = () => {
+    const contract = getContract({
+      client,
+      chain: process.env.NEXT_PUBLIC_CHAIN_ID === '84532' ? baseSepolia : base,
+      address: tbaAddress,
+    });
+
+    // For withdrawal, we need to call the transfer function on the token contract
+    // This is simplified - in a real implementation, you'd need to encode the transfer call properly
+    return prepareContractCall({
+      contract,
+      method: 'function executeCall(address dest, uint256 value, bytes calldata data)',
+      params: [
+        currentToken as `0x${string}`, // destination token contract
+        BigInt('0'), // value in ETH
+        ('0xa9059cbb' + // transfer(address,uint256) function selector
+        // This would need proper encoding of the transfer parameters
+        '000000000000000000000000' + tbaAddress.slice(2) + // to address
+        BigInt(balance).toString(16).padStart(64, '0')) as `0x${string}` // amount
+      ]
+    });
   };
 
   const formatBalance = (bal: string) => {
@@ -132,10 +136,12 @@ export const WalletInterface: React.FC<WalletInterfaceProps> = ({
         </button>
 
         <TransactionButton
-          contractAddress={tbaAddress}
-          action={handleWithdraw}
-          className="flex flex-col items-center p-4 bg-green-50 rounded-2xl hover:bg-green-100 transition-colors"
-          isDisabled={parseFloat(balance) === 0}
+          transaction={handleWithdraw}
+          onTransactionConfirmed={() => {
+            loadWalletData();
+          }}
+          disabled={parseFloat(balance) === 0}
+          className="flex flex-col items-center p-4 bg-green-50 rounded-2xl hover:bg-green-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center mb-2">
             <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">

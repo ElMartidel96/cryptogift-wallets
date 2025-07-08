@@ -43,7 +43,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // Upload to ThirdWeb Storage (IPFS)
     const uploadResult = await upload({
-      client: { clientId: process.env.TW_CLIENT_ID! },
+      client: { 
+        clientId: process.env.TW_CLIENT_ID!,
+        secretKey: process.env.TW_SECRET_KEY!,
+      },
       files: [nftFile],
     });
     const cid = uploadResult;
@@ -60,7 +63,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
       
       const filteredCidResult = await upload({
-        client: { clientId: process.env.TW_CLIENT_ID! },
+        client: { 
+        clientId: process.env.TW_CLIENT_ID!,
+        secretKey: process.env.TW_SECRET_KEY!,
+      },
         files: [filteredFile],
       });
       const filteredCid = filteredCidResult;
@@ -88,7 +94,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
 
       const metadataCidResult = await upload({
-        client: { clientId: process.env.TW_CLIENT_ID! },
+        client: { 
+        clientId: process.env.TW_CLIENT_ID!,
+        secretKey: process.env.TW_SECRET_KEY!,
+      },
         files: [metadataFile],
       });
       const metadataCid = metadataCidResult;

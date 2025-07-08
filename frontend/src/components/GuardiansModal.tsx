@@ -42,7 +42,7 @@ export const GuardiansModal: React.FC<GuardiansModalProps> = ({
 
     // Convert emails to hashes (for privacy)
     const guardianHashes = validEmails.map(email => {
-      return keccak256(toUtf8Bytes(email.toLowerCase().trim()));
+      return keccak256(toUtf8Bytes(email.toLowerCase().trim())) as `0x${string}`;
     });
 
     const contract = getContract({
@@ -54,7 +54,7 @@ export const GuardiansModal: React.FC<GuardiansModalProps> = ({
     return prepareContractCall({
       contract,
       method: 'function addGuardians(bytes32[] calldata guardianHashes)',
-      params: [guardianHashes]
+      params: [guardianHashes as readonly `0x${string}`[]]
     });
   };
 
@@ -164,7 +164,6 @@ export const GuardiansModal: React.FC<GuardiansModalProps> = ({
           <div className="flex gap-4">
             <button
               onClick={onClose}
-              disabled={isLoading}
               className="flex-1 px-6 py-3 border border-gray-300 rounded-lg font-medium hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               Cancelar
