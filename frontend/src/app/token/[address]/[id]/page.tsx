@@ -18,8 +18,8 @@ export default function TokenPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const contractAddress = params.address as string;
-  const tokenId = params.id as string;
+  const contractAddress = params?.address as string;
+  const tokenId = params?.id as string;
 
   useEffect(() => {
     loadNFTData();
@@ -62,7 +62,7 @@ export default function TokenPage() {
         body: JSON.stringify({
           contractAddress,
           tokenId,
-          userAddress: account.address,
+          userAddress: account?.address,
         }),
       });
 

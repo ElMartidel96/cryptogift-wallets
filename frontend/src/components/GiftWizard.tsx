@@ -118,7 +118,7 @@ export const GiftWizard: React.FC<GiftWizardProps> = ({ isOpen, onClose, referre
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          to: account.address,
+          to: account?.address,
           amount: wizardData.amount,
           referrer: referrer,
           metadata: {

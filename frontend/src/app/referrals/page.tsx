@@ -26,7 +26,7 @@ export default function ReferralsPage() {
       const response = await fetch('/api/referrals', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ address: account.address }),
+        body: JSON.stringify({ address: account?.address }),
       });
 
       if (response.ok) {
@@ -44,7 +44,7 @@ export default function ReferralsPage() {
     if (!account) return;
     
     const baseUrl = window.location.origin;
-    const referralUrl = `${baseUrl}/?ref=${account.address}`;
+    const referralUrl = `${baseUrl}/?ref=${account?.address}`;
     setReferralData(prev => ({ ...prev, referralUrl }));
   }, [account]);
 
