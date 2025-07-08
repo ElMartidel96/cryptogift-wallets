@@ -16,7 +16,7 @@ const nextConfig = {
   },
   experimental: {
     serverComponentsExternalPackages: [
-      '@thirdweb-dev/sdk',
+      'thirdweb',
       'ethers'
     ]
   },
