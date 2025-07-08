@@ -16,7 +16,7 @@ export default function Home() {
 
   useEffect(() => {
     // Check for referral parameter
-    const ref = searchParams.get("ref");
+    const ref = searchParams?.get("ref");
     if (ref) {
       setReferrer(ref);
       // Store in localStorage for later use
