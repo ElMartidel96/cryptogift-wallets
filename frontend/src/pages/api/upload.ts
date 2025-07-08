@@ -1,7 +1,7 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import formidable from "formidable";
 import { promises as fs } from "fs";
-import { File, NFTStorage } from "nft.storage";
+import { upload } from "thirdweb/storage";
 
 // Disable the default body parser
 export const config = {
@@ -16,8 +16,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    if (!process.env.NFT_STORAGE_API_KEY) {
-      throw new Error('NFT.Storage API key not configured');
+    if (!process.env.NEXT_PUBLIC_TW_CLIENT_ID) {
+      throw new Error('ThirdWeb client ID not configured');
     }
 
     // Parse the multipart form data
@@ -36,14 +36,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Read the file
     const fileData = await fs.readFile(uploadedFile.filepath);
     
-    // Create File object for NFT.Storage
+    // Create File object
     const nftFile = new File([fileData], uploadedFile.originalFilename || 'image', {
       type: uploadedFile.mimetype || 'image/jpeg',
     });
 
-    // Upload to NFT.Storage (IPFS)
-    const client = new NFTStorage({ token: process.env.NFT_STORAGE_API_KEY });
-    const cid = await client.storeBlob(nftFile);
+    // Upload to ThirdWeb Storage (IPFS)
+    const uploadResult = await upload({
+      client: { clientId: process.env.NEXT_PUBLIC_TW_CLIENT_ID! },
+      files: [nftFile],
+    });
+    const cid = uploadResult;
 
     // Create metadata if this is the final upload
     const filteredUrl = fields.filteredUrl?.[0];
