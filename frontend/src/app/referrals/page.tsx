@@ -70,7 +70,7 @@ export default function ReferralsPage() {
 
     return prepareContractCall({
       contract,
-      method: 'withdraw',
+      method: 'function withdraw()',
       params: []
     });
   };
