@@ -2,7 +2,10 @@
 
 import React, { useState } from 'react';
 import { TransactionButton } from 'thirdweb/react';
+import { prepareContractCall, getContract } from 'thirdweb';
+import { baseSepolia, base } from 'thirdweb/chains';
 import { keccak256, toUtf8Bytes } from 'ethers';
+import { client } from '../app/client';
 
 interface GuardiansModalProps {
   isOpen: boolean;
@@ -16,7 +19,6 @@ export const GuardiansModal: React.FC<GuardiansModalProps> = ({
   tbaAddress
 }) => {
   const [guardians, setGuardians] = useState(['', '', '']);
-  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const handleGuardianChange = (index: number, value: string) => {
@@ -30,33 +32,30 @@ export const GuardiansModal: React.FC<GuardiansModalProps> = ({
     return re.test(email);
   };
 
-  const handleAddGuardians = async (contract: any) => {
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      // Validate all emails
-      const validEmails = guardians.filter(email => email.trim() && validateEmail(email.trim()));
-      
-      if (validEmails.length < 3) {
-        throw new Error('Se requieren 3 emails válidos');
-      }
-
-      // Convert emails to hashes (for privacy)
-      const guardianHashes = validEmails.map(email => {
-        return keccak256(toUtf8Bytes(email.toLowerCase().trim()));
-      });
-
-      // Call the smart contract
-      const tx = await contract.call('addGuardians', [guardianHashes]);
-      
-      console.log('Guardians added:', tx);
-      onClose();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error adding guardians');
-    } finally {
-      setIsLoading(false);
+  const handleAddGuardians = () => {
+    // Validate all emails
+    const validEmails = guardians.filter(email => email.trim() && validateEmail(email.trim()));
+    
+    if (validEmails.length < 3) {
+      throw new Error('Se requieren 3 emails válidos');
     }
+
+    // Convert emails to hashes (for privacy)
+    const guardianHashes = validEmails.map(email => {
+      return keccak256(toUtf8Bytes(email.toLowerCase().trim()));
+    });
+
+    const contract = getContract({
+      client,
+      chain: process.env.NEXT_PUBLIC_CHAIN_ID === '84532' ? baseSepolia : base,
+      address: tbaAddress,
+    });
+
+    return prepareContractCall({
+      contract,
+      method: 'function addGuardians(bytes32[] calldata guardianHashes)',
+      params: [guardianHashes]
+    });
   };
 
   if (!isOpen) return null;
@@ -172,22 +171,16 @@ export const GuardiansModal: React.FC<GuardiansModalProps> = ({
             </button>
             
             <TransactionButton
-              contractAddress={tbaAddress}
-              action={handleAddGuardians}
-              isDisabled={
-                isLoading || 
+              transaction={handleAddGuardians}
+              onTransactionConfirmed={() => {
+                onClose();
+              }}
+              disabled={
                 guardians.filter(email => email.trim() && validateEmail(email.trim())).length < 3
               }
               className="flex-1 px-6 py-3 bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
-              {isLoading ? (
-                <div className="flex items-center justify-center">
-                  <div className="animate-spin w-5 h-5 border-2 border-white border-t-transparent rounded-full mr-2"></div>
-                  Configurando...
-                </div>
-              ) : (
-                '🛡️ Configurar Guardianes'
-              )}
+              🛡️ Configurar Guardianes
             </TransactionButton>
           </div>
 
