@@ -76,7 +76,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         name: `CryptoGift NFT #${Date.now()}`,
         description: "Un regalo cripto único creado con amor",
         image: `ipfs://${filteredCid}`,
-        external_url: "https://cryptogift.gl",
+        external_url: "https://cryptogift-wallets.vercel.app",
         attributes: [
           {
             trait_type: "Creation Date",

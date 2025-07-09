@@ -24,7 +24,8 @@
     "qrcode.react": "^4.2.0",
     "formidable": "^3.5.4",
     "react-dropzone": "^14.3.8",
-    "@vercel/kv": "^3.0.0"
+    "@vercel/kv": "^3.0.0",
+    "@biconomy/account": "^4.5.7"
   },
   "devDependencies": {
     "@types/node": "^24.0.10",

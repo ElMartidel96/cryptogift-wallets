@@ -189,7 +189,7 @@ export const GiftWizard: React.FC<GiftWizardProps> = ({ isOpen, onClose, referre
                 client={client}
                 appMetadata={{
                   name: "CryptoGift Wallets",
-                  url: "https://cryptogift.gl",
+                  url: "https://cryptogift-wallets.vercel.app",
                 }}
               />
             )}

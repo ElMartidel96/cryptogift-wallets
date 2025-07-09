@@ -77,7 +77,7 @@ export const Navbar: React.FC = () => {
                 client={client}
                 appMetadata={{
                   name: "CryptoGift Wallets",
-                  url: "https://cryptogift.gl",
+                  url: "https://cryptogift-wallets.vercel.app",
                 }}
               />
             )}
@@ -139,7 +139,7 @@ export const Navbar: React.FC = () => {
                   client={client}
                   appMetadata={{
                     name: "CryptoGift Wallets",
-                    url: "https://cryptogift.gl",
+                    url: "https://cryptogift-wallets.vercel.app",
                   }}
                 />
               </div>

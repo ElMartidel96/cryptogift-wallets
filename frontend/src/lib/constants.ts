@@ -30,6 +30,10 @@ export const PAYMASTER_URL = process.env.NEXT_PUBLIC_PAYMASTER_URL || "https://p
 export const CREATION_FEE_PERCENT = parseInt(process.env.NEXT_PUBLIC_CREATION_FEE_PERCENT || "4");
 export const IPFS_GATEWAY = process.env.NEXT_PUBLIC_IPFS_GATEWAY || "https://gateway.pinata.cloud/ipfs/";
 
+// Biconomy Configuration
+export const BICONOMY_PAYMASTER_API_KEY = process.env.NEXT_PUBLIC_BICONOMY_PAYMASTER_API_KEY;
+export const BICONOMY_BUNDLER_URL = process.env.NEXT_PUBLIC_BICONOMY_BUNDLER_URL;
+
 // Validation
 export const validateEnvironment = () => {
   const required = [
@@ -49,7 +53,8 @@ export const validateEnvironment = () => {
     nftDrop: NFT_DROP_ADDRESS,
     treasury: REF_TREASURY_ADDRESS,
     usdc: USDC_ADDRESS,
-    clientId: THIRDWEB_KEY ? 'Configured' : 'Missing'
+    clientId: THIRDWEB_KEY ? 'Configured' : 'Missing',
+    biconomy: BICONOMY_PAYMASTER_API_KEY ? 'Configured' : 'Missing'
   });
 };
 

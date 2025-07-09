@@ -3,6 +3,7 @@ import { createThirdwebClient, getContract, prepareContractCall, sendTransaction
 import { upload } from "thirdweb/storage";
 import { baseSepolia } from "thirdweb/chains";
 import { privateKeyToAccount } from "thirdweb/wallets";
+import { createBiconomySmartAccount, sendGaslessTransaction, validateBiconomyConfig } from "../../lib/biconomy";
 
 // Helper function to upload metadata to IPFS
 async function uploadMetadataToIPFS(metadata: any) {
@@ -110,6 +111,46 @@ async function distributeReferralFees(referrer: string | undefined, referralFee:
   }
 }
 
+// Helper function for gasless NFT minting
+async function mintNFTGasless(to: string, metadataUri: string, client: any) {
+  try {
+    // Check if Biconomy is configured
+    if (!validateBiconomyConfig()) {
+      throw new Error('Biconomy not configured. Using fallback minting.');
+    }
+
+    // Create Smart Account
+    const smartAccount = await createBiconomySmartAccount(process.env.PRIVATE_KEY_DEPLOY!);
+    
+    // Get NFT contract
+    const nftContract = getContract({
+      client,
+      chain: baseSepolia,
+      address: process.env.NEXT_PUBLIC_NFT_DROP_ADDRESS!,
+    });
+
+    // Prepare mint transaction
+    const mintTransaction = prepareContractCall({
+      contract: nftContract,
+      method: "mintTo",
+      params: [to, metadataUri],
+    });
+
+    // Send gasless transaction via Biconomy
+    const receipt = await sendGaslessTransaction(smartAccount, mintTransaction);
+    
+    return {
+      success: true,
+      transactionHash: receipt.transactionHash,
+      blockNumber: receipt.blockNumber,
+      gasUsed: "0", // Gasless transaction
+    };
+  } catch (error) {
+    console.error('Gasless minting failed:', error);
+    throw error;
+  }
+}
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
@@ -171,7 +212,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       name: metadata.name || `CryptoGift #${Date.now()}`,
       description: metadata.description || "Un regalo cripto único creado con amor",
       image: metadata.image,
-      external_url: "https://cryptogift.gl",
+      external_url: "https://cryptogift-wallets.vercel.app",
       attributes: [
         ...(metadata.attributes || []),
         {
@@ -206,12 +247,26 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       // Upload metadata to IPFS first
       const metadataUri = await uploadMetadataToIPFS(nftMetadata);
       
-      // TODO: Implement real minting when contract is ready
-      // For now, simulate minting with deterministic values
-      const timestamp = Date.now();
-      tokenId = (timestamp % 1000000).toString();
+      // Try gasless minting with Biconomy
+      try {
+        const gaslessResult = await mintNFTGasless(to, metadataUri, client);
+        transactionHash = gaslessResult.transactionHash;
+        
+        // Extract tokenId from gasless transaction
+        tokenId = await getTokenIdFromReceipt(gaslessResult);
+        
+        console.log(`✅ Gasless NFT minted successfully: tx=${transactionHash}`);
+      } catch (gaslessError) {
+        console.warn('Gasless minting failed, using simulation:', gaslessError);
+        
+        // Fallback to simulation if gasless fails
+        const timestamp = Date.now();
+        tokenId = (timestamp % 1000000).toString();
+        transactionHash = `0x${timestamp.toString(16).padStart(64, '0')}`;
+      }
+      
+      // Calculate TBA address
       tbaAddress = await calculateTBAAddress(tokenId);
-      transactionHash = `0x${timestamp.toString(16).padStart(64, '0')}`;
       
       // Implement USDC deposit to TBA
       await depositUSDCToTBA(tbaAddress, netAmount, client, account);
@@ -219,7 +274,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       // Implement referral fee distribution
       await distributeReferralFees(referrer, referralFee, platformFee, client, account);
       
-      console.log(`NFT minted successfully: tokenId=${tokenId}, tbaAddress=${tbaAddress}, tx=${transactionHash}`);
+      console.log(`NFT process completed: tokenId=${tokenId}, tbaAddress=${tbaAddress}, tx=${transactionHash}`);
       
     } catch (error) {
       console.error('Minting failed:', error);

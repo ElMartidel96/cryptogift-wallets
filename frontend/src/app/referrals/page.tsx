@@ -98,7 +98,7 @@ export default function ReferralsPage() {
               client={client}
               appMetadata={{
                 name: "CryptoGift Wallets",
-                url: "https://cryptogift.gl",
+                url: "https://cryptogift-wallets.vercel.app",
               }}
             />
           )}

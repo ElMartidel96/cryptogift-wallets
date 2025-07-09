@@ -28,7 +28,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       totalEarned: "0",
       referralCount: 0,
       pendingRewards: "0",
-      referralUrl: `${process.env.NEXT_PUBLIC_APP_URL || 'https://cryptogift.gl'}/?ref=${address}`,
+      referralUrl: `${process.env.NEXT_PUBLIC_APP_URL || 'https://cryptogift-wallets.vercel.app'}/?ref=${address}`,
     };
 
     res.status(200).json({
