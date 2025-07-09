@@ -1,5 +1,6 @@
 import { NextApiRequest, NextApiResponse } from "next";
-import { createThirdwebClient, getContract, prepareContractCall, sendTransaction, upload } from "thirdweb";
+import { createThirdwebClient, getContract, prepareContractCall, sendTransaction } from "thirdweb";
+import { upload } from "thirdweb/storage";
 import { baseSepolia } from "thirdweb/chains";
 import { privateKeyToAccount } from "thirdweb/wallets";
 
