@@ -43,7 +43,7 @@ export default function ReferralsPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [account]);
+  }, [mounted, account]);
 
   const generateReferralUrl = useCallback(() => {
     if (!mounted || !account) return;
@@ -51,7 +51,7 @@ export default function ReferralsPage() {
     const baseUrl = window.location.origin;
     const referralUrl = `${baseUrl}/?ref=${account?.address}`;
     setReferralData(prev => ({ ...prev, referralUrl }));
-  }, [account]);
+  }, [mounted, account]);
 
   useEffect(() => {
     if (mounted && account) {

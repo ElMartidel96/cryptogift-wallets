@@ -66,7 +66,7 @@ export default function TokenPage() {
     } catch (err) {
       console.error('Error checking ownership:', err);
     }
-  }, [account, nftData, contractAddress, tokenId]);
+  }, [mounted, account, nftData, contractAddress, tokenId]);
 
   useEffect(() => {
     loadNFTData();
