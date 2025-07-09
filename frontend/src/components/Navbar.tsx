@@ -21,31 +21,34 @@ export const Navbar: React.FC = () => {
         <div className="flex justify-between items-center py-4">
           {/* Logo */}
           <Link href="/" className="flex items-center space-x-3">
-            <div className="relative w-10 h-10">
+            <div className="relative w-12 h-12">
               <Image
                 src="/logo.png"
                 alt="CryptoGift Wallets Logo"
-                width={40}
-                height={40}
-                className="rounded-xl"
+                width={48}
+                height={48}
+                className="rounded-xl object-cover shadow-lg"
                 priority
-                unoptimized
                 onError={(e) => {
                   // Fallback to emoji if PNG fails to load
-                  e.currentTarget.style.display = 'none';
-                  e.currentTarget.nextElementSibling.style.display = 'flex';
+                  const target = e.target as HTMLImageElement;
+                  target.style.display = 'none';
+                  const fallback = target.nextElementSibling as HTMLElement;
+                  if (fallback) {
+                    fallback.style.display = 'flex';
+                  }
                 }}
               />
               <div 
-                className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-500 rounded-xl items-center justify-center hidden"
+                className="w-12 h-12 bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 rounded-xl flex items-center justify-center shadow-lg"
                 style={{ display: 'none' }}
               >
-                <span className="text-white font-bold text-lg">🎁</span>
+                <span className="text-white font-bold text-xl">🎁</span>
               </div>
             </div>
             <div>
               <div className="font-bold text-xl text-gray-800">CryptoGift</div>
-              <div className="text-xs text-gray-500">Wallets</div>
+              <div className="text-xs text-gray-500 -mt-1">Wallets</div>
             </div>
           </Link>
 
