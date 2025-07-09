@@ -9,8 +9,7 @@
     "start": "next start",
     "lint": "next lint",
     "deploy": "vercel --prod",
-    "type-check": "tsc --noEmit",
-    "postinstall": "pnpm install --lockfile-only"
+    "type-check": "tsc --noEmit"
   },
   "dependencies": {
     "next": "15.3.5",
