@@ -1,5 +1,19 @@
 {
-  "buildCommand": "cd frontend && npm install && npm run build",
-  "installCommand": "cd frontend && npm install",
-  "devCommand": "cd frontend && npm run dev"
+  "version": 2,
+  "name": "cryptogift-wallets",
+  "builds": [
+    {
+      "src": "frontend/package.json",
+      "use": "@vercel/next",
+      "config": {
+        "distDir": ".next"
+      }
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "frontend/$1"
+    }
+  ]
 }
