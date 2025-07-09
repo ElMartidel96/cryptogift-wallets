@@ -1,19 +1,10 @@
 {
-  "version": 2,
-  "name": "cryptogift-wallets",
-  "builds": [
-    {
-      "src": "frontend/package.json",
-      "use": "@vercel/next",
-      "config": {
-        "distDir": ".next"
-      }
-    }
-  ],
-  "routes": [
-    {
-      "src": "/(.*)",
-      "dest": "frontend/$1"
-    }
-  ]
+  "buildCommand": "cd frontend && pnpm install --force && pnpm run build",
+  "installCommand": "cd frontend && pnpm install --force",
+  "devCommand": "cd frontend && pnpm run dev",
+  "framework": "nextjs",
+  "outputDirectory": "frontend/.next",
+  "env": {
+    "VERCEL_FORCE_NO_BUILD_CACHE": "1"
+  }
 }

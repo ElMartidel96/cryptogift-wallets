@@ -2,13 +2,15 @@
   "name": "cryptogift-wallets-frontend",
   "version": "1.0.0",
   "private": true,
+  "packageManager": "pnpm@9.15.0",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
     "deploy": "vercel --prod",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "postinstall": "pnpm install --lockfile-only"
   },
   "dependencies": {
     "next": "15.3.5",
