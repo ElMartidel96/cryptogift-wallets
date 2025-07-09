@@ -12,6 +12,6 @@ Este frontend está construido con Next.js y thirdweb SDK. Consulta la documenta
 
 Consulta `.env.example` para ver todas las claves necesarias.
 
----
+--- FOR DEPLOY
 
 Cualquier cambio relevante en la estructura o dependencias debe reflejarse aquí.

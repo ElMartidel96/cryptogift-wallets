@@ -14,10 +14,12 @@ export const THIRDWEB_KEY = process.env.NEXT_PUBLIC_TW_CLIENT_ID!;
 export const CHAIN_ID = parseInt(process.env.NEXT_PUBLIC_CHAIN_ID || "84532");
 export const CHAIN_NAME = process.env.NEXT_PUBLIC_CHAIN_NAME || "base-sepolia";
 
-// Contract Addresses
+// Contract Addresses (Base Sepolia Testnet)
 export const NFT_DROP_ADDRESS = process.env.NEXT_PUBLIC_NFT_DROP_ADDRESS || "0x8DfCAfB320cBB7bcdbF4cc83A62bccA08B30F5D3";
-export const REF_TREASURY_ADDRESS = process.env.NEXT_PUBLIC_REF_TREASURY_ADDRESS || "0x8DfCAfB320cBB7bcdbF4cc83A62bccA08B30F5D3"; // Temporal - usar el mismo NFT drop por ahora
-export const USDC_ADDRESS = process.env.NEXT_PUBLIC_USDC_ADDRESS || "0x036CbD53842c5426634e7929541eC2318f3dCF7e";
+export const REF_TREASURY_ADDRESS = process.env.NEXT_PUBLIC_REF_TREASURY_ADDRESS || "0x75341Ce1E98c24F33b0AB0e5ABE3AaaC5b0A8f01"; // ReferralTreasury deployed address
+export const USDC_ADDRESS = process.env.NEXT_PUBLIC_USDC_ADDRESS || "0x036CbD53842c5426634e7929541eC2318f3dCF7e"; // Base Sepolia USDC
+export const ERC6551_REGISTRY = process.env.NEXT_PUBLIC_ERC6551_REGISTRY || "0x000000006551c19487814612e58FE06813775758"; // Standard ERC6551 Registry
+export const TBA_IMPLEMENTATION = process.env.NEXT_PUBLIC_TBA_IMPLEMENTATION || "0x2D25602551487C3f3354dD80D76D54383A243358"; // TBA Implementation
 
 // API Endpoints
 export const ZEROX_ENDPOINT = process.env.NEXT_PUBLIC_ZEROX_ENDPOINT || "https://base.api.0x.org/swap/v2";
@@ -32,15 +34,23 @@ export const IPFS_GATEWAY = process.env.NEXT_PUBLIC_IPFS_GATEWAY || "https://gat
 export const validateEnvironment = () => {
   const required = [
     'NEXT_PUBLIC_TW_CLIENT_ID',
-    'NEXT_PUBLIC_NFT_DROP_ADDRESS',
-    'NEXT_PUBLIC_REF_TREASURY_ADDRESS',
+    'NEXT_PUBLIC_CHAIN_ID',
   ];
   
   const missing = required.filter(key => !process.env[key]);
   
   if (missing.length > 0) {
-    throw new Error(`Missing required environment variables: ${missing.join(', ')}`);
+    console.warn(`Missing environment variables: ${missing.join(', ')}. Using fallback values.`);
   }
+
+  // Log current configuration
+  console.log('🔧 Environment Configuration:', {
+    chainId: CHAIN_ID,
+    nftDrop: NFT_DROP_ADDRESS,
+    treasury: REF_TREASURY_ADDRESS,
+    usdc: USDC_ADDRESS,
+    clientId: THIRDWEB_KEY ? 'Configured' : 'Missing'
+  });
 };
 
 // Common token addresses on Base
