@@ -1,10 +1,23 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
-import { ThirdwebWrapper } from "../components/ThirdwebWrapper";
-import { Navbar } from "../components/Navbar";
-import { Footer } from "../components/Footer";
+import dynamic from "next/dynamic";
 import { ErrorBoundary } from "../components/ErrorBoundary";
+
+const ThirdwebWrapper = dynamic(() => import("../components/ThirdwebWrapper").then(mod => ({ default: mod.ThirdwebWrapper })), {
+  ssr: false,
+  loading: () => <div className="min-h-screen bg-gray-50" />
+});
+
+const Navbar = dynamic(() => import("../components/Navbar").then(mod => ({ default: mod.Navbar })), {
+  ssr: false,
+  loading: () => <div className="h-16 bg-white shadow-lg" />
+});
+
+const Footer = dynamic(() => import("../components/Footer").then(mod => ({ default: mod.Footer })), {
+  ssr: false,
+  loading: () => <div className="h-32 bg-gray-900" />
+});
 
 const inter = Inter({ subsets: ["latin"] });
 
