@@ -12,9 +12,12 @@ import { StatsSection } from "../components/StatsSection";
 export default function Home() {
   const [showWizard, setShowWizard] = useState(false);
   const [referrer, setReferrer] = useState<string | null>(null);
+  const [mounted, setMounted] = useState(false);
   const searchParams = useSearchParams();
 
   useEffect(() => {
+    setMounted(true);
+    
     // Check for referral parameter
     const ref = searchParams?.get("ref");
     if (ref) {
@@ -99,13 +102,15 @@ export default function Home() {
             >
               Crear mi Primer Regalo
             </button>
-            <ConnectButton
-              client={client}
-              appMetadata={{
-                name: "CryptoGift Wallets",
-                url: "https://cryptogift.gl",
-              }}
-            />
+            {mounted && (
+              <ConnectButton
+                client={client}
+                appMetadata={{
+                  name: "CryptoGift Wallets",
+                  url: "https://cryptogift.gl",
+                }}
+              />
+            )}
           </div>
         </div>
       </section>
