@@ -155,24 +155,41 @@ export async function withRetry<T>(
   throw lastError!;
 }
 
-// Error logging function
+// Structured JSON logging function
 export function logError(error: Error | CryptoGiftError, context?: string): void {
-  const errorInfo = {
+  const logEntry = {
+    level: "ERROR",
     message: error.message,
-    stack: error.stack,
-    context,
+    context: context || "unknown",
     timestamp: new Date().toISOString(),
-    ...(error instanceof CryptoGiftError ? {
-      type: error.type,
-      code: error.code,
-      details: error.details,
-    } : {}),
+    errorType: error instanceof CryptoGiftError ? error.type : "native_error",
+    code: error instanceof CryptoGiftError ? error.code : undefined,
+    stack: process.env.NODE_ENV === 'development' ? error.stack : undefined,
+    userId: "anonymized", // Never log real user data
+    sessionId: typeof window !== 'undefined' ? window.crypto?.randomUUID?.()?.slice(0, 8) : undefined,
   };
 
-  console.error('CryptoGift Error:', errorInfo);
+  // Structured JSON output for monitoring systems
+  console.error(JSON.stringify(logEntry));
 
-  // In production, you might want to send this to a logging service
-  // Example: sendToLoggingService(errorInfo);
+  // In production, send to monitoring service
+  if (process.env.NODE_ENV === 'production') {
+    // Example: sendToLoggingService(logEntry);
+  }
+}
+
+// Success logging with same structure
+export function logSuccess(message: string, context?: string, metadata?: any): void {
+  const logEntry = {
+    level: "INFO",
+    message,
+    context: context || "success",
+    timestamp: new Date().toISOString(),
+    metadata: metadata || {},
+    userId: "anonymized",
+  };
+
+  console.log(JSON.stringify(logEntry));
 }
 
 // Toast notification helpers

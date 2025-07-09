@@ -147,11 +147,51 @@ All 22+ variables are configured including:
 - Vercel builds from `/frontend/` directory only
 - **NEW**: Upload errors now provide detailed debugging info via ErrorModal
 
+### Development Standards & Security
+
+#### Commit Standards (Conventional Commits)
+- `feat:` nueva funcionalidad
+- `fix:` corrección de bugs
+- `chore:` mantenimiento, dependencias  
+- `docs:` documentación
+- `refactor:` reestructuración sin cambios funcionales
+- `security:` mejoras de seguridad
+- **Una funcionalidad = un commit** para rollbacks quirúrgicos
+
+#### Security Rules (Applied Automatically)
+```bash
+# Pre-commit checks que Claude ejecuta:
+npm audit --audit-level high          # CVE scanning
+npm run type-check                    # TypeScript strict
+npm run lint                          # ESLint + security rules
+```
+
+#### Gas Monitoring
+```javascript
+// Umbral de alerta: 50 transacciones básicas
+const GAS_ALERT_THRESHOLD = 21000 * 50;
+// Webhook para alertas de gas alto
+```
+
+#### Logging Standards
+```typescript
+// Estructura JSON para todos los logs:
+{
+  "level": "ERROR|WARN|INFO", 
+  "message": "description",
+  "context": {...},
+  "timestamp": ISO8601,
+  "userId": "anonymized"  // PII-free
+}
+```
+
 ### Testing Strategy
 - TypeScript compilation via `npm run type-check`
 - ESLint checking via `npm run lint`
+- Security audit via `npm audit --audit-level high`
 - Manual testing on Base Sepolia testnet
 - Contract testing via Hardhat framework
+- Gas cost monitoring on every deployment
 
 ### Deployment Process
 1. All changes must build successfully in `/frontend/` directory
