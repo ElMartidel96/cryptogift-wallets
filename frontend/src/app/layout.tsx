@@ -1,23 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
-import dynamic from "next/dynamic";
-import { ErrorBoundary } from "../components/ErrorBoundary";
-
-const ThirdwebWrapper = dynamic(() => import("../components/ThirdwebWrapper").then(mod => ({ default: mod.ThirdwebWrapper })), {
-  ssr: false,
-  loading: () => <div className="min-h-screen bg-gray-50" />
-});
-
-const Navbar = dynamic(() => import("../components/Navbar").then(mod => ({ default: mod.Navbar })), {
-  ssr: false,
-  loading: () => <div className="h-16 bg-white shadow-lg" />
-});
-
-const Footer = dynamic(() => import("../components/Footer").then(mod => ({ default: mod.Footer })), {
-  ssr: false,
-  loading: () => <div className="h-32 bg-gray-900" />
-});
+import { ClientLayout } from "../components/ClientLayout";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -48,17 +32,9 @@ export default function RootLayout({
   return (
     <html lang="es">
       <body className={inter.className}>
-        <ThirdwebWrapper>
-          <ErrorBoundary>
-            <div className="min-h-screen flex flex-col">
-              <Navbar />
-              <main className="flex-1">
-                {children}
-              </main>
-              <Footer />
-            </div>
-          </ErrorBoundary>
-        </ThirdwebWrapper>
+        <ClientLayout>
+          {children}
+        </ClientLayout>
       </body>
     </html>
   );
