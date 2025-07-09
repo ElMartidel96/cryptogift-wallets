@@ -1,6 +1,7 @@
 {
   "framework": "nextjs",
-  "env": {
-    "VERCEL_FORCE_NO_BUILD_CACHE": "1"
-  }
+  "buildCommand": "npm install && npm run build",
+  "installCommand": "npm install",
+  "devCommand": "npm run dev",
+  "outputDirectory": ".next"
 }
