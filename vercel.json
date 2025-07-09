@@ -1,9 +1,10 @@
 {
-  "buildCommand": "cd frontend && pnpm install --no-frozen-lockfile && pnpm run build",
-  "installCommand": "cd frontend && pnpm install --no-frozen-lockfile",
-  "devCommand": "cd frontend && pnpm run dev",
+  "buildCommand": "pnpm install --no-frozen-lockfile && pnpm run build",
+  "installCommand": "pnpm install --no-frozen-lockfile",
+  "devCommand": "pnpm run dev",
   "framework": "nextjs",
-  "outputDirectory": "frontend/.next",
+  "outputDirectory": ".next",
+  "rootDirectory": "frontend",
   "env": {
     "VERCEL_FORCE_NO_BUILD_CACHE": "1"
   }
