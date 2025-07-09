@@ -238,7 +238,7 @@ export const GiftWizard: React.FC<GiftWizardProps> = ({ isOpen, onClose, referre
             onConfirm={handleMintGift}
             onBack={handleBack}
             isLoading={isLoading}
-            error={error}
+            error={error ? (error instanceof CryptoGiftError ? error.userMessage || error.message : error.message || error.toString()) : null}
           />
         );
 
