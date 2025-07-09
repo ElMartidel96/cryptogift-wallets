@@ -94,11 +94,26 @@ Next.js 15 requires special handling for ThirdWeb components:
 - Private keys stored as environment variables only
 - Contracts use OpenZeppelin's security patterns
 
+### Recent Updates (Latest Session)
+**Error Handling System Implemented:**
+- ✅ Fixed upload API inconsistency (`TW_CLIENT_ID` → `NEXT_PUBLIC_TW_CLIENT_ID`)
+- ✅ Added comprehensive error handling with `ErrorModal` component
+- ✅ Implemented detailed error messages with step-by-step solutions
+- ✅ Added error logging and monitoring infrastructure
+- ✅ Logo PNG support with fallback to emoji
+
+**Current Status:**
+- Upload error "Failed to upload image" has been addressed
+- Users now receive specific error codes and solutions
+- Error modal provides guided troubleshooting steps
+- ThirdWeb API configuration corrected across all files
+
 ### Known Issues & Patterns
 - Build failures typically relate to SSR/client-side hydration
 - TypeScript errors often involve `0x${string}` type casting for addresses
 - useEffect dependency warnings require careful management of callbacks
 - Vercel builds from `/frontend/` directory only
+- **NEW**: Upload errors now provide detailed debugging info via ErrorModal
 
 ### Testing Strategy
 - TypeScript compilation via `npm run type-check`

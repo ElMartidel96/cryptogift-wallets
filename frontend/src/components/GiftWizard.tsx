@@ -9,6 +9,8 @@ import { AmountSelector } from './AmountSelector';
 import { GiftSummary } from './GiftSummary';
 import { QRShare } from './QRShare';
 import { CREATION_FEE_PERCENT } from '../lib/constants';
+import { CryptoGiftError, parseApiError, logError } from '../lib/errorHandler';
+import { ErrorModal } from './ErrorModal';
 
 interface GiftWizardProps {
   isOpen: boolean;
@@ -57,7 +59,8 @@ export const GiftWizard: React.FC<GiftWizardProps> = ({ isOpen, onClose, referre
   });
 
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<CryptoGiftError | Error | null>(null);
+  const [showErrorModal, setShowErrorModal] = useState(false);
 
   // Calculate fees
   const creationFee = (wizardData.amount * CREATION_FEE_PERCENT) / 100;
@@ -119,7 +122,8 @@ export const GiftWizard: React.FC<GiftWizardProps> = ({ isOpen, onClose, referre
       });
 
       if (!uploadResponse.ok) {
-        throw new Error('Failed to upload image');
+        const errorData = await uploadResponse.json().catch(() => ({}));
+        throw new Error(errorData.message || `Upload failed with status ${uploadResponse.status}`);
       }
 
       const { ipfsCid } = await uploadResponse.json();
@@ -146,7 +150,8 @@ export const GiftWizard: React.FC<GiftWizardProps> = ({ isOpen, onClose, referre
       });
 
       if (!mintResponse.ok) {
-        throw new Error('Failed to mint NFT');
+        const errorData = await mintResponse.json().catch(() => ({}));
+        throw new Error(errorData.message || `Mint failed with status ${mintResponse.status}`);
       }
 
       const { tokenId, shareUrl, qrCode } = await mintResponse.json();
@@ -160,7 +165,10 @@ export const GiftWizard: React.FC<GiftWizardProps> = ({ isOpen, onClose, referre
       
       setCurrentStep(WizardStep.SUCCESS);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create gift');
+      const parsedError = parseApiError(err);
+      logError(parsedError, 'GiftWizard.handleMintGift');
+      setError(parsedError);
+      setShowErrorModal(true);
       setCurrentStep(WizardStep.SUMMARY);
     } finally {
       setIsLoading(false);
@@ -313,6 +321,21 @@ export const GiftWizard: React.FC<GiftWizardProps> = ({ isOpen, onClose, referre
           {renderStepContent()}
         </div>
       </div>
+
+      {/* Error Modal */}
+      <ErrorModal
+        isOpen={showErrorModal}
+        error={error}
+        onClose={() => {
+          setShowErrorModal(false);
+          setError(null);
+        }}
+        onRetry={() => {
+          setShowErrorModal(false);
+          setError(null);
+          handleMintGift();
+        }}
+      />
     </div>
   );
 };

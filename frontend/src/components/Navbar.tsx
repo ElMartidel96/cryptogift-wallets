@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useActiveAccount, ConnectButton } from 'thirdweb/react';
 import { client } from '../app/client';
 
@@ -19,9 +20,28 @@ export const Navbar: React.FC = () => {
       <div className="container mx-auto px-4">
         <div className="flex justify-between items-center py-4">
           {/* Logo */}
-          <Link href="/" className="flex items-center space-x-2">
-            <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-500 rounded-xl flex items-center justify-center">
-              <span className="text-white font-bold text-lg">🎁</span>
+          <Link href="/" className="flex items-center space-x-3">
+            <div className="relative w-10 h-10">
+              <Image
+                src="/logo.png"
+                alt="CryptoGift Wallets Logo"
+                width={40}
+                height={40}
+                className="rounded-xl"
+                priority
+                unoptimized
+                onError={(e) => {
+                  // Fallback to emoji if PNG fails to load
+                  e.currentTarget.style.display = 'none';
+                  e.currentTarget.nextElementSibling.style.display = 'flex';
+                }}
+              />
+              <div 
+                className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-500 rounded-xl items-center justify-center hidden"
+                style={{ display: 'none' }}
+              >
+                <span className="text-white font-bold text-lg">🎁</span>
+              </div>
             </div>
             <div>
               <div className="font-bold text-xl text-gray-800">CryptoGift</div>
