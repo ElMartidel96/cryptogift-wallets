@@ -102,16 +102,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Get real wallet data
     const walletData = await getWalletData(client, address);
     
-    // Add metadata
-    walletData.network = "Base Sepolia";
-    walletData.chainId = 84532;
-    walletData.primaryToken = process.env.NEXT_PUBLIC_USDC_ADDRESS || "0x036CbD53842c5426634e7929541eC2318f3dCF7e";
-
-    res.status(200).json({
+    // Create response with additional metadata
+    const response = {
       success: true,
       address,
       ...walletData,
-    });
+      network: "Base Sepolia",
+      chainId: 84532,
+      primaryToken: process.env.NEXT_PUBLIC_USDC_ADDRESS || "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
+    };
+
+    res.status(200).json(response);
 
   } catch (error) {
     console.error('Wallet API error:', error);
