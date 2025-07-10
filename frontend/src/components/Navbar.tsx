@@ -60,17 +60,12 @@ export const Navbar: React.FC = () => {
             <Link href="/referrals" className="text-gray-600 hover:text-blue-600 transition-colors">
               Referidos
             </Link>
-            <Link href="/explore" className="text-gray-600 hover:text-blue-600 transition-colors">
-              Explorar
+            <Link href="/knowledge" className="text-gray-600 hover:text-blue-600 transition-colors flex items-center">
+              📚 Knowledge
             </Link>
-            <a 
-              href="https://docs.cryptogift.gl" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="text-gray-600 hover:text-blue-600 transition-colors"
-            >
-              Docs
-            </a>
+            <Link href="/nexuswallet" className="text-gray-600 hover:text-blue-600 transition-colors flex items-center">
+              💼 NexusWallet
+            </Link>
             
             {mounted && (
               <ConnectButton
@@ -119,20 +114,19 @@ export const Navbar: React.FC = () => {
                 Referidos
               </Link>
               <Link 
-                href="/explore" 
+                href="/knowledge" 
                 className="block text-gray-600 hover:text-blue-600 transition-colors"
                 onClick={() => setIsMenuOpen(false)}
               >
-                Explorar
+                📚 Knowledge
               </Link>
-              <a 
-                href="https://docs.cryptogift.gl" 
-                target="_blank" 
-                rel="noopener noreferrer"
+              <Link 
+                href="/nexuswallet" 
                 className="block text-gray-600 hover:text-blue-600 transition-colors"
+                onClick={() => setIsMenuOpen(false)}
               >
-                Docs
-              </a>
+                💼 NexusWallet
+              </Link>
               
               <div className="pt-4">
                 <ConnectButton
