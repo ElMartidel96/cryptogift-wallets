@@ -1,5 +1,5 @@
 import { NextApiRequest, NextApiResponse } from "next";
-import { createThirdwebClient, getContract, encodeFunctionData } from "thirdweb";
+import { createThirdwebClient, getContract } from "thirdweb";
 import { baseSepolia } from "thirdweb/chains";
 import { createBiconomySmartAccount, sendGaslessTransaction, validateBiconomyConfig } from "../../lib/biconomy";
 
@@ -47,32 +47,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       // Create Smart Account for gasless transaction
       const smartAccount = await createBiconomySmartAccount(process.env.PRIVATE_KEY_DEPLOY!);
 
-      // Prepare claim transaction (transfer from current owner to claimer)
-      const claimData = encodeFunctionData({
-        abi: [
-          {
-            inputs: [
-              { name: "from", type: "address" },
-              { name: "to", type: "address" },
-              { name: "tokenId", type: "uint256" }
-            ],
-            name: "transferFrom",
-            outputs: [],
-            stateMutability: "nonpayable",
-            type: "function"
-          }
-        ],
-        functionName: "transferFrom",
-        args: [
-          process.env.WALLET_ADDRESS! as `0x${string}`, // Current owner (minter)
-          claimerAddress as `0x${string}`, // New owner (claimer)
-          BigInt(tokenId)
-        ]
-      });
-
+      // Manual encoding of transferFrom function call
+      const fromAddress = process.env.WALLET_ADDRESS!.slice(2).toLowerCase().padStart(64, '0');
+      const toAddress = claimerAddress.slice(2).toLowerCase().padStart(64, '0');
+      const tokenIdHex = BigInt(tokenId).toString(16).padStart(64, '0');
+      
       const claimTransaction = {
         to: contractAddress as `0x${string}`,
-        data: claimData,
+        data: `0x23b872dd000000000000000000000000${fromAddress}000000000000000000000000${toAddress}${tokenIdHex}` as `0x${string}`,
         value: '0' as `0x${string}`,
       };
 
