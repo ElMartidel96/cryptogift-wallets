@@ -142,7 +142,7 @@ export const SwapModal: React.FC<SwapModalProps> = ({
       contract,
       method: 'function executeCall(address dest, uint256 value, bytes calldata data)',
       params: [
-        swapData.dest,
+        swapData.dest as `0x${string}`,
         BigInt(swapData.value || '0'),
         swapData.calldata as `0x${string}`,
       ]
@@ -160,7 +160,7 @@ export const SwapModal: React.FC<SwapModalProps> = ({
       contract,
       method: 'function approve(address spender, uint256 amount)',
       params: [
-        PERMIT2_ADDRESS,
+        PERMIT2_ADDRESS as `0x${string}`,
         BigInt('0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff'), // Max approval
       ]
     });
@@ -226,9 +226,13 @@ export const SwapModal: React.FC<SwapModalProps> = ({
           {/* Swap Quote */}
           {swapData && (
             <div className="p-4 bg-blue-50 rounded-lg">
-              <p className="text-sm text-blue-800">
-                Swap quote ready! Click &quot;Execute Swap&quot; to proceed.
+              <p className="text-sm text-blue-800 mb-2">
+                Swap quote ready! Choose your execution method:
               </p>
+              <div className="text-xs text-blue-700 space-y-1">
+                <div>🚀 <strong>Gasless Swap:</strong> Free transaction sponsored by Biconomy</div>
+                <div>⚡ <strong>Manual Swap:</strong> Pay gas fees yourself</div>
+              </div>
             </div>
           )}
 
@@ -256,16 +260,25 @@ export const SwapModal: React.FC<SwapModalProps> = ({
                 </button>
                 
                 {swapData && (
-                  <TransactionButton
-                    transaction={handleSwap}
-                    onTransactionConfirmed={() => {
-                      onClose();
-                      alert('Swap completed successfully!');
-                    }}
-                    className="flex-1 bg-green-500 hover:bg-green-600 text-white font-medium py-2 px-4 rounded-lg"
-                  >
-                    Execute Swap
-                  </TransactionButton>
+                  <>
+                    <button
+                      onClick={executeGaslessSwap}
+                      disabled={isLoading}
+                      className="flex-1 bg-purple-500 hover:bg-purple-600 disabled:bg-gray-300 text-white font-medium py-2 px-4 rounded-lg"
+                    >
+                      {isLoading ? 'Executing...' : '🚀 Gasless Swap'}
+                    </button>
+                    <TransactionButton
+                      transaction={handleSwap}
+                      onTransactionConfirmed={() => {
+                        onClose();
+                        alert('Swap completed successfully!');
+                      }}
+                      className="flex-1 bg-green-500 hover:bg-green-600 text-white font-medium py-2 px-4 rounded-lg"
+                    >
+                      Manual Swap
+                    </TransactionButton>
+                  </>
                 )}
               </>
             )}
