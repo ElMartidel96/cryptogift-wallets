@@ -48,8 +48,19 @@ export async function sendGaslessTransaction(
   transaction: any
 ) {
   try {
+    console.log("Preparing gasless transaction:", transaction);
+    
+    // Normalize transaction format for Biconomy
+    const normalizedTx = {
+      to: transaction.to || transaction.address,
+      data: transaction.data || transaction.input || "0x",
+      value: transaction.value || "0x0",
+    };
+    
+    console.log("Normalized transaction:", normalizedTx);
+    
     // Build user operation
-    const userOp = await smartAccount.buildUserOp([transaction]);
+    const userOp = await smartAccount.buildUserOp([normalizedTx]);
     
     // Send user operation (gasless)
     const userOpResponse = await smartAccount.sendUserOp(userOp);

@@ -1,5 +1,5 @@
 import { NextApiRequest, NextApiResponse } from "next";
-import { createThirdwebClient, getContract } from "thirdweb";
+import { createThirdwebClient, getContract, prepareContractCall } from "thirdweb";
 import { baseSepolia } from "thirdweb/chains";
 import { createBiconomySmartAccount, sendGaslessTransaction, validateBiconomyConfig } from "../../lib/biconomy";
 
@@ -47,16 +47,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       // Create Smart Account for gasless transaction
       const smartAccount = await createBiconomySmartAccount(process.env.PRIVATE_KEY_DEPLOY!);
 
-      // Manual encoding of transferFrom function call
-      const fromAddress = process.env.WALLET_ADDRESS!.slice(2).toLowerCase().padStart(64, '0');
-      const toAddress = claimerAddress.slice(2).toLowerCase().padStart(64, '0');
-      const tokenIdHex = BigInt(tokenId).toString(16).padStart(64, '0');
-      
-      const claimTransaction = {
-        to: contractAddress as `0x${string}`,
-        data: `0x23b872dd000000000000000000000000${fromAddress}000000000000000000000000${toAddress}${tokenIdHex}` as `0x${string}`,
-        value: '0' as `0x${string}`,
-      };
+      // Use proper thirdweb v5 syntax for prepareContractCall
+      const claimTransaction = prepareContractCall({
+        contract: nftContract,
+        method: "function transferFrom(address from, address to, uint256 tokenId) external",
+        params: [
+          process.env.WALLET_ADDRESS!, // Current owner (minter)
+          claimerAddress, // New owner (claimer)
+          BigInt(tokenId)
+        ],
+      });
 
       // Execute gasless claim
       const claimTxResult = await sendGaslessTransaction(smartAccount, claimTransaction);

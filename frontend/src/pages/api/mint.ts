@@ -1,5 +1,5 @@
 import { NextApiRequest, NextApiResponse } from "next";
-import { createThirdwebClient, getContract } from "thirdweb";
+import { createThirdwebClient, getContract, prepareContractCall } from "thirdweb";
 import { upload } from "thirdweb/storage";
 import { baseSepolia } from "thirdweb/chains";
 import { privateKeyToAccount } from "thirdweb/wallets";
@@ -70,12 +70,12 @@ async function mintNFTGasless(to: string, tokenURI: string, client: any) {
       address: process.env.NEXT_PUBLIC_NFT_DROP_ADDRESS!,
     });
 
-    // Simple transaction structure for gasless minting
-    const mintTransaction = {
-      to: process.env.NEXT_PUBLIC_NFT_DROP_ADDRESS! as `0x${string}`,
-      data: `0x449a52f8000000000000000000000000${to.slice(2).toLowerCase()}0000000000000000000000000000000000000000000000000000000000000040${tokenURI.length.toString(16).padStart(64, '0')}${Buffer.from(tokenURI).toString('hex').padEnd(Math.ceil(tokenURI.length / 32) * 64, '0')}` as `0x${string}`,
-      value: '0' as `0x${string}`,
-    };
+    // Use proper thirdweb v5 syntax for prepareContractCall
+    const mintTransaction = prepareContractCall({
+      contract: nftContract,
+      method: "function mintTo(address to, string memory tokenURI) external",
+      params: [to, tokenURI],
+    });
 
     // Send gasless transaction via Biconomy
     const receipt = await sendGaslessTransaction(smartAccount, mintTransaction);

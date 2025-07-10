@@ -222,7 +222,9 @@ export default function TokenPage() {
                       ) : (
                         <ClaimInterface
                           nftData={nftData}
-                          onClaim={handleClaim}
+                          tokenId={tokenId}
+                          contractAddress={contractAddress}
+                          claimerAddress={account?.address || ''}
                           isLoading={isLoading}
                           error={error}
                         />
