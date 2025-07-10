@@ -72,7 +72,7 @@ export const ReferralsTrackingPanel: React.FC<ReferralsTrackingPanelProps> = ({
 
   useEffect(() => {
     setReferrals(mockReferrals);
-  }, []);
+  }, [mockReferrals]);
 
   // Simular actualizaciones en tiempo real
   useEffect(() => {

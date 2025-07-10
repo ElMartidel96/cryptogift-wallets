@@ -81,7 +81,7 @@ export const PendingActionsPanel: React.FC<PendingActionsPanelProps> = ({
 
   useEffect(() => {
     setActions(mockActions);
-  }, []);
+  }, [mockActions]);
 
   const getTypeIcon = (type: string) => {
     switch (type) {

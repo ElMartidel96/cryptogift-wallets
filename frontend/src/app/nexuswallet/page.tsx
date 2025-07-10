@@ -92,7 +92,7 @@ export default function NexusWalletPage() {
   useEffect(() => {
     setAssets(mockAssets);
     setTransactions(mockTransactions);
-  }, []);
+  }, [mockAssets, mockTransactions]);
 
   const totalValue = assets.reduce((sum, asset) => sum + asset.value, 0);
   const totalChange = assets.reduce((sum, asset) => sum + (asset.value * asset.change24h / 100), 0);

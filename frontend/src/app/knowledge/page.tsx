@@ -273,7 +273,7 @@ export default function KnowledgePage() {
                 {module.isLocked ? (
                   <div className="text-center py-3">
                     <p className="text-sm text-gray-500 mb-2">
-                      Completa "{module.prerequisite}" para desbloquear
+                      Completa &quot;{module.prerequisite}&quot; para desbloquear
                     </p>
                     <button className="px-4 py-2 bg-gray-200 text-gray-500 rounded-lg cursor-not-allowed">
                       🔒 Bloqueado
