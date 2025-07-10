@@ -12,12 +12,12 @@ async function getWalletData(client: any, address: string) {
       address: process.env.NEXT_PUBLIC_USDC_ADDRESS!,
     });
 
-    // Read USDC balance
+    // Read USDC balance using proper thirdweb v5 syntax
     let usdcBalance = "0";
     try {
       const balance = await readContract({
         contract: usdcContract,
-        method: "balanceOf",
+        method: "function balanceOf(address) view returns (uint256)",
         params: [address],
       });
       // Convert from wei to USDC (6 decimals)
