@@ -2,6 +2,83 @@ import { NextApiRequest, NextApiResponse } from "next";
 import { createThirdwebClient, getContract, readContract } from "thirdweb";
 import { baseSepolia } from "thirdweb/chains";
 
+// Helper function to get real wallet data
+async function getWalletData(client: any, address: string) {
+  try {
+    // Get USDC contract
+    const usdcContract = getContract({
+      client,
+      chain: baseSepolia,
+      address: process.env.NEXT_PUBLIC_USDC_ADDRESS!,
+    });
+
+    // Read USDC balance
+    let usdcBalance = "0";
+    try {
+      const balance = await readContract({
+        contract: usdcContract,
+        method: "balanceOf",
+        params: [address],
+      });
+      // Convert from wei to USDC (6 decimals)
+      usdcBalance = (Number(balance) / 1000000).toString();
+    } catch (balanceError) {
+      console.warn('Could not read USDC balance:', balanceError);
+    }
+
+    // Get ETH balance (native token)
+    let ethBalance = "0";
+    try {
+      const balance = await client.getBalance({
+        address,
+        chain: baseSepolia,
+      });
+      ethBalance = (Number(balance) / 1000000000000000000).toString(); // Convert from wei to ETH
+    } catch (ethError) {
+      console.warn('Could not read ETH balance:', ethError);
+    }
+
+    return {
+      balance: ethBalance,
+      tokens: [
+        {
+          address: process.env.NEXT_PUBLIC_USDC_ADDRESS!,
+          symbol: "USDC",
+          name: "USD Coin",
+          balance: usdcBalance,
+          decimals: 6,
+        },
+        {
+          address: "0x0000000000000000000000000000000000000000",
+          symbol: "ETH",
+          name: "Ethereum",
+          balance: ethBalance,
+          decimals: 18,
+        }
+      ],
+      transactions: [],
+      nfts: [],
+    };
+  } catch (error) {
+    console.error('Error getting wallet data:', error);
+    // Return empty data on error
+    return {
+      balance: "0",
+      tokens: [
+        {
+          address: process.env.NEXT_PUBLIC_USDC_ADDRESS!,
+          symbol: "USDC",
+          name: "USD Coin",
+          balance: "0",
+          decimals: 6,
+        }
+      ],
+      transactions: [],
+      nfts: [],
+    };
+  }
+}
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'GET') {
     return res.status(405).json({ error: 'Method not allowed' });
@@ -22,24 +99,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       secretKey: process.env.TW_SECRET_KEY!,
     });
 
-    // Simplified wallet data - TODO: implement with thirdweb v5 readContract
-    const walletData = {
-      balance: "0",
-      primaryToken: process.env.NEXT_PUBLIC_USDC_ADDRESS || "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
-      transactions: [],
-      tokens: [
-        {
-          address: process.env.NEXT_PUBLIC_USDC_ADDRESS || "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
-          symbol: "USDC",
-          name: "USD Coin",
-          balance: "0",
-          decimals: 6,
-        }
-      ],
-      nfts: [],
-      network: "Base Sepolia",
-      chainId: 84532,
-    };
+    // Get real wallet data
+    const walletData = await getWalletData(client, address);
+    
+    // Add metadata
+    walletData.network = "Base Sepolia";
+    walletData.chainId = 84532;
+    walletData.primaryToken = process.env.NEXT_PUBLIC_USDC_ADDRESS || "0x036CbD53842c5426634e7929541eC2318f3dCF7e";
 
     res.status(200).json({
       success: true,

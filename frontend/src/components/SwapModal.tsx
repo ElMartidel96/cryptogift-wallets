@@ -70,6 +70,9 @@ export const SwapModal: React.FC<SwapModalProps> = ({
           from: currentToken,
           to: targetToken,
           amount: currentBalance,
+          tbaAddress: tbaAddress,
+          executeSwap: false, // Just get quote first
+          chainId: baseSepolia.id,
         }),
       });
 
@@ -81,6 +84,46 @@ export const SwapModal: React.FC<SwapModalProps> = ({
       setSwapData(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to get swap quote');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const executeGaslessSwap = async () => {
+    if (!swapData) return;
+
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const response = await fetch('/api/swap', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          from: currentToken,
+          to: targetToken,
+          amount: currentBalance,
+          tbaAddress: tbaAddress,
+          executeSwap: true, // Execute the swap gaslessly
+          chainId: baseSepolia.id,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Gasless swap failed: ${response.status}`);
+      }
+
+      const data = await response.json();
+      
+      if (data.executed) {
+        console.log('✅ Gasless swap successful:', data.transactionHash);
+        onClose(); // Close modal on success
+        // TODO: Refresh wallet balance
+      } else {
+        throw new Error(data.error || 'Gasless execution failed');
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to execute gasless swap');
     } finally {
       setIsLoading(false);
     }
