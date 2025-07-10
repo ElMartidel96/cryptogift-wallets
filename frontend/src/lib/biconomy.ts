@@ -8,8 +8,8 @@ export const biconomyConfig = {
   chainId: 84532, // Base Sepolia
   rpcUrl: "https://sepolia.base.org",
   // These will be set from environment variables
-  paymasterApiKey: process.env.NEXT_PUBLIC_BICONOMY_PAYMASTER_API_KEY!,
-  bundlerUrl: process.env.NEXT_PUBLIC_BICONOMY_BUNDLER_URL!,
+  paymasterApiKey: process.env.NEXT_PUBLIC_BICONOMY_PAYMASTER_API_KEY || "l0I7KBcia.2e5af1b9-52f2-43d8-aaad-bb5c8275d1a7",
+  bundlerUrl: process.env.NEXT_PUBLIC_BICONOMY_BUNDLER_URL || "https://paymaster.biconomy.io/api/v2/84532/l0I7KBcia.2e5af1b9-52f2-43d8-aaad-bb5c8275d1a7",
 };
 
 // Create Biconomy Smart Account
@@ -57,8 +57,13 @@ export async function sendGaslessTransaction(
     // Wait for transaction to be mined
     const receipt = await userOpResponse.wait();
     
-    console.log("Gasless transaction successful:", receipt.transactionHash);
-    return receipt;
+    console.log("Gasless transaction successful:", receipt.userOpHash);
+    return {
+      transactionHash: receipt.userOpHash,
+      blockNumber: receipt.receipt?.blockNumber || 0,
+      logs: receipt.receipt?.logs || [],
+      receipt: receipt.receipt
+    };
   } catch (error) {
     console.error("Error sending gasless transaction:", error);
     throw error;
