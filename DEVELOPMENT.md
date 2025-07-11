@@ -1,6 +1,6 @@
-# CLAUDE.md
+# DEVELOPMENT.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides development guidance and context for the Godez22 Art Project CryptoGift platform.
 
 ## Common Development Commands
 
@@ -12,6 +12,50 @@ npm run start        # Start production server
 npm run lint         # ESLint code checking
 npm run type-check   # TypeScript type checking without emit
 npm run deploy       # Deploy to Vercel production
+```
+
+### Local Development & Testing Process
+
+#### Starting Development Server
+```powershell
+# En PowerShell (Windows):
+cd C:\Users\[tu-usuario]\cryptogift-wallets
+cd frontend
+npm run dev
+```
+
+El servidor se iniciará en `http://localhost:3000`
+
+#### Testing Debug System
+Una vez que el servidor esté corriendo, puedes acceder a:
+
+1. **Debug Console**: `http://localhost:3000/debug`
+   - Interface visual para ver logs en tiempo real
+   - Auto-refresh cada 5 segundos
+   - Filtros por nivel de log (INFO, ERROR, SUCCESS, WARN)
+
+2. **Debug API Endpoint**: `http://localhost:3000/api/debug/mint-logs`
+   - Endpoint directo para ver logs en formato JSON
+   - Útil para debugging programático
+
+3. **Testing Mint Process**:
+   - Crear un regalo en `http://localhost:3000`
+   - Los logs aparecerán automáticamente en `/debug`
+   - **Step 5 Debugging**: El cálculo de TBA address ahora incluye logging detallado:
+     * Registry address: `0x000000006551c19487814612e58FE06813775758`
+     * Implementation: `0x2d25602551487c3f3354dd80d76d54383a243358`
+     * Chain ID: `421614` (Arbitrum Sepolia)
+     * Cálculo CREATE2 completo con salt generation
+
+#### New Features Testing
+- **Knowledge Academy**: `http://localhost:3000/knowledge`
+- **NexusWallet Hub**: `http://localhost:3000/nexuswallet`  
+- **Referral Analytics**: Accesible desde el dashboard principal
+
+#### Common Development Issues
+- Si `npm run dev` falla, asegúrate de estar en el directorio `/frontend/`
+- PowerShell no soporta `&&`, usar comandos separados
+- Para TypeScript errors, ejecutar `npm run type-check`
 ```
 
 ### Smart Contract Development (in root directory)
@@ -26,7 +70,7 @@ npx hardhat run scripts/deploy.ts --network base-sepolia  # Deploy to Base Sepol
 - Deployment uses `vercel.json` configuration which builds from `/frontend/`
 - Environment variables must be configured in Vercel dashboard for production
 
-## Architecture Overview
+## Architecture Overview - Godez22 Art Project
 
 ### Technology Stack
 - **Frontend**: Next.js 15 with App Router, TypeScript, Tailwind CSS
@@ -34,9 +78,10 @@ npx hardhat run scripts/deploy.ts --network base-sepolia  # Deploy to Base Sepol
 - **Smart Contracts**: Solidity 0.8.23, OpenZeppelin, Hardhat
 - **APIs**: 0x Protocol v2 (swaps), PhotoRoom API (AI filters), NFT.Storage (IPFS)
 - **Deployment**: Vercel with KV storage for rate limiting
+- **Analytics**: Chart.js integration for referral tracking and business metrics
 
-### Core Business Logic
-This is a Web3 platform where **NFTs function as wallets** using ERC-6551 Token Bound Accounts:
+### Core Business Logic - CryptoGift Platform
+This is an innovative Web3 platform developed by Godez22 Art Project where **NFTs function as wallets** using ERC-6551 Token Bound Accounts:
 1. Users upload images and add cryptocurrency amounts to create "crypto gifts"
 2. Each minted NFT automatically gets an associated wallet address that can hold real crypto
 3. Recipients can claim the NFT and access the funds in the bound wallet
@@ -94,7 +139,25 @@ Next.js 15 requires special handling for ThirdWeb components:
 - Private keys stored as environment variables only
 - Contracts use OpenZeppelin's security patterns
 
-### Recent Updates (Latest Session - January 10, 2025)
+### Recent Updates (Latest Session - January 11, 2025)
+
+**MAJOR UPDATE: Advanced Referral System 2.0 & Debug Infrastructure**
+- ✅ **Mint Step 5 Error SOLVED**: Implementado cálculo ERC-6551 TBA address completo y estándar
+- ✅ **Debug System**: Sistema de logging comprehensivo para identificar errores específicos del mint
+- ✅ **Referral Analytics 2.0**: Panel avanzado con Chart.js, tracking en tiempo real, network marketing features
+- ✅ **Navigation Restructure**: Reemplazado "Explorar/Docs" → "Knowledge/NexusWallet"
+- ✅ **Knowledge Academy**: Módulos educativos de cripto con progreso tracking y AI assistant
+- ✅ **NexusWallet Hub**: Exchange fee-free interno, portfolio overview, earning mechanisms
+- ✅ **Real-time Analytics**: Live tracking de referidos con feed de actividad estilo Trust Investing
+- ✅ **Pending Actions Panel**: Sistema de tareas gamificado para optimización de referidos
+
+**Technical Fixes for Deployment:**
+- ✅ **Chart.js Dependencies**: Agregado `react-chartjs-2` y `chart.js` al package.json
+- ✅ **ESLint Warnings**: Movido mock data fuera de componentes para fix exhaustive-deps
+- ✅ **TypeScript Errors**: Agregado 'WARN' level al debug logging system
+- ✅ **ERC-6551 Standard**: Implementación completa del cálculo TBA address con CREATE2 pattern
+
+**Previous Session (January 10, 2025):**
 
 **FASE 5 COMPLETED: Gasless Transactions & API Implementation**
 - ✅ **DEPLOYMENT EXITOSO**: Build completo sin errores TypeScript

@@ -3,13 +3,13 @@ import { NextApiRequest, NextApiResponse } from "next";
 // In-memory log storage for debugging (temporary solution)
 let mintLogs: Array<{
   timestamp: string;
-  level: 'INFO' | 'ERROR' | 'SUCCESS';
+  level: 'INFO' | 'ERROR' | 'SUCCESS' | 'WARN';
   step: string;
   data: any;
 }> = [];
 
 // Function to add log (to be called from mint API)
-export function addMintLog(level: 'INFO' | 'ERROR' | 'SUCCESS', step: string, data: any) {
+export function addMintLog(level: 'INFO' | 'ERROR' | 'SUCCESS' | 'WARN', step: string, data: any) {
   const log = {
     timestamp: new Date().toISOString(),
     level,
