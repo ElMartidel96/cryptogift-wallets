@@ -53,9 +53,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // Create metadata if this is the final upload
     const filteredUrl = fields.filteredUrl?.[0];
-    if (filteredUrl) {
+    if (filteredUrl && typeof filteredUrl === 'string' && filteredUrl.startsWith('http')) {
       // If we have a filtered image URL, use that as the main image
-      const metadataResponse = await fetch(filteredUrl);
+      const metadataResponse = await fetch(filteredUrl, {
+        method: 'GET',
+        headers: {
+          'User-Agent': 'CryptoGift-Wallets/1.0'
+        }
+      });
+      
+      if (!metadataResponse.ok) {
+        throw new Error(`Failed to fetch filtered image: ${metadataResponse.status}`);
+      }
+      
       const filteredImageData = await metadataResponse.arrayBuffer();
       
       const filteredFile = new File([filteredImageData], 'filtered-image.jpg', {

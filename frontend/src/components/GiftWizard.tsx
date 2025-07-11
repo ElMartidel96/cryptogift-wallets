@@ -110,6 +110,21 @@ export const GiftWizard: React.FC<GiftWizardProps> = ({ isOpen, onClose, referre
     setIsLoading(true);
     setError(null);
 
+    // Log start of mint process to debug system
+    try {
+      await fetch('/api/debug/mint-logs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          level: 'INFO',
+          step: 'GIFT_WIZARD_START',
+          data: { walletAddress: account.address, timestamp: new Date().toISOString() }
+        })
+      });
+    } catch (debugError) {
+      console.warn('Debug logging failed:', debugError);
+    }
+
     try {
       // Step 1: Upload image to IPFS
       const formData = new FormData();
@@ -167,6 +182,27 @@ export const GiftWizard: React.FC<GiftWizardProps> = ({ isOpen, onClose, referre
     } catch (err) {
       const parsedError = parseApiError(err);
       logError(parsedError, 'GiftWizard.handleMintGift');
+      
+      // Log error to debug system
+      try {
+        await fetch('/api/debug/mint-logs', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            level: 'ERROR',
+            step: 'GIFT_WIZARD_ERROR',
+            data: { 
+              error: parsedError.message,
+              stack: parsedError.stack,
+              userMessage: parsedError instanceof Error ? parsedError.message : 'Unknown error',
+              timestamp: new Date().toISOString()
+            }
+          })
+        });
+      } catch (debugError) {
+        console.warn('Debug error logging failed:', debugError);
+      }
+      
       setError(parsedError);
       setShowErrorModal(true);
       setCurrentStep(WizardStep.SUMMARY);
