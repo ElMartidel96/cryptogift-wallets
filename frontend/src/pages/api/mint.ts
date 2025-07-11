@@ -5,6 +5,7 @@ import { baseSepolia } from "thirdweb/chains";
 import { privateKeyToAccount } from "thirdweb/wallets";
 import { createBiconomySmartAccount, sendGaslessTransaction, validateBiconomyConfig } from "../../lib/biconomy";
 import { addMintLog } from "./debug/mint-logs";
+import { ethers } from "ethers";
 
 // Helper function to upload metadata to IPFS
 async function uploadMetadataToIPFS(metadata: any) {
