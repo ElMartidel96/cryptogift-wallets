@@ -19,6 +19,7 @@ export default function DebugPage() {
     try {
       const response = await fetch('/api/debug/mint-logs');
       const data = await response.json();
+      console.log('Debug logs response:', data);
       setLogs(data.logs || []);
     } catch (error) {
       console.error('Error fetching logs:', error);
@@ -124,9 +125,13 @@ export default function DebugPage() {
             </div>
             
             <div className="border-t border-gray-700 pt-4">
-              <div className="text-yellow-400">📊 LOGS ({logs.length} total):</div>
+              <div className="text-yellow-400">📊 LOGS ({logs.length} total) - {isLoading ? 'Loading...' : 'Ready'}:</div>
               {logs.length === 0 ? (
-                <div className="text-gray-500 italic">No logs yet. Try minting an NFT to see debug information.</div>
+                <div className="text-gray-500 italic">
+                  No logs yet. Try minting an NFT to see debug information.
+                  <br />
+                  <small>If logs don&apos;t appear, check browser console for errors.</small>
+                </div>
               ) : (
                 <div className="max-h-96 overflow-y-auto">
                   {logs.map((log, index) => (
@@ -180,12 +185,12 @@ export default function DebugPage() {
           <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg">
             <h3 className="font-bold text-green-800 mb-2">🎯 How to Use Debug System:</h3>
             <ol className="text-sm text-green-700 space-y-1 list-decimal list-inside">
-              <li><strong>Test Debug System:</strong> Click "Test Debug" button to verify logs are working</li>
+              <li><strong>Test Debug System:</strong> Click &quot;Test Debug&quot; button to verify logs are working</li>
               <li><strong>Create NFT Gift:</strong> Go to main page and try to create a gift</li>
               <li><strong>Monitor in Real-time:</strong> Enable auto-refresh and watch logs appear</li>
               <li><strong>Identify Issues:</strong> Look for ERROR or WARN level logs</li>
               <li><strong>Check Data Field:</strong> Expand log entries to see detailed error information</li>
-              <li><strong>Clear When Done:</strong> Use "Clear Logs" to start fresh</li>
+              <li><strong>Clear When Done:</strong> Use &quot;Clear Logs&quot; to start fresh</li>
             </ol>
           </div>
         </div>
