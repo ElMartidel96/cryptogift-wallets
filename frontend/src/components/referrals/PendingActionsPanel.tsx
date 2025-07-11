@@ -21,17 +21,8 @@ interface PendingActionsPanelProps {
   pendingCount: number;
 }
 
-export const PendingActionsPanel: React.FC<PendingActionsPanelProps> = ({
-  isOpen,
-  onClose,
-  pendingCount
-}) => {
-  const [filter, setFilter] = useState('all');
-  const [sortBy, setSortBy] = useState('priority');
-  const [actions, setActions] = useState<PendingAction[]>([]);
-
-  // Mock data - en producción vendría de la API
-  const mockActions: PendingAction[] = [
+// Mock data - en producción vendría de la API
+const mockActions: PendingAction[] = [
     {
       id: '1',
       type: 'follow_up',
@@ -77,11 +68,20 @@ export const PendingActionsPanel: React.FC<PendingActionsPanelProps> = ({
       priority: 'medium',
       estimatedTime: 20
     }
-  ];
+];
+
+export const PendingActionsPanel: React.FC<PendingActionsPanelProps> = ({
+  isOpen,
+  onClose,
+  pendingCount
+}) => {
+  const [filter, setFilter] = useState('all');
+  const [sortBy, setSortBy] = useState('priority');
+  const [actions, setActions] = useState<PendingAction[]>([]);
 
   useEffect(() => {
     setActions(mockActions);
-  }, [mockActions]);
+  }, []);
 
   const getTypeIcon = (type: string) => {
     switch (type) {

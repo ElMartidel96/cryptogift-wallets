@@ -21,18 +21,8 @@ interface ReferralsTrackingPanelProps {
   totalReferrals: number;
 }
 
-export const ReferralsTrackingPanel: React.FC<ReferralsTrackingPanelProps> = ({
-  isOpen,
-  onClose,
-  totalReferrals
-}) => {
-  const [filter, setFilter] = useState('all');
-  const [sortBy, setSortBy] = useState('joinedAt');
-  const [realTimeEnabled, setRealTimeEnabled] = useState(true);
-  const [referrals, setReferrals] = useState<ReferralUser[]>([]);
-
-  // Mock data - en producción vendría de WebSocket o API polling
-  const mockReferrals: ReferralUser[] = [
+// Mock data - en producción vendría de WebSocket o API polling
+const mockReferrals: ReferralUser[] = [
     {
       id: '1',
       walletSuffix: '7A3E',
@@ -68,11 +58,21 @@ export const ReferralsTrackingPanel: React.FC<ReferralsTrackingPanelProps> = ({
       level: 0,
       country: 'AR',
     },
-  ];
+];
+
+export const ReferralsTrackingPanel: React.FC<ReferralsTrackingPanelProps> = ({
+  isOpen,
+  onClose,
+  totalReferrals
+}) => {
+  const [filter, setFilter] = useState('all');
+  const [sortBy, setSortBy] = useState('joinedAt');
+  const [realTimeEnabled, setRealTimeEnabled] = useState(true);
+  const [referrals, setReferrals] = useState<ReferralUser[]>([]);
 
   useEffect(() => {
     setReferrals(mockReferrals);
-  }, [mockReferrals]);
+  }, []);
 
   // Simular actualizaciones en tiempo real
   useEffect(() => {

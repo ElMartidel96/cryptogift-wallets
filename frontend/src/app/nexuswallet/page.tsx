@@ -23,17 +23,8 @@ interface Transaction {
   to?: string;
 }
 
-export default function NexusWalletPage() {
-  const account = useActiveAccount();
-  const [activeTab, setActiveTab] = useState('overview');
-  const [assets, setAssets] = useState<WalletAsset[]>([]);
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [swapFrom, setSwapFrom] = useState('USDC');
-  const [swapTo, setSwapTo] = useState('ETH');
-  const [swapAmount, setSwapAmount] = useState('');
-
-  // Mock data - en producción vendría de la API
-  const mockAssets: WalletAsset[] = [
+// Mock data - en producción vendría de la API
+const mockAssets: WalletAsset[] = [
     {
       symbol: 'USDC',
       name: 'USD Coin',
@@ -58,9 +49,9 @@ export default function NexusWalletPage() {
       change24h: 15.8,
       icon: '🎁'
     }
-  ];
+];
 
-  const mockTransactions: Transaction[] = [
+const mockTransactions: Transaction[] = [
     {
       id: '1',
       type: 'referral',
@@ -87,12 +78,21 @@ export default function NexusWalletPage() {
       status: 'completed',
       from: 'Gift Claim'
     }
-  ];
+];
+
+export default function NexusWalletPage() {
+  const account = useActiveAccount();
+  const [activeTab, setActiveTab] = useState('overview');
+  const [assets, setAssets] = useState<WalletAsset[]>([]);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [swapFrom, setSwapFrom] = useState('USDC');
+  const [swapTo, setSwapTo] = useState('ETH');
+  const [swapAmount, setSwapAmount] = useState('');
 
   useEffect(() => {
     setAssets(mockAssets);
     setTransactions(mockTransactions);
-  }, [mockAssets, mockTransactions]);
+  }, []);
 
   const totalValue = assets.reduce((sum, asset) => sum + asset.value, 0);
   const totalChange = assets.reduce((sum, asset) => sum + (asset.value * asset.change24h / 100), 0);
