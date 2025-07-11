@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 
 interface MintLog {
   timestamp: string;
-  level: 'INFO' | 'ERROR' | 'SUCCESS';
+  level: 'INFO' | 'ERROR' | 'SUCCESS' | 'WARN';
   step: string;
   data: any;
 }
@@ -47,11 +47,31 @@ export default function DebugPage() {
     }
   }, [autoRefresh]);
 
+  const testDebugSystem = async () => {
+    try {
+      const response = await fetch('/api/debug/mint-logs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          level: 'INFO',
+          step: 'DEBUG_TEST',
+          data: { message: 'Test log entry created', timestamp: new Date().toISOString() }
+        })
+      });
+      if (response.ok) {
+        fetchLogs();
+      }
+    } catch (error) {
+      console.error('Error testing debug system:', error);
+    }
+  };
+
   const getLevelColor = (level: string) => {
     switch (level) {
       case 'ERROR': return 'text-red-600 bg-red-50';
       case 'SUCCESS': return 'text-green-600 bg-green-50';
       case 'INFO': return 'text-blue-600 bg-blue-50';
+      case 'WARN': return 'text-yellow-600 bg-yellow-50';
       default: return 'text-gray-600 bg-gray-50';
     }
   };
@@ -78,6 +98,12 @@ export default function DebugPage() {
                 className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50"
               >
                 {isLoading ? 'Loading...' : 'Refresh'}
+              </button>
+              <button
+                onClick={testDebugSystem}
+                className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
+              >
+                Test Debug
               </button>
               <button
                 onClick={clearLogs}
@@ -127,15 +153,40 @@ export default function DebugPage() {
             </div>
           </div>
 
-          <div className="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-            <h3 className="font-bold text-yellow-800 mb-2">🚨 Common Issues & Solutions:</h3>
-            <ul className="text-sm text-yellow-700 space-y-1">
-              <li><strong>STEP_1 fails:</strong> IPFS upload issue - check internet connection</li>
-              <li><strong>STEP_2 fails:</strong> Biconomy configuration issue - check environment variables</li>
-              <li><strong>STEP_3 fails:</strong> Smart Account creation issue - check private key and funding</li>
-              <li><strong>STEP_4 fails:</strong> Transaction execution issue - check contract addresses</li>
-              <li><strong>STEP_5 fails:</strong> TBA calculation issue - should not fail, but check token ID</li>
-            </ul>
+          <div className="mt-6 grid md:grid-cols-2 gap-4">
+            <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <h3 className="font-bold text-yellow-800 mb-2">🚨 Common Issues & Solutions:</h3>
+              <ul className="text-sm text-yellow-700 space-y-1">
+                <li><strong>STEP_1 fails:</strong> IPFS upload issue - check internet connection</li>
+                <li><strong>STEP_2 fails:</strong> Biconomy configuration issue - check environment variables</li>
+                <li><strong>STEP_3 fails:</strong> Smart Account creation issue - check private key and funding</li>
+                <li><strong>STEP_4 fails:</strong> Transaction execution issue - check contract addresses</li>
+                <li><strong>STEP_5 fails:</strong> TBA calculation issue - should not fail, but check token ID</li>
+              </ul>
+            </div>
+            
+            <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <h3 className="font-bold text-blue-800 mb-2">🔧 Debug System Status:</h3>
+              <ul className="text-sm text-blue-700 space-y-1">
+                <li><strong>Logs Storage:</strong> In-memory (resets on server restart)</li>
+                <li><strong>Max Logs:</strong> 100 entries (automatic cleanup)</li>
+                <li><strong>Auto-refresh:</strong> {autoRefresh ? '✅ Enabled (2s)' : '❌ Disabled'}</li>
+                <li><strong>API Endpoint:</strong> /api/debug/mint-logs</li>
+                <li><strong>Environment:</strong> {process.env.NODE_ENV || 'development'}</li>
+              </ul>
+            </div>
+          </div>
+          
+          <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+            <h3 className="font-bold text-green-800 mb-2">🎯 How to Use Debug System:</h3>
+            <ol className="text-sm text-green-700 space-y-1 list-decimal list-inside">
+              <li><strong>Test Debug System:</strong> Click "Test Debug" button to verify logs are working</li>
+              <li><strong>Create NFT Gift:</strong> Go to main page and try to create a gift</li>
+              <li><strong>Monitor in Real-time:</strong> Enable auto-refresh and watch logs appear</li>
+              <li><strong>Identify Issues:</strong> Look for ERROR or WARN level logs</li>
+              <li><strong>Check Data Field:</strong> Expand log entries to see detailed error information</li>
+              <li><strong>Clear When Done:</strong> Use "Clear Logs" to start fresh</li>
+            </ol>
           </div>
         </div>
       </div>

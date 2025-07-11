@@ -28,6 +28,23 @@ export function addMintLog(level: 'INFO' | 'ERROR' | 'SUCCESS' | 'WARN', step: s
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  // Handle POST for manual test logging
+  if (req.method === 'POST') {
+    const { level, step, data } = req.body;
+    
+    if (!level || !step) {
+      return res.status(400).json({ error: 'Level and step are required' });
+    }
+    
+    addMintLog(level, step, data || {});
+    
+    return res.status(200).json({ 
+      success: true, 
+      message: 'Test log added successfully',
+      totalLogs: mintLogs.length 
+    });
+  }
+  
   if (req.method !== 'GET') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
