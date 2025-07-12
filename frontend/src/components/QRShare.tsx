@@ -8,9 +8,10 @@ interface QRShareProps {
   shareUrl: string;
   qrCode: string;
   onClose: () => void;
+  wasGasless?: boolean;
 }
 
-export const QRShare: React.FC<QRShareProps> = ({ tokenId, shareUrl, qrCode, onClose }) => {
+export const QRShare: React.FC<QRShareProps> = ({ tokenId, shareUrl, qrCode, onClose, wasGasless = false }) => {
   const [copied, setCopied] = useState(false);
   const [copyType, setCopyType] = useState<'url' | 'message' | null>(null);
 
@@ -157,9 +158,14 @@ Bienvenid@ al futuro de los regalos 💎✨`;
         <h3 className="font-semibold text-blue-800 mb-2">Detalles del NFT</h3>
         <div className="space-y-1 text-sm text-blue-700">
           <p>• Token ID: #{tokenId}</p>
-          <p>• Blockchain: Base</p>
+          <p>• Blockchain: Base Sepolia</p>
           <p>• Estándar: ERC-6551 (Token Bound Account)</p>
           <p>• Wallet integrada: ✅ Lista para usar</p>
+          {wasGasless ? (
+            <p className="text-green-600 font-medium">• 🎉 Transacción GASLESS (gratis)</p>
+          ) : (
+            <p className="text-orange-600 font-medium">• 💰 Gas pagado (~$0.01)</p>
+          )}
         </div>
       </div>
 

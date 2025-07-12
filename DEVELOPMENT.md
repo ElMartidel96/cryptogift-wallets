@@ -418,10 +418,12 @@ NEXT_PUBLIC_TW_CLIENT_ID=9183b572b02ec88dd4d8f20c3ed847d3    ✅ Required for ot
 - `refactor:` reestructuración sin cambios funcionales
 - `security:` mejoras de seguridad
 - **Una funcionalidad = un commit** para rollbacks quirúrgicos
+- **Siempre incluir**: `🚀 Developed by mbxarts.com THE MOON IN A BOX LLC` en commit messages
+- **Co-Author format**: `Co-Authored-By: mbxarts.com THE MOON IN A BOX LLC <noreply@mbxarts.com>`
 
 #### Security Rules (Applied Automatically)
 ```bash
-# Pre-commit checks que Claude ejecuta:
+# Pre-commit checks ejecutados por mbxarts.com development team:
 npm audit --audit-level high          # CVE scanning
 npm run type-check                    # TypeScript strict
 npm run lint                          # ESLint + security rules

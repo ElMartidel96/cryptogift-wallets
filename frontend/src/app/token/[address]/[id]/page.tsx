@@ -8,6 +8,7 @@ import { useActiveAccount, ConnectButton } from 'thirdweb/react';
 import { client } from '../../../client';
 import { WalletInterface } from '../../../../components/WalletInterface';
 import { ClaimInterface } from '../../../../components/ClaimInterface';
+import { TBAWalletContainer } from '../../../../components/TBAWallet';
 
 export default function TokenPage() {
   const params = useParams();
@@ -18,6 +19,7 @@ export default function TokenPage() {
   const [isOwner, setIsOwner] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showTBAWallet, setShowTBAWallet] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -213,12 +215,29 @@ export default function TokenPage() {
                           )}
                         </div>
                       ) : isOwner ? (
-                        <WalletInterface
-                          nftData={nftData}
-                          tbaAddress={tbaAddress}
-                          contractAddress={contractAddress}
-                          tokenId={tokenId}
-                        />
+                        <div className="space-y-4">
+                          <WalletInterface
+                            nftData={nftData}
+                            tbaAddress={tbaAddress}
+                            contractAddress={contractAddress}
+                            tokenId={tokenId}
+                          />
+                          
+                          {/* TBA Wallet Interface Button */}
+                          <div className="border-t pt-4">
+                            <button
+                              onClick={() => setShowTBAWallet(true)}
+                              className="w-full bg-gradient-to-r from-orange-500 to-orange-600 text-white py-3 px-6 rounded-lg hover:from-orange-600 hover:to-orange-700 transition-all duration-200 font-medium flex items-center justify-center space-x-2"
+                            >
+                              <span className="text-lg">💎</span>
+                              <span>Open MetaMask-Style Wallet</span>
+                              <span className="text-xs bg-white bg-opacity-20 px-2 py-1 rounded">NEW</span>
+                            </button>
+                            <p className="text-xs text-gray-500 text-center mt-2">
+                              Professional wallet interface with advanced features
+                            </p>
+                          </div>
+                        </div>
                       ) : (
                         <ClaimInterface
                           nftData={nftData}
@@ -264,6 +283,20 @@ export default function TokenPage() {
           </div>
         </div>
       </div>
+
+      {/* TBA Wallet Modal */}
+      {showTBAWallet && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="relative">
+            <TBAWalletContainer
+              nftContract={contractAddress}
+              tokenId={tokenId}
+              onClose={() => setShowTBAWallet(false)}
+              className="mx-auto"
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

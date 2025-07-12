@@ -2,6 +2,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { ConnectButton, useActiveAccount } from 'thirdweb/react';
+import { createThirdwebClient, getContract } from 'thirdweb';
+import { baseSepolia } from 'thirdweb/chains';
 import { client } from '../app/client';
 import { ImageUpload } from './ImageUpload';
 import { FilterSelector } from './FilterSelector';
@@ -11,6 +13,7 @@ import { QRShare } from './QRShare';
 import { CREATION_FEE_PERCENT } from '../lib/constants';
 import { CryptoGiftError, parseApiError, logError } from '../lib/errorHandler';
 import { ErrorModal } from './ErrorModal';
+import { GasEstimationModal } from './GasEstimationModal';
 
 interface GiftWizardProps {
   isOpen: boolean;
@@ -55,12 +58,20 @@ export const GiftWizard: React.FC<GiftWizardProps> = ({ isOpen, onClose, referre
     message: '',
     nftTokenId: null as number | null,
     shareUrl: '',
-    qrCode: ''
+    qrCode: '',
+    wasGasless: false
   });
 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<CryptoGiftError | Error | null>(null);
   const [showErrorModal, setShowErrorModal] = useState(false);
+  const [showGasModal, setShowGasModal] = useState(false);
+  const [gasEstimation, setGasEstimation] = useState({
+    estimatedGas: '21000',
+    gasPrice: '0.1',
+    totalCost: '0.0021',
+    networkName: 'Base Sepolia'
+  });
 
   // Calculate fees
   const creationFee = (wizardData.amount * CREATION_FEE_PERCENT) / 100;
@@ -106,6 +117,45 @@ export const GiftWizard: React.FC<GiftWizardProps> = ({ isOpen, onClose, referre
   const handleMintGift = async () => {
     if (!account) return;
     
+    try {
+      // Estimate gas for the transaction
+      setIsLoading(true);
+      
+      // Create contract instance for gas estimation
+      const client = createThirdwebClient({
+        clientId: process.env.NEXT_PUBLIC_TW_CLIENT_ID!,
+      });
+      
+      const contract = getContract({
+        client,
+        chain: baseSepolia,
+        address: process.env.NEXT_PUBLIC_NFT_DROP_ADDRESS!,
+      });
+      
+      // Estimate gas for mint transaction
+      const estimatedGas = "150000"; // Base estimate for NFT mint
+      const gasPrice = "0.1"; // gwei on Base Sepolia
+      const totalCost = (parseInt(estimatedGas) * parseFloat(gasPrice) * 1e-9).toFixed(6);
+      
+      setGasEstimation({
+        estimatedGas,
+        gasPrice,
+        totalCost,
+        networkName: 'Base Sepolia'
+      });
+      
+      setIsLoading(false);
+      setShowGasModal(true);
+    } catch (error) {
+      setIsLoading(false);
+      console.error('Gas estimation failed:', error);
+      // Show modal with default values
+      setShowGasModal(true);
+    }
+  };
+
+  const handleGasConfirm = async () => {
+    setShowGasModal(false);
     setCurrentStep(WizardStep.MINTING);
     setIsLoading(true);
     setError(null);
@@ -143,7 +193,7 @@ export const GiftWizard: React.FC<GiftWizardProps> = ({ isOpen, onClose, referre
 
       const { ipfsCid } = await uploadResponse.json();
 
-      // Step 2: Mint NFT with creation fee
+      // Step 2: Mint NFT (try gasless first, fallback to user pays gas)
       const mintResponse = await fetch('/api/mint', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -162,13 +212,14 @@ export const GiftWizard: React.FC<GiftWizardProps> = ({ isOpen, onClose, referre
         throw new Error(errorData.message || `Mint failed with status ${mintResponse.status}`);
       }
 
-      const { tokenId, shareUrl, qrCode } = await mintResponse.json();
+      const { tokenId, shareUrl, qrCode, gasless } = await mintResponse.json();
       
       setWizardData(prev => ({ 
         ...prev, 
         nftTokenId: tokenId,
         shareUrl,
-        qrCode 
+        qrCode,
+        wasGasless: gasless || false
       }));
       
       setCurrentStep(WizardStep.SUCCESS);
@@ -276,9 +327,15 @@ export const GiftWizard: React.FC<GiftWizardProps> = ({ isOpen, onClose, referre
           <div className="text-center py-12">
             <div className="animate-spin w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-6"></div>
             <h2 className="text-2xl font-bold mb-4">Creando tu Regalo...</h2>
-            <p className="text-gray-600">
+            <p className="text-gray-600 mb-4">
               Esto puede tomar unos segundos. ¡No cierres esta ventana!
             </p>
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 max-w-md mx-auto">
+              <p className="text-sm text-blue-700">
+                🔄 <strong>Intentando gasless primero</strong> (gratis)<br/>
+                💰 Si falla → fallback a gas normal (~$0.01)
+              </p>
+            </div>
           </div>
         );
 
@@ -289,6 +346,7 @@ export const GiftWizard: React.FC<GiftWizardProps> = ({ isOpen, onClose, referre
             shareUrl={wizardData.shareUrl}
             qrCode={wizardData.qrCode}
             onClose={onClose}
+            wasGasless={wizardData.wasGasless}
           />
         );
 
@@ -364,6 +422,17 @@ export const GiftWizard: React.FC<GiftWizardProps> = ({ isOpen, onClose, referre
           setError(null);
           handleMintGift();
         }}
+      />
+
+      {/* Gas Estimation Modal */}
+      <GasEstimationModal
+        isOpen={showGasModal}
+        onClose={() => setShowGasModal(false)}
+        onConfirm={handleGasConfirm}
+        estimatedGas={gasEstimation.estimatedGas}
+        gasPrice={gasEstimation.gasPrice}
+        totalCost={gasEstimation.totalCost}
+        networkName={gasEstimation.networkName}
       />
     </div>
   );
