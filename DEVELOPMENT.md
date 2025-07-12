@@ -181,6 +181,9 @@ Next.js 15 requires special handling for ThirdWeb components:
 - ✅ **ERC-6551 Standard**: Implementación completa del cálculo TBA address con CREATE2 pattern
 - ✅ **Ethers Import**: Corregido import faltante para funciones ERC-6551
 - ✅ **Build Cache**: Optimización de 254MB cache para deploys más rápidos
+- ✅ **IPFS Hybrid System**: Implementado sistema de múltiples proveedores con fallbacks
+- ✅ **NFT.Storage Integration**: Provider principal para desarrollo (gratis, permanente)
+- ✅ **Debug Integration**: Sistema completo conectado con logs de IPFS uploads
 
 **📱 Live URLs (Deployment Successful):**
 - **Main App**: https://cryptogift-wallets.vercel.app
@@ -225,6 +228,17 @@ Next.js 15 requires special handling for ThirdWeb components:
 - **Real-time Updates**: Data refresh automático con simulación WebSocket
 - **Interactive Dashboards**: Panels expandibles con data drill-down
 - **Export Capabilities**: Preparado para export de data y reportes
+
+### 6. IPFS Hybrid Strategy (Godez22 Art Project)
+- **Current Phase**: NFT.Storage (development) + ThirdWeb fallback
+- **Future Phase**: Pinata (production) + NFT.Storage backup
+- **Providers Priority**:
+  1. **NFT.Storage**: Free, permanent, Protocol Labs
+  2. **ThirdWeb**: Fallback, current system
+  3. **Pinata**: Future production (professional grade)
+- **Smart Fallbacks**: Automatic provider switching on failures
+- **Debug Integration**: Full logging of upload process and provider usage
+- **Environment Setup**: `.env.example` with all provider configurations
 
 **Previous Session (January 10, 2025):**
 

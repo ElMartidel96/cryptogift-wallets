@@ -2,6 +2,8 @@ import { NextApiRequest, NextApiResponse } from "next";
 import formidable from "formidable";
 import { promises as fs } from "fs";
 import { upload } from "thirdweb/storage";
+import { uploadToIPFS, uploadMetadata, validateIPFSConfig } from "../../lib/ipfs";
+import { addMintLog } from "./debug/mint-logs";
 
 // Disable the default body parser
 export const config = {
@@ -16,8 +18,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    if (!process.env.NEXT_PUBLIC_TW_CLIENT_ID) {
-      throw new Error('ThirdWeb client ID not configured');
+    addMintLog('INFO', 'UPLOAD_API_START', { timestamp: new Date().toISOString() });
+    
+    // Check IPFS configuration
+    const ipfsConfig = validateIPFSConfig();
+    addMintLog('INFO', 'IPFS_CONFIG_CHECK', ipfsConfig);
+    
+    if (!ipfsConfig.nftStorage && !ipfsConfig.thirdweb) {
+      throw new Error('No IPFS providers configured. Check environment variables.');
     }
 
     // Parse the multipart form data
@@ -41,15 +49,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       type: uploadedFile.mimetype || 'image/jpeg',
     });
 
-    // Upload to ThirdWeb Storage (IPFS)
-    const uploadResult = await upload({
-      client: { 
-        clientId: process.env.NEXT_PUBLIC_TW_CLIENT_ID!,
-        secretKey: process.env.TW_SECRET_KEY!,
-      },
-      files: [nftFile],
+    // Upload using hybrid IPFS strategy
+    addMintLog('INFO', 'IPFS_UPLOAD_START', { 
+      fileName: nftFile.name, 
+      fileSize: nftFile.size,
+      mimeType: nftFile.type 
     });
-    const cid = uploadResult;
+    
+    const uploadResult = await uploadToIPFS(nftFile);
+    addMintLog('SUCCESS', 'IPFS_UPLOAD_COMPLETE', {
+      provider: uploadResult.provider,
+      cid: uploadResult.cid,
+      url: uploadResult.url,
+      size: uploadResult.size
+    });
+    
+    const cid = uploadResult.cid;
 
     // Create metadata if this is the final upload
     const filteredUrl = fields.filteredUrl?.[0];
@@ -72,14 +87,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         type: 'image/jpeg',
       });
       
-      const filteredCidResult = await upload({
-        client: { 
-        clientId: process.env.NEXT_PUBLIC_TW_CLIENT_ID!,
-        secretKey: process.env.TW_SECRET_KEY!,
-      },
-        files: [filteredFile],
+      addMintLog('INFO', 'FILTERED_IMAGE_UPLOAD_START', { 
+        filteredUrl, 
+        imageSize: filteredImageData.byteLength 
       });
-      const filteredCid = filteredCidResult;
+      
+      const filteredUploadResult = await uploadToIPFS(filteredFile);
+      addMintLog('SUCCESS', 'FILTERED_IMAGE_UPLOAD_COMPLETE', {
+        provider: filteredUploadResult.provider,
+        cid: filteredUploadResult.cid,
+        url: filteredUploadResult.url
+      });
+      
+      const filteredCid = filteredUploadResult.cid;
       
       // Store the metadata
       const metadata = {
@@ -99,18 +119,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         ],
       };
 
-      const metadataFile = new File([JSON.stringify(metadata)], 'metadata.json', {
-        type: 'application/json',
+      addMintLog('INFO', 'METADATA_UPLOAD_START', { metadata });
+      
+      const metadataUploadResult = await uploadMetadata(metadata);
+      addMintLog('SUCCESS', 'METADATA_UPLOAD_COMPLETE', {
+        provider: metadataUploadResult.provider,
+        cid: metadataUploadResult.cid,
+        url: metadataUploadResult.url
       });
-
-      const metadataCidResult = await upload({
-        client: { 
-        clientId: process.env.NEXT_PUBLIC_TW_CLIENT_ID!,
-        secretKey: process.env.TW_SECRET_KEY!,
-      },
-        files: [metadataFile],
-      });
-      const metadataCid = metadataCidResult;
+      
+      const metadataCid = metadataUploadResult.cid;
 
       return res.status(200).json({
         success: true,
@@ -133,9 +151,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   } catch (error) {
     console.error('Upload error:', error);
+    addMintLog('ERROR', 'UPLOAD_API_ERROR', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+      timestamp: new Date().toISOString()
+    });
+    
     res.status(500).json({
       error: 'Upload failed',
       message: error instanceof Error ? error.message : 'Unknown error',
+      debug: 'Check /api/debug/mint-logs for detailed error information'
     });
   }
 }
