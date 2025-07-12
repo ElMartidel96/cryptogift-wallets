@@ -6,6 +6,7 @@ import { ClientLayout } from "../components/ClientLayout";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://cryptogift-wallets.vercel.app'),
   title: "CryptoGift Wallets - Regala el Futuro",
   description: "Regala NFT-wallets con criptomonedas. La forma más fácil de introducir a tus amigos al mundo cripto.",
   keywords: "crypto, NFT, wallet, gift, regalo, blockchain, Base, USDC",

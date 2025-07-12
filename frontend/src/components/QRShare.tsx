@@ -32,15 +32,15 @@ Es un NFT único que contiene criptomonedas reales. Solo tienes que:
 2. Conectar tu wallet (o crear una nueva)
 3. ¡Reclamar tu regalo!
 
-${shareUrl}
+${shareUrl || 'https://cryptogift-wallets.vercel.app'}
 
 Bienvenid@ al futuro de los regalos 💎✨`;
 
-  const shortUrl = shareUrl.replace('https://', '').replace('http://', '');
+  const shortUrl = shareUrl ? shareUrl.replace('https://', '').replace('http://', '') : 'cryptogift-wallets.vercel.app';
 
   const handleSocialShare = (platform: string) => {
     const text = encodeURIComponent(shareMessage);
-    const url = encodeURIComponent(shareUrl);
+    const url = encodeURIComponent(shareUrl || 'https://cryptogift-wallets.vercel.app');
     
     const shareUrls = {
       whatsapp: `https://wa.me/?text=${text}`,

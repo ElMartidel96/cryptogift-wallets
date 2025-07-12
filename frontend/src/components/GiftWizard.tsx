@@ -149,18 +149,11 @@ export const GiftWizard: React.FC<GiftWizardProps> = ({ isOpen, onClose, referre
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           to: account?.address,
-          amount: wizardData.amount,
-          referrer: referrer,
-          metadata: {
-            name: `CryptoGift #${Date.now()}`,
-            description: 'Un regalo cripto único creado con amor',
-            image: `ipfs://${ipfsCid}`,
-            attributes: [
-              { trait_type: 'Filter', value: wizardData.selectedFilter },
-              { trait_type: 'Initial Balance', value: `${netAmount} USDC` },
-              { trait_type: 'Creation Date', value: new Date().toISOString() }
-            ]
-          }
+          imageFile: ipfsCid, // Send IPFS CID from upload
+          giftMessage: wizardData.message || 'Un regalo cripto único creado con amor',
+          initialBalance: netAmount, // Net amount after fees
+          filter: wizardData.selectedFilter || 'Original',
+          referrer: referrer
         }),
       });
 

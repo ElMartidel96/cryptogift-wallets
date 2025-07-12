@@ -1,28 +1,29 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import { createThirdwebClient, getContract, prepareContractCall } from "thirdweb";
-import { upload } from "thirdweb/storage";
 import { baseSepolia } from "thirdweb/chains";
 import { privateKeyToAccount } from "thirdweb/wallets";
 import { createBiconomySmartAccount, sendGaslessTransaction, validateBiconomyConfig } from "../../lib/biconomy";
 import { addMintLog } from "./debug/mint-logs";
+import { uploadMetadata } from "../../lib/ipfs";
 import { ethers } from "ethers";
 
-// Helper function to upload metadata to IPFS
+// Helper function to upload metadata to IPFS using robust fallback strategy
 async function uploadMetadataToIPFS(metadata: any) {
   try {
-    const client = createThirdwebClient({
-      clientId: process.env.NEXT_PUBLIC_TW_CLIENT_ID!,
-      secretKey: process.env.TW_SECRET_KEY!,
-    });
-
-    const uri = await upload({
-      client,
-      files: [metadata],
-    });
-
-    return uri;
+    console.log("📝 Uploading metadata to IPFS using fallback strategy...");
+    const result = await uploadMetadata(metadata);
+    
+    if (result.success) {
+      console.log("✅ Metadata upload successful:", { 
+        provider: result.provider, 
+        cid: result.cid 
+      });
+      return result.url;
+    } else {
+      throw new Error(`Metadata upload failed: ${result.error}`);
+    }
   } catch (error) {
-    console.error("Error uploading to IPFS:", error);
+    console.error("❌ Error uploading metadata to IPFS:", error);
     throw error;
   }
 }
@@ -280,12 +281,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     addMintLog('SUCCESS', 'STEP_5_COMPLETE', { tbaAddress, tokenId });
 
     // Final success
+    // Generate share URL and QR code for the NFT
+    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://cryptogift-wallets.vercel.app';
+    const shareUrl = `${baseUrl}/token/${process.env.NEXT_PUBLIC_NFT_DROP_ADDRESS}/${tokenId}`;
+    const qrCode = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(shareUrl)}`;
+
     const finalResult = {
       success: true,
       transactionHash,
       tokenId,
       tbaAddress,
       metadataUri,
+      shareUrl,
+      qrCode,
       gasless,
       message: gasless ? 'NFT minted successfully with gasless transaction!' : 'NFT minted in simulation mode'
     };
