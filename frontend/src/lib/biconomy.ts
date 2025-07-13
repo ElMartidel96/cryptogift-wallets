@@ -7,9 +7,12 @@ import { privateKeyToAccount } from "viem/accounts";
 export const biconomyConfig = {
   chainId: 84532, // Base Sepolia
   rpcUrl: "https://sepolia.base.org",
-  // These will be set from environment variables
+  // FIXED: Separate bundler and paymaster URLs
   paymasterApiKey: process.env.NEXT_PUBLIC_BICONOMY_PAYMASTER_API_KEY || "l0I7KBcia.2e5af1b9-52f2-43d8-aaad-bb5c8275d1a7",
-  bundlerUrl: process.env.NEXT_PUBLIC_BICONOMY_BUNDLER_URL || "https://paymaster.biconomy.io/api/v2/84532/l0I7KBcia.2e5af1b9-52f2-43d8-aaad-bb5c8275d1a7",
+  // BUNDLER URL (different from paymaster)
+  bundlerUrl: process.env.NEXT_PUBLIC_BICONOMY_BUNDLER_URL || "https://bundler.biconomy.io/api/v2/84532/nJPK7B3ru.dd7f7861-190d-41bd-af80-6877f74b8f44",
+  // PAYMASTER URL 
+  paymasterUrl: process.env.NEXT_PUBLIC_BICONOMY_PAYMASTER_URL || "https://paymaster.biconomy.io/api/v2/84532/l0I7KBcia.2e5af1b9-52f2-43d8-aaad-bb5c8275d1a7",
 };
 
 // Create Biconomy Smart Account
@@ -37,11 +40,12 @@ export async function createBiconomySmartAccount(privateKey: string) {
       transport: http(),
     });
 
-    // Create Smart Account
+    // Create Smart Account with proper URLs
     const smartAccount = await createSmartAccountClient({
       signer: walletClient,
       biconomyPaymasterApiKey: biconomyConfig.paymasterApiKey,
-      bundlerUrl: biconomyConfig.bundlerUrl,
+      bundlerUrl: biconomyConfig.bundlerUrl, // Now uses correct bundler URL
+      paymasterUrl: biconomyConfig.paymasterUrl, // Add paymaster URL if supported
       rpcUrl: biconomyConfig.rpcUrl,
       chainId: biconomyConfig.chainId,
     });
