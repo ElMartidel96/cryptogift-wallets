@@ -148,22 +148,28 @@ async function mintNFTGasless(to: string, tokenURI: string, client: any) {
       accountAddress: smartAccount ? "Created" : "Failed" 
     });
     
-    // Get NFT contract
+    // Get NFT contract with custom RPC
     console.log("🔍 GASLESS MINT Step 3c: Getting NFT contract", { 
       contractAddress: process.env.NEXT_PUBLIC_NFT_DROP_ADDRESS 
     });
+    
+    const customChain = {
+      ...baseSepolia,
+      rpc: process.env.NEXT_PUBLIC_RPC_URL || "https://base-sepolia.g.alchemy.com/v2/GJfW9U_S-o-boMw93As3e"
+    };
+    
     const nftContract = getContract({
       client,
-      chain: baseSepolia,
+      chain: customChain,
       address: process.env.NEXT_PUBLIC_NFT_DROP_ADDRESS!,
     });
     console.log("✅ GASLESS MINT Step 3c SUCCESS: NFT contract obtained");
 
-    // Use proper thirdweb v5 syntax for prepareContractCall
+    // Use proper thirdweb v5 syntax for prepareContractCall - UPDATED METHOD
     console.log("🔍 GASLESS MINT Step 3d: Preparing contract call");
     const mintTransaction = prepareContractCall({
       contract: nftContract,
-      method: "function mintTo(address to, string memory tokenURI) external",
+      method: "function mint(address to, string memory uri) public",
       params: [to, tokenURI],
     });
     console.log("✅ GASLESS MINT Step 3d SUCCESS: Contract call prepared");

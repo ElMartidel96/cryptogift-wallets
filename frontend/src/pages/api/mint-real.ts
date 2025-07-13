@@ -199,19 +199,24 @@ async function mintNFTReal(to: string, metadataUri: string): Promise<{
       privateKey: process.env.PRIVATE_KEY_DEPLOY!,
     });
 
-    // Get NFT contract
+    // Get NFT contract with custom RPC
+    const customChain = {
+      ...baseSepolia,
+      rpc: process.env.NEXT_PUBLIC_RPC_URL || "https://base-sepolia.g.alchemy.com/v2/GJfW9U_S-o-boMw93As3e"
+    };
+    
     const contract = getContract({
       client,
-      chain: baseSepolia,
+      chain: customChain,
       address: process.env.NEXT_PUBLIC_NFT_DROP_ADDRESS!,
     });
 
     addMintLog('INFO', 'REAL_MINT_TRANSACTION_PREP', { contract: contract.address });
 
-    // Prepare the mint transaction
+    // Prepare the mint transaction - UPDATED METHOD SIGNATURE
     const transaction = prepareContractCall({
       contract,
-      method: "function mintTo(address to, string memory uri) external",
+      method: "function mint(address to, string memory uri) public",
       params: [to, metadataUri],
     });
 

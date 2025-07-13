@@ -3,21 +3,32 @@ import { createWalletClient, http } from "viem";
 import { baseSepolia } from "viem/chains";
 import { privateKeyToAccount } from "viem/accounts";
 
-// Biconomy configuration for Base Sepolia
+// Biconomy configuration for Base Sepolia - CURRENT BEST PRACTICES 2025
 export const biconomyConfig = {
   chainId: 84532, // Base Sepolia
-  rpcUrl: "https://sepolia.base.org",
-  // FIXED: Separate bundler and paymaster URLs
+  rpcUrl: process.env.NEXT_PUBLIC_RPC_URL || "https://base-sepolia.g.alchemy.com/v2/GJfW9U_S-o-boMw93As3e",
+  
+  // PAYMASTER API KEY
   paymasterApiKey: process.env.NEXT_PUBLIC_BICONOMY_PAYMASTER_API_KEY || "l0I7KBcia.2e5af1b9-52f2-43d8-aaad-bb5c8275d1a7",
-  // BUNDLER URL (different from paymaster)
+  
+  // BUNDLER URL - REQUIRED for AA transactions
   bundlerUrl: process.env.NEXT_PUBLIC_BICONOMY_BUNDLER_URL || "https://bundler.biconomy.io/api/v2/84532/nJPK7B3ru.dd7f7861-190d-41bd-af80-6877f74b8f44",
-  // PAYMASTER URL 
+  
+  // PAYMASTER URL
   paymasterUrl: process.env.NEXT_PUBLIC_BICONOMY_PAYMASTER_URL || "https://paymaster.biconomy.io/api/v2/84532/l0I7KBcia.2e5af1b9-52f2-43d8-aaad-bb5c8275d1a7",
 };
 
 // Create Biconomy Smart Account
 export async function createBiconomySmartAccount(privateKey: string) {
   try {
+    console.log('🔧 BICONOMY CONFIG - CURRENT BEST PRACTICES 2025:', {
+      chainId: biconomyConfig.chainId,
+      rpcUrl: biconomyConfig.rpcUrl,
+      paymasterApiKey: biconomyConfig.paymasterApiKey.substring(0, 10) + '...',
+      bundlerUrl: biconomyConfig.bundlerUrl,
+      paymasterUrl: biconomyConfig.paymasterUrl,
+      architecture: 'Bundler + Paymaster (Complete AA Stack)',
+    });
     // Ensure private key has 0x prefix and is properly formatted
     const formattedPrivateKey = privateKey.startsWith('0x') 
       ? privateKey as `0x${string}`
@@ -40,12 +51,12 @@ export async function createBiconomySmartAccount(privateKey: string) {
       transport: http(),
     });
 
-    // Create Smart Account with proper URLs
+    // Create Smart Account using current best practices
     const smartAccount = await createSmartAccountClient({
       signer: walletClient,
       biconomyPaymasterApiKey: biconomyConfig.paymasterApiKey,
-      bundlerUrl: biconomyConfig.bundlerUrl, // Now uses correct bundler URL
-      paymasterUrl: biconomyConfig.paymasterUrl, // Add paymaster URL if supported
+      bundlerUrl: biconomyConfig.bundlerUrl, // REQUIRED for transactions
+      paymasterUrl: biconomyConfig.paymasterUrl,
       rpcUrl: biconomyConfig.rpcUrl,
       chainId: biconomyConfig.chainId,
     });
@@ -113,19 +124,31 @@ export async function sendGaslessTransaction(
   }
 }
 
-// Check if paymaster is available
+// Check if Biconomy configuration is complete
 export function validateBiconomyConfig() {
-  const required = [
-    'NEXT_PUBLIC_BICONOMY_PAYMASTER_API_KEY',
-    'NEXT_PUBLIC_BICONOMY_BUNDLER_URL'
-  ];
+  const paymasterKey = process.env.NEXT_PUBLIC_BICONOMY_PAYMASTER_API_KEY || biconomyConfig.paymasterApiKey;
+  const paymasterUrl = process.env.NEXT_PUBLIC_BICONOMY_PAYMASTER_URL || biconomyConfig.paymasterUrl;
+  const bundlerUrl = process.env.NEXT_PUBLIC_BICONOMY_BUNDLER_URL || biconomyConfig.bundlerUrl;
   
-  const missing = required.filter(key => !process.env[key]);
-  
-  if (missing.length > 0) {
-    console.warn(`Missing Biconomy environment variables: ${missing.join(', ')}`);
+  if (!paymasterKey) {
+    console.error('❌ Missing Biconomy Paymaster API Key');
     return false;
   }
+  
+  if (!bundlerUrl) {
+    console.error('❌ Missing Biconomy Bundler URL');
+    return false;
+  }
+  
+  if (!paymasterUrl) {
+    console.error('❌ Missing Biconomy Paymaster URL');
+    return false;
+  }
+  
+  console.log('✅ Biconomy configuration validated');
+  console.log(`🔧 Bundler URL: ${bundlerUrl.substring(0, 50)}...`);
+  console.log(`💰 Paymaster URL: ${paymasterUrl.substring(0, 50)}...`);
+  console.log(`🔑 API Key: ${paymasterKey.substring(0, 10)}...`);
   
   return true;
 }

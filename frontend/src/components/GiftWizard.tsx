@@ -365,8 +365,16 @@ export const GiftWizard: React.FC<GiftWizardProps> = ({ isOpen, onClose, referre
 
       const { ipfsCid } = await uploadResponse.json();
 
-      // Step 2: Mint NFT (try gasless first, fallback to user pays gas)
-      const mintResponse = await fetch('/api/mint', {
+      // Step 2: Mint NFT with GAS PAYMENT (user confirmed to pay gas)
+      addStep('GIFT_WIZARD', 'GAS_PAID_MINT_STARTED', {
+        endpoint: '/api/mint-real',
+        to: account?.address,
+        imageFile: ipfsCid,
+        initialBalance: netAmount,
+        filter: wizardData.selectedFilter || 'Original'
+      }, 'pending');
+
+      const mintResponse = await fetch('/api/mint-real', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -379,12 +387,47 @@ export const GiftWizard: React.FC<GiftWizardProps> = ({ isOpen, onClose, referre
         }),
       });
 
+      addStep('GIFT_WIZARD', 'GAS_PAID_API_RESPONSE_RECEIVED', {
+        status: mintResponse.status,
+        statusText: mintResponse.statusText,
+        ok: mintResponse.ok
+      }, mintResponse.ok ? 'success' : 'error');
+
       if (!mintResponse.ok) {
         const errorData = await mintResponse.json().catch(() => ({}));
-        throw new Error(errorData.message || `Mint failed with status ${mintResponse.status}`);
+        addError('GIFT_WIZARD', 'GAS_PAID_API_ERROR', errorData.message || 'Gas-paid API call failed', {
+          status: mintResponse.status,
+          errorData
+        });
+        throw new Error(errorData.message || `Gas-paid mint failed with status ${mintResponse.status}`);
       }
 
-      const { tokenId, shareUrl, qrCode, gasless } = await mintResponse.json();
+      const mintResult = await mintResponse.json();
+      const { tokenId, shareUrl, qrCode, gasless, message } = mintResult;
+      
+      addStep('GIFT_WIZARD', 'GAS_PAID_API_RESPONSE_PARSED', {
+        tokenId,
+        hasShareUrl: !!shareUrl,
+        hasQrCode: !!qrCode,
+        gasless, // Should be false for gas-paid transactions
+        message,
+        fullResponse: mintResult
+      }, 'success');
+      
+      // CRITICAL DECISION POINT: Confirm this was a gas-paid transaction
+      addDecision('GIFT_WIZARD', 'isTransactionGasPaid', !gasless, {
+        tokenId,
+        message,
+        apiSaysGasless: gasless,
+        expectedGasPaid: true
+      });
+      
+      addStep('GIFT_WIZARD', 'GAS_PAID_SUCCESS_CONFIRMED', {
+        tokenId,
+        shareUrl,
+        qrCode,
+        userPaidGas: !gasless
+      }, 'success');
       
       setWizardData(prev => ({ 
         ...prev, 
