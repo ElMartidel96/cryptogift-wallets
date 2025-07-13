@@ -62,14 +62,30 @@ export async function sendGaslessTransaction(
   try {
     console.log("Preparing gasless transaction:", transaction);
     
+    // CRITICAL FIX: ThirdWeb v5 returns data as async function, we need to call it
+    let transactionData = "0x";
+    if (transaction.data) {
+      if (typeof transaction.data === 'function') {
+        console.log("🔧 Resolving ThirdWeb v5 async data function...");
+        transactionData = await transaction.data();
+        console.log("✅ Data resolved:", transactionData.substring(0, 20) + "...");
+      } else {
+        transactionData = transaction.data;
+      }
+    }
+    
     // Normalize transaction format for Biconomy
     const normalizedTx = {
       to: transaction.to || transaction.address,
-      data: transaction.data || transaction.input || "0x",
+      data: transactionData,
       value: transaction.value || "0x0",
     };
     
-    console.log("Normalized transaction:", normalizedTx);
+    console.log("Normalized transaction:", {
+      to: normalizedTx.to,
+      data: normalizedTx.data.substring(0, 20) + "...",
+      value: normalizedTx.value
+    });
     
     // Build user operation
     const userOp = await smartAccount.buildUserOp([normalizedTx]);

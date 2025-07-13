@@ -2,8 +2,109 @@ import { NextApiRequest, NextApiResponse } from 'next';
 import fs from 'fs';
 import path from 'path';
 
+// In-memory storage for production (simple fallback)
+let inMemoryTraces: any[] = [];
+
+function handleInMemoryStorage(req: NextApiRequest, res: NextApiResponse) {
+  if (req.method === 'POST') {
+    try {
+      const { type, sessionId, step, trace } = req.body;
+
+      if (type === 'step') {
+        // Add step to existing trace or create new one
+        let existingTrace = inMemoryTraces.find(t => t.sessionId === sessionId);
+        if (!existingTrace) {
+          existingTrace = {
+            sessionId,
+            startTime: step.timestamp,
+            steps: []
+          };
+          inMemoryTraces.push(existingTrace);
+        }
+        existingTrace.steps.push(step);
+      } else if (type === 'complete') {
+        // Update or add complete trace
+        const existingIndex = inMemoryTraces.findIndex(t => t.sessionId === trace.sessionId);
+        if (existingIndex >= 0) {
+          inMemoryTraces[existingIndex] = trace;
+        } else {
+          inMemoryTraces.push(trace);
+        }
+      }
+
+      // Keep only last 20 traces to prevent memory bloat
+      inMemoryTraces = inMemoryTraces.slice(-20);
+
+      res.status(200).json({ success: true, message: 'Trace data saved (in-memory)' });
+    } catch (error) {
+      res.status(500).json({ 
+        error: 'Failed to save trace', 
+        message: error instanceof Error ? error.message : 'Unknown error' 
+      });
+    }
+  } else if (req.method === 'GET') {
+    try {
+      const { sessionId, latest } = req.query;
+
+      if (sessionId) {
+        // Get specific trace
+        const trace = inMemoryTraces.find(t => t.sessionId === sessionId);
+        if (!trace) {
+          return res.status(404).json({ error: 'Trace not found' });
+        }
+        
+        const analysis = analyzeTrace(trace);
+        res.status(200).json({ trace, analysis });
+      } else if (latest) {
+        // Get latest trace
+        const latestTrace = inMemoryTraces.slice(-1)[0];
+        if (!latestTrace) {
+          return res.status(200).json({ trace: null });
+        }
+        
+        const analysis = analyzeTrace(latestTrace);
+        res.status(200).json({ trace: latestTrace, analysis });
+      } else {
+        // Get all traces summary
+        const summary = inMemoryTraces.map(trace => ({
+          sessionId: trace.sessionId,
+          userAddress: trace.userAddress,
+          startTime: trace.startTime,
+          endTime: trace.endTime,
+          finalResult: trace.finalResult,
+          stepCount: trace.steps.length,
+          duration: trace.endTime ? 
+            new Date(trace.endTime).getTime() - new Date(trace.startTime).getTime() : null
+        }));
+        
+        res.status(200).json({ 
+          summary,
+          totalTraces: inMemoryTraces.length,
+          latestTrace: inMemoryTraces.slice(-1)[0]?.sessionId || null
+        });
+      }
+    } catch (error) {
+      res.status(500).json({ 
+        error: 'Failed to read traces', 
+        message: error instanceof Error ? error.message : 'Unknown error' 
+      });
+    }
+  } else {
+    res.status(405).json({ error: 'Method not allowed' });
+  }
+}
+
 // Flow trace persistence and retrieval
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  // For production/Vercel compatibility, use in-memory storage with fallback
+  const isProduction = process.env.NODE_ENV === 'production';
+  
+  if (isProduction) {
+    // In production, use simple in-memory storage (or integrate with your preferred DB)
+    return handleInMemoryStorage(req, res);
+  }
+  
+  // Development: use file system
   const logsDir = path.join(process.cwd(), 'logs');
   const tracesFile = path.join(logsDir, 'flow-traces.json');
 
