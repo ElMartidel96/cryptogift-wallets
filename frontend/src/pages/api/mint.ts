@@ -7,6 +7,35 @@ import { addMintLog } from "./debug/mint-logs";
 import { uploadMetadata } from "../../lib/ipfs";
 import { ethers } from "ethers";
 
+// Add flow tracking to API
+let currentFlowTrace: any = null;
+
+function addAPIStep(action: string, data?: any, result?: 'success' | 'error' | 'pending' | 'skipped') {
+  try {
+    // Simple server-side step tracking
+    const step = {
+      component: 'API_MINT',
+      action,
+      data,
+      result,
+      timestamp: new Date().toISOString()
+    };
+    
+    console.log(`🔍 API TRACE [API_MINT] ${action}:`, { result, data: data ? JSON.stringify(data).substring(0, 100) + '...' : 'none' });
+    addMintLog('INFO', `FLOW_TRACE_${action}`, step);
+  } catch (error) {
+    console.warn('Flow tracking failed:', error);
+  }
+}
+
+function addAPIDecision(condition: string, result: boolean, data?: any) {
+  addAPIStep('DECISION_POINT', { condition, conditionResult: result, ...data }, 'success');
+}
+
+function addAPIError(action: string, error: Error | string, data?: any) {
+  addAPIStep(action, { errorMessage: error instanceof Error ? error.message : error, ...data }, 'error');
+}
+
 // Helper function to upload metadata to IPFS using robust fallback strategy
 async function uploadMetadataToIPFS(metadata: any) {
   try {
@@ -165,11 +194,15 @@ async function mintNFTGasless(to: string, tokenURI: string, client: any) {
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   addMintLog('INFO', 'API_START', { timestamp: new Date().toISOString() });
+  addAPIStep('API_HANDLER_STARTED', { method: req.method, timestamp: new Date().toISOString() }, 'pending');
   
   if (req.method !== 'POST') {
     addMintLog('ERROR', 'INVALID_METHOD', { method: req.method });
+    addAPIError('INVALID_METHOD', `Method ${req.method} not allowed`, { method: req.method });
     return res.status(405).json({ error: 'Method not allowed' });
   }
+  
+  addAPIDecision('isMethodPOST', true, { method: req.method });
 
   try {
     const { to, imageFile, giftMessage, initialBalance, filter = "Original" } = req.body;
@@ -180,9 +213,31 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       initialBalance,
       filter 
     });
+    
+    addAPIStep('PARAMETERS_EXTRACTED', { 
+      to: to?.slice(0, 10) + "...", 
+      hasImageFile: !!imageFile, 
+      hasGiftMessage: !!giftMessage, 
+      initialBalance,
+      filter 
+    }, 'success');
 
-    if (!to || !imageFile || !giftMessage || !initialBalance) {
+    const hasRequiredParams = !!(to && imageFile && giftMessage && initialBalance);
+    addAPIDecision('hasAllRequiredParameters', hasRequiredParams, {
+      to: !!to,
+      imageFile: !!imageFile,
+      giftMessage: !!giftMessage,
+      initialBalance: !!initialBalance
+    });
+
+    if (!hasRequiredParams) {
       addMintLog('ERROR', 'MISSING_PARAMETERS', { 
+        missingTo: !to, 
+        missingImageFile: !imageFile, 
+        missingGiftMessage: !giftMessage, 
+        missingInitialBalance: !initialBalance 
+      });
+      addAPIError('MISSING_PARAMETERS', 'Required parameters missing', {
         missingTo: !to, 
         missingImageFile: !imageFile, 
         missingGiftMessage: !giftMessage, 
@@ -217,8 +272,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // Upload metadata to IPFS
     addMintLog('INFO', 'STEP_1_START', { message: 'Starting metadata upload to IPFS' });
+    addAPIStep('METADATA_UPLOAD_STARTED', { metadataSize: JSON.stringify(metadata).length }, 'pending');
     const metadataUri = await uploadMetadataToIPFS(metadata);
     addMintLog('SUCCESS', 'STEP_1_COMPLETE', { metadataUri });
+    addAPIStep('METADATA_UPLOAD_SUCCESS', { metadataUri }, 'success');
 
     let transactionHash: string;
     let tokenId: string;
@@ -226,45 +283,76 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // Step 2: Try GASLESS first (Biconomy), then fallback to user pays gas
     console.log("🔍 MINT DEBUG Step 2: Attempting GASLESS NFT mint FIRST");
+    addAPIStep('GASLESS_MINT_ATTEMPT_STARTED', { strategy: 'GASLESS_FIRST' }, 'pending');
+    
     try {
       // Check Biconomy config first
-      if (!validateBiconomyConfig()) {
+      addAPIStep('BICONOMY_CONFIG_CHECK', {}, 'pending');
+      const biconomyConfigValid = validateBiconomyConfig();
+      addAPIDecision('isBiconomyConfigValid', biconomyConfigValid, { configCheck: 'validateBiconomyConfig()' });
+      
+      if (!biconomyConfigValid) {
         throw new Error('Biconomy config validation failed');
       }
       console.log("✅ MINT DEBUG Step 2a SUCCESS: Biconomy config valid");
+      addAPIStep('BICONOMY_CONFIG_VALID', {}, 'success');
 
       console.log("🔍 MINT DEBUG Step 2b: Creating ThirdWeb client");
+      addAPIStep('THIRDWEB_CLIENT_CREATION', {}, 'pending');
       const client = createThirdwebClient({
         clientId: process.env.NEXT_PUBLIC_TW_CLIENT_ID!,
         secretKey: process.env.TW_SECRET_KEY!,
       });
       console.log("✅ MINT DEBUG Step 2b SUCCESS: ThirdWeb client created");
+      addAPIStep('THIRDWEB_CLIENT_CREATED', {}, 'success');
 
       console.log("🔍 MINT DEBUG Step 3: Executing gasless NFT mint", { to: to.slice(0, 10) + "..." });
+      addAPIStep('GASLESS_NFT_MINT_EXECUTION', { to: to.slice(0, 10) + "...", metadataUri }, 'pending');
       const gaslessResult = await mintNFTGasless(to, metadataUri, client);
       console.log("✅ MINT DEBUG Step 3 SUCCESS: Gasless mint executed", { 
         transactionHash: gaslessResult.transactionHash,
         blockNumber: gaslessResult.blockNumber 
       });
+      addAPIStep('GASLESS_NFT_MINT_SUCCESS', { 
+        transactionHash: gaslessResult.transactionHash,
+        blockNumber: gaslessResult.blockNumber 
+      }, 'success');
 
       transactionHash = gaslessResult.transactionHash;
       
       console.log("🔍 MINT DEBUG Step 4: Extracting token ID from receipt");
+      addAPIStep('TOKEN_ID_EXTRACTION', { transactionHash }, 'pending');
       tokenId = await getTokenIdFromReceipt(gaslessResult);
       console.log("✅ MINT DEBUG Step 4 SUCCESS: Token ID extracted", { tokenId });
+      addAPIStep('TOKEN_ID_EXTRACTED', { tokenId }, 'success');
       
       gasless = true;
       console.log("✅ MINT DEBUG: GASLESS mint completed successfully! 🎉");
+      addAPIDecision('isTransactionGasless', true, { 
+        transactionHash, 
+        tokenId,
+        gasless: true
+      });
       addMintLog('SUCCESS', 'GASLESS_MINT_SUCCESS', { 
         transactionHash, 
         tokenId,
         gasless: true
       });
+      addAPIStep('GASLESS_MINT_COMPLETE_SUCCESS', { 
+        transactionHash, 
+        tokenId,
+        gasless: true
+      }, 'success');
 
     } catch (gaslessError) {
       console.log("❌ GASLESS FAILED - NO MORE FALLBACKS");
       addMintLog('ERROR', 'GASLESS_MINT_FAILED', { 
         error: gaslessError.message,
+        stack: gaslessError.stack,
+        name: gaslessError.name
+      });
+      addAPIError('GASLESS_MINT_FAILED', gaslessError, {
+        errorType: 'GASLESS_FAILURE',
         stack: gaslessError.stack,
         name: gaslessError.name
       });
@@ -275,8 +363,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // Calculate TBA address
     addMintLog('INFO', 'STEP_5_START', { tokenId, message: 'Calculating TBA address' });
+    addAPIStep('TBA_ADDRESS_CALCULATION', { tokenId }, 'pending');
     const tbaAddress = await calculateTBAAddress(tokenId);
     addMintLog('SUCCESS', 'STEP_5_COMPLETE', { tbaAddress, tokenId });
+    addAPIStep('TBA_ADDRESS_CALCULATED', { tbaAddress, tokenId }, 'success');
 
     // Final success
     // Generate share URL and QR code for the NFT
@@ -297,6 +387,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     };
     
     addMintLog('SUCCESS', 'MINT_COMPLETE', finalResult);
+    addAPIStep('MINT_API_SUCCESS', finalResult, 'success');
 
     res.status(200).json({
       ...finalResult,
@@ -305,6 +396,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   } catch (error) {
     addMintLog('ERROR', 'MINT_API_ERROR', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined
+    });
+    addAPIError('MINT_API_ERROR', error, {
       error: error instanceof Error ? error.message : 'Unknown error',
       stack: error instanceof Error ? error.stack : undefined
     });

@@ -15,8 +15,20 @@ export const biconomyConfig = {
 // Create Biconomy Smart Account
 export async function createBiconomySmartAccount(privateKey: string) {
   try {
+    // Ensure private key has 0x prefix and is properly formatted
+    const formattedPrivateKey = privateKey.startsWith('0x') 
+      ? privateKey as `0x${string}`
+      : `0x${privateKey}` as `0x${string}`;
+    
+    console.log('🔍 Private key format check:', {
+      original: privateKey.substring(0, 10) + '...',
+      formatted: formattedPrivateKey.substring(0, 10) + '...',
+      hasPrefix: privateKey.startsWith('0x'),
+      length: privateKey.length
+    });
+    
     // Create EOA from private key
-    const account = privateKeyToAccount(privateKey as `0x${string}`);
+    const account = privateKeyToAccount(formattedPrivateKey);
     
     // Create wallet client
     const walletClient = createWalletClient({

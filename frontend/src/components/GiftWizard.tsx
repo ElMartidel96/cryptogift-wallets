@@ -14,6 +14,7 @@ import { CREATION_FEE_PERCENT } from '../lib/constants';
 import { CryptoGiftError, parseApiError, logError } from '../lib/errorHandler';
 import { ErrorModal } from './ErrorModal';
 import { GasEstimationModal } from './GasEstimationModal';
+import { startTrace, addStep, addDecision, addError, finishTrace } from '../lib/flowTracker';
 
 interface GiftWizardProps {
   isOpen: boolean;
@@ -115,19 +116,58 @@ export const GiftWizard: React.FC<GiftWizardProps> = ({ isOpen, onClose, referre
   };
 
   const handleMintGift = async () => {
-    if (!account) return;
+    if (!account) {
+      addError('GIFT_WIZARD', 'HANDLE_MINT_GIFT', 'No account connected');
+      return;
+    }
+    
+    // Start flow trace
+    const traceId = startTrace(account.address, {
+      amount: wizardData.amount,
+      filter: wizardData.selectedFilter,
+      referrer
+    });
+    
+    addStep('GIFT_WIZARD', 'MINT_GIFT_STARTED', {
+      traceId,
+      walletAddress: account.address,
+      amount: wizardData.amount,
+      netAmount,
+      referrer
+    }, 'pending');
     
     setCurrentStep(WizardStep.MINTING);
     setIsLoading(true);
     setError(null);
     
+    addStep('GIFT_WIZARD', 'WIZARD_STATE_SET', {
+      currentStep: 'MINTING',
+      isLoading: true
+    }, 'success');
+    
     // STEP 1: Try GASLESS FIRST (no user confirmation needed)
+    addStep('GIFT_WIZARD', 'GASLESS_ATTEMPT_DECISION', {
+      strategy: 'GASLESS_FIRST',
+      reason: 'User preference for free transactions'
+    }, 'pending');
+    
     console.log('🔄 Attempting GASLESS first...');
     
     try {
       await attemptGaslessMint();
     } catch (gaslessError) {
+      addError('GIFT_WIZARD', 'GASLESS_ATTEMPT_FAILED', gaslessError, {
+        errorType: 'GASLESS_FAILURE',
+        willShowGasModal: true
+      });
+      
       console.log('❌ Gasless failed, showing gas estimation modal');
+      
+      addDecision('GIFT_WIZARD', 'gaslessFailed', true, {
+        nextAction: 'SHOW_GAS_MODAL',
+        errorMessage: gaslessError instanceof Error ? gaslessError.message : gaslessError
+      });
+      
       // If gasless fails, THEN show gas modal
       setIsLoading(false);
       setCurrentStep(WizardStep.SUMMARY);
@@ -144,27 +184,31 @@ export const GiftWizard: React.FC<GiftWizardProps> = ({ isOpen, onClose, referre
         networkName: 'Base Sepolia'
       });
       
+      addStep('GIFT_WIZARD', 'GAS_MODAL_SHOWN', {
+        estimatedGas,
+        gasPrice,
+        totalCost,
+        networkName: 'Base Sepolia'
+      }, 'success');
+      
       setShowGasModal(true);
     }
   };
   
   const attemptGaslessMint = async () => {
-    // Log start of gasless attempt
-    try {
-      await fetch('/api/debug/mint-logs', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          level: 'INFO',
-          step: 'GASLESS_ATTEMPT_START',
-          data: { walletAddress: account.address, timestamp: new Date().toISOString() }
-        })
-      });
-    } catch (debugError) {
-      console.warn('Debug logging failed:', debugError);
-    }
+    addStep('GIFT_WIZARD', 'GASLESS_MINT_STARTED', {
+      walletAddress: account?.address,
+      imageFile: !!wizardData.imageFile,
+      message: wizardData.message || 'default',
+      amount: netAmount
+    }, 'pending');
 
     // Step 1: Upload image to IPFS
+    addStep('GIFT_WIZARD', 'IPFS_UPLOAD_STARTED', {
+      hasImageFile: !!wizardData.imageFile,
+      hasFilteredUrl: !!wizardData.filteredImageUrl
+    }, 'pending');
+
     const formData = new FormData();
     formData.append('file', wizardData.imageFile!);
     formData.append('filteredUrl', wizardData.filteredImageUrl);
@@ -175,12 +219,22 @@ export const GiftWizard: React.FC<GiftWizardProps> = ({ isOpen, onClose, referre
     });
 
     if (!uploadResponse.ok) {
+      addError('GIFT_WIZARD', 'IPFS_UPLOAD_FAILED', `Upload failed with status ${uploadResponse.status}`);
       throw new Error('Upload failed');
     }
 
     const { ipfsCid } = await uploadResponse.json();
+    addStep('GIFT_WIZARD', 'IPFS_UPLOAD_SUCCESS', { ipfsCid }, 'success');
 
     // Step 2: Try gasless mint using /api/mint (which tries gasless first)
+    addStep('GIFT_WIZARD', 'GASLESS_API_CALL_STARTED', {
+      endpoint: '/api/mint',
+      to: account?.address,
+      imageFile: ipfsCid,
+      initialBalance: netAmount,
+      filter: wizardData.selectedFilter || 'Original'
+    }, 'pending');
+
     const mintResponse = await fetch('/api/mint', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -194,17 +248,55 @@ export const GiftWizard: React.FC<GiftWizardProps> = ({ isOpen, onClose, referre
       }),
     });
 
+    addStep('GIFT_WIZARD', 'GASLESS_API_RESPONSE_RECEIVED', {
+      status: mintResponse.status,
+      statusText: mintResponse.statusText,
+      ok: mintResponse.ok
+    }, mintResponse.ok ? 'success' : 'error');
+
     if (!mintResponse.ok) {
       const errorData = await mintResponse.json().catch(() => ({}));
+      addError('GIFT_WIZARD', 'GASLESS_API_ERROR', errorData.message || 'API call failed', {
+        status: mintResponse.status,
+        errorData
+      });
       throw new Error(errorData.message || 'Gasless mint failed');
     }
 
-    const { tokenId, shareUrl, qrCode, gasless } = await mintResponse.json();
+    const mintResult = await mintResponse.json();
+    const { tokenId, shareUrl, qrCode, gasless, message } = mintResult;
+    
+    addStep('GIFT_WIZARD', 'GASLESS_API_RESPONSE_PARSED', {
+      tokenId,
+      hasShareUrl: !!shareUrl,
+      hasQrCode: !!qrCode,
+      gasless,
+      message,
+      fullResponse: mintResult
+    }, 'success');
+    
+    // CRITICAL DECISION POINT: Was it actually gasless?
+    addDecision('GIFT_WIZARD', 'isTransactionGasless', gasless, {
+      tokenId,
+      message,
+      apiSaysGasless: gasless
+    });
     
     // Only proceed if it was actually gasless
     if (!gasless) {
+      addError('GIFT_WIZARD', 'TRANSACTION_NOT_GASLESS', 'API returned gasless=false', {
+        tokenId,
+        message,
+        gaslessValue: gasless
+      });
       throw new Error('Transaction was not gasless');
     }
+    
+    addStep('GIFT_WIZARD', 'GASLESS_SUCCESS_CONFIRMED', {
+      tokenId,
+      shareUrl,
+      qrCode
+    }, 'success');
     
     setWizardData(prev => ({ 
       ...prev, 
@@ -214,8 +306,24 @@ export const GiftWizard: React.FC<GiftWizardProps> = ({ isOpen, onClose, referre
       wasGasless: true
     }));
     
+    addStep('GIFT_WIZARD', 'WIZARD_DATA_UPDATED', {
+      tokenId,
+      wasGasless: true
+    }, 'success');
+    
     setCurrentStep(WizardStep.SUCCESS);
     setIsLoading(false);
+    
+    finishTrace('success', {
+      tokenId,
+      wasGasless: true,
+      finalStep: 'SUCCESS'
+    });
+    
+    addStep('GIFT_WIZARD', 'GASLESS_FLOW_COMPLETED', {
+      tokenId,
+      currentStep: 'SUCCESS'
+    }, 'success');
   };
 
   const handleGasConfirm = async () => {
