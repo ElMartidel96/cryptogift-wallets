@@ -110,7 +110,7 @@ export const SwapModal: React.FC<SwapModalProps> = ({
     } finally {
       setIsLoading(false);
     }
-  }, [fromToken, toToken]);
+  }, [fromToken, toToken, availableBalance.eth, availableBalance.usdc, mockRates]);
 
   // Handle amount input
   useEffect(() => {
@@ -120,7 +120,7 @@ export const SwapModal: React.FC<SwapModalProps> = ({
       setQuote(null);
       setToAmount('');
     }
-  }, [fromAmount, fromToken, toToken]);
+  }, [fromAmount, fromToken, toToken, calculateQuote]);
 
   // Swap tokens
   const handleSwapTokens = () => {

@@ -66,10 +66,10 @@ export const TBAWalletInterface: React.FC<WalletInterfaceProps> = ({
     }
 
     loadWalletData();
-  }, [nftContract, tokenId, account]);
+  }, [nftContract, tokenId, account, loadWalletData]);
 
   // Security: Safe TBA address calculation with error handling
-  const calculateTBAAddress = async (): Promise<string> => {
+  const calculateTBAAddress = useCallback(async (): Promise<string> => {
     try {
       const REGISTRY_ADDRESS = "0x000000006551c19487814612e58FE06813775758";
       const IMPLEMENTATION_ADDRESS = "0x2d25602551487c3f3354dd80d76d54383a243358";
@@ -101,7 +101,7 @@ export const TBAWalletInterface: React.FC<WalletInterfaceProps> = ({
       console.error('Error calculating TBA address:', error);
       throw new Error('Failed to calculate wallet address');
     }
-  };
+  }, [nftContract, tokenId]);
 
   // Security: Protected data loading with error boundaries
   const loadWalletData = useCallback(async () => {
@@ -157,7 +157,7 @@ export const TBAWalletInterface: React.FC<WalletInterfaceProps> = ({
     } finally {
       setLoading(false);
     }
-  }, [nftContract, tokenId]);
+  }, [nftContract, tokenId, calculateTBAAddress]);
 
   // Security: Safe address formatting
   const formatAddress = (address: string): string => {
@@ -220,7 +220,8 @@ export const TBAWalletInterface: React.FC<WalletInterfaceProps> = ({
                 onError={(e) => {
                   // Fallback if logo not found
                   e.currentTarget.style.display = 'none';
-                  e.currentTarget.nextElementSibling.style.display = 'block';
+                  const nextEl = e.currentTarget.nextElementSibling as HTMLElement;
+                  if (nextEl) nextEl.style.display = 'block';
                 }}
               />
               <span className="text-orange-600 font-bold text-sm hidden">CG</span>
