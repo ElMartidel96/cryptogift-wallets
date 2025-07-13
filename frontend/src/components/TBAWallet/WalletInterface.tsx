@@ -50,6 +50,7 @@ export const TBAWalletInterface: React.FC<WalletInterfaceProps> = ({
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'assets' | 'activity' | 'swap' | 'settings'>('assets');
   const [error, setError] = useState<string | null>(null);
+  const [nftImageUrl, setNftImageUrl] = useState<string>('');
 
   // Security: Input validation
   useEffect(() => {
@@ -66,7 +67,8 @@ export const TBAWalletInterface: React.FC<WalletInterfaceProps> = ({
     }
 
     loadWalletData();
-  }, [nftContract, tokenId, account, loadWalletData]);
+    loadNFTImage();
+  }, [nftContract, tokenId, account, loadWalletData, loadNFTImage]);
 
   // Security: Safe TBA address calculation with error handling
   const calculateTBAAddress = useCallback(async (): Promise<string> => {
@@ -100,6 +102,39 @@ export const TBAWalletInterface: React.FC<WalletInterfaceProps> = ({
     } catch (error) {
       console.error('Error calculating TBA address:', error);
       throw new Error('Failed to calculate wallet address');
+    }
+  }, [nftContract, tokenId]);
+
+  // Load NFT image from contract metadata
+  const loadNFTImage = useCallback(async () => {
+    try {
+      const nftContract_instance = getContract({
+        client,
+        chain: baseSepolia,
+        address: nftContract,
+      });
+
+      // Get token URI
+      const tokenURI = await readContract({
+        contract: nftContract_instance,
+        method: "function tokenURI(uint256) view returns (string)",
+        params: [BigInt(tokenId)]
+      });
+
+      // Fetch metadata
+      const metadataResponse = await fetch(tokenURI);
+      const metadata = await metadataResponse.json();
+      
+      if (metadata.image) {
+        // Handle IPFS URLs
+        const imageUrl = metadata.image.startsWith('ipfs://') 
+          ? metadata.image.replace('ipfs://', 'https://nftstorage.link/ipfs/')
+          : metadata.image;
+        setNftImageUrl(imageUrl);
+      }
+    } catch (error) {
+      console.error('Error loading NFT image:', error);
+      setNftImageUrl('/images/nft-placeholder.png');
     }
   }, [nftContract, tokenId]);
 
@@ -210,9 +245,9 @@ export const TBAWalletInterface: React.FC<WalletInterfaceProps> = ({
       {/* Header - MetaMask Style */}
       <div className="bg-gradient-to-r from-orange-400 to-orange-600 text-white p-4">
         <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-3">
+            {/* CG Wallet Logo - ALWAYS FIXED for branding */}
             <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center relative">
-              {/* CG Wallet Logo - Replace with actual logo */}
               <img 
                 src="/images/cg-wallet-logo.png" 
                 alt="CG Wallet" 
@@ -226,9 +261,23 @@ export const TBAWalletInterface: React.FC<WalletInterfaceProps> = ({
               />
               <span className="text-orange-600 font-bold text-sm hidden">CG</span>
             </div>
+            
+            {/* NFT Preview - Shows user's NFT */}
+            <div className="w-10 h-10 rounded-lg overflow-hidden border-2 border-white border-opacity-30">
+              <img 
+                src={nftImageUrl || '/images/nft-placeholder.png'}
+                alt={`NFT #${tokenId}`}
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  // Fallback for NFT image
+                  e.currentTarget.src = '/images/nft-placeholder.png';
+                }}
+              />
+            </div>
+            
             <div>
               <h3 className="font-semibold">CG Wallet</h3>
-              <p className="text-xs opacity-90">Token #{tokenId}</p>
+              <p className="text-xs opacity-90">NFT #{tokenId}</p>
             </div>
           </div>
           {onClose && (
@@ -257,8 +306,23 @@ export const TBAWalletInterface: React.FC<WalletInterfaceProps> = ({
         </div>
       </div>
 
-      {/* Balance Display */}
-      <div className="p-4 bg-gray-50">
+      {/* NFT Display Section */}
+      <div className="p-4 bg-gradient-to-b from-gray-50 to-white">
+        <div className="text-center mb-4">
+          <div className="w-24 h-24 mx-auto rounded-xl overflow-hidden shadow-lg border-2 border-orange-200">
+            <img 
+              src={nftImageUrl || '/images/nft-placeholder.png'}
+              alt={`Your NFT #${tokenId}`}
+              className="w-full h-full object-cover"
+              onError={(e) => {
+                e.currentTarget.src = '/images/nft-placeholder.png';
+              }}
+            />
+          </div>
+          <p className="text-xs text-gray-500 mt-2">Your NFT-Wallet</p>
+        </div>
+        
+        {/* Balance Display */}
         <div className="text-center">
           <div className="text-3xl font-bold text-gray-800">
             ${(parseFloat(walletData?.balance.usdc || '0') * 1.0).toFixed(2)}
