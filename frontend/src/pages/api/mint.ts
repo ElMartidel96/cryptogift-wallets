@@ -262,30 +262,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
 
     } catch (gaslessError) {
-      console.log("❌ GASLESS FAILED, trying FALLBACK to user-paid gas");
+      console.log("❌ GASLESS FAILED - NO MORE FALLBACKS");
       addMintLog('ERROR', 'GASLESS_MINT_FAILED', { 
         error: gaslessError.message,
         stack: gaslessError.stack,
         name: gaslessError.name
       });
       
-      // Fallback to user pays gas (simulation for now)
-      console.log("🔍 FALLBACK: User will pay gas (~$0.01-0.05)");
-      addMintLog('INFO', 'STEP_FALLBACK_TO_USER_GAS', { message: 'Fallback to user-paid gas' });
-      
-      // Generate realistic transaction hash and token ID for fallback
-      const timestamp = Date.now();
-      transactionHash = `0x${timestamp.toString(16).padStart(64, '0')}`;
-      tokenId = (timestamp % 1000000).toString();
-      gasless = false;
-      
-      addMintLog('SUCCESS', 'FALLBACK_SIMULATION_COMPLETE', { 
-        transactionHash, 
-        tokenId,
-        gasless: false,
-        note: 'Fallback to user-paid gas (simulation for testing)'
-      });
-      console.log("✅ FALLBACK SUCCESS: User-paid gas simulation completed");
+      // NO SIMULATION - Just throw the error
+      throw new Error(`Gasless transaction failed: ${gaslessError.message}. Please try again or use gas-paid transaction.`);
     }
 
     // Calculate TBA address

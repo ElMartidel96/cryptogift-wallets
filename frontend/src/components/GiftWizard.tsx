@@ -117,24 +117,24 @@ export const GiftWizard: React.FC<GiftWizardProps> = ({ isOpen, onClose, referre
   const handleMintGift = async () => {
     if (!account) return;
     
+    setCurrentStep(WizardStep.MINTING);
+    setIsLoading(true);
+    setError(null);
+    
+    // STEP 1: Try GASLESS FIRST (no user confirmation needed)
+    console.log('🔄 Attempting GASLESS first...');
+    
     try {
-      // Estimate gas for the transaction
-      setIsLoading(true);
+      await attemptGaslessMint();
+    } catch (gaslessError) {
+      console.log('❌ Gasless failed, showing gas estimation modal');
+      // If gasless fails, THEN show gas modal
+      setIsLoading(false);
+      setCurrentStep(WizardStep.SUMMARY);
       
-      // Create contract instance for gas estimation
-      const client = createThirdwebClient({
-        clientId: process.env.NEXT_PUBLIC_TW_CLIENT_ID!,
-      });
-      
-      const contract = getContract({
-        client,
-        chain: baseSepolia,
-        address: process.env.NEXT_PUBLIC_NFT_DROP_ADDRESS!,
-      });
-      
-      // Estimate gas for mint transaction
-      const estimatedGas = "150000"; // Base estimate for NFT mint
-      const gasPrice = "0.1"; // gwei on Base Sepolia
+      // Estimate gas for fallback
+      const estimatedGas = "150000";
+      const gasPrice = "0.1";
       const totalCost = (parseInt(estimatedGas) * parseFloat(gasPrice) * 1e-9).toFixed(6);
       
       setGasEstimation({
@@ -144,14 +144,78 @@ export const GiftWizard: React.FC<GiftWizardProps> = ({ isOpen, onClose, referre
         networkName: 'Base Sepolia'
       });
       
-      setIsLoading(false);
-      setShowGasModal(true);
-    } catch (error) {
-      setIsLoading(false);
-      console.error('Gas estimation failed:', error);
-      // Show modal with default values
       setShowGasModal(true);
     }
+  };
+  
+  const attemptGaslessMint = async () => {
+    // Log start of gasless attempt
+    try {
+      await fetch('/api/debug/mint-logs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          level: 'INFO',
+          step: 'GASLESS_ATTEMPT_START',
+          data: { walletAddress: account.address, timestamp: new Date().toISOString() }
+        })
+      });
+    } catch (debugError) {
+      console.warn('Debug logging failed:', debugError);
+    }
+
+    // Step 1: Upload image to IPFS
+    const formData = new FormData();
+    formData.append('file', wizardData.imageFile!);
+    formData.append('filteredUrl', wizardData.filteredImageUrl);
+    
+    const uploadResponse = await fetch('/api/upload', {
+      method: 'POST',
+      body: formData,
+    });
+
+    if (!uploadResponse.ok) {
+      throw new Error('Upload failed');
+    }
+
+    const { ipfsCid } = await uploadResponse.json();
+
+    // Step 2: Try gasless mint using /api/mint (which tries gasless first)
+    const mintResponse = await fetch('/api/mint', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        to: account?.address,
+        imageFile: ipfsCid,
+        giftMessage: wizardData.message || 'Un regalo cripto único creado con amor',
+        initialBalance: netAmount,
+        filter: wizardData.selectedFilter || 'Original',
+        referrer: referrer
+      }),
+    });
+
+    if (!mintResponse.ok) {
+      const errorData = await mintResponse.json().catch(() => ({}));
+      throw new Error(errorData.message || 'Gasless mint failed');
+    }
+
+    const { tokenId, shareUrl, qrCode, gasless } = await mintResponse.json();
+    
+    // Only proceed if it was actually gasless
+    if (!gasless) {
+      throw new Error('Transaction was not gasless');
+    }
+    
+    setWizardData(prev => ({ 
+      ...prev, 
+      nftTokenId: tokenId,
+      shareUrl,
+      qrCode,
+      wasGasless: true
+    }));
+    
+    setCurrentStep(WizardStep.SUCCESS);
+    setIsLoading(false);
   };
 
   const handleGasConfirm = async () => {
@@ -332,8 +396,9 @@ export const GiftWizard: React.FC<GiftWizardProps> = ({ isOpen, onClose, referre
             </p>
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 max-w-md mx-auto">
               <p className="text-sm text-blue-700">
-                🔄 <strong>Intentando gasless primero</strong> (gratis)<br/>
-                💰 Si falla → fallback a gas normal (~$0.01)
+                🔄 <strong>Intentando transacción gasless</strong> (gratis)<br/>
+                ⚡ Biconomy paymaster procesando...<br/>
+                💰 Si falla → te pediremos pagar gas (~$0.01)
               </p>
             </div>
           </div>

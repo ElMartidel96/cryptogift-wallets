@@ -31,9 +31,9 @@ export const GasEstimationModal: React.FC<GasEstimationModalProps> = ({
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-xl shadow-2xl w-96 max-w-90vw overflow-hidden">
         {/* Header */}
-        <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-4">
+        <div className="bg-gradient-to-r from-orange-500 to-orange-600 text-white p-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold">⛽ Gas Fee Estimation</h3>
+            <h3 className="text-lg font-semibold">⚠️ Gasless Failed - Gas Required</h3>
             <button
               onClick={onClose}
               className="text-white hover:text-gray-200 text-xl"
@@ -46,8 +46,12 @@ export const GasEstimationModal: React.FC<GasEstimationModalProps> = ({
         {/* Content */}
         <div className="p-6 space-y-4">
           {/* Gas Details */}
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <h4 className="font-semibold text-blue-800 mb-3">💡 Transaction Details</h4>
+          <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+            <h4 className="font-semibold text-orange-800 mb-2">⚠️ Gasless Transaction Failed</h4>
+            <p className="text-sm text-orange-700 mb-3">
+              The paymaster couldn&apos;t sponsor this transaction. You&apos;ll need to pay a small gas fee to proceed.
+            </p>
+            <h4 className="font-semibold text-orange-800 mb-3">💡 Transaction Details</h4>
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
                 <span className="text-gray-600">Network:</span>
