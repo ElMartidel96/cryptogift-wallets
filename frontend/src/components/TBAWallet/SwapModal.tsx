@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { ethers } from 'ethers';
 
 interface SwapModalProps {
@@ -41,10 +41,10 @@ export const SwapModal: React.FC<SwapModalProps> = ({
   const [slippage, setSlippage] = useState('1.0');
 
   // Mock exchange rates (in production, fetch from 0x API)
-  const mockRates = {
+  const mockRates = useMemo(() => ({
     'ETH-USDC': 3000,
     'USDC-ETH': 1 / 3000
-  };
+  }), []);
 
   // Security: Input validation
   const validateAmount = (amount: string, balance: string): boolean => {

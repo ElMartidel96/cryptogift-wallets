@@ -52,23 +52,7 @@ export const TBAWalletInterface: React.FC<WalletInterfaceProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [nftImageUrl, setNftImageUrl] = useState<string>('');
 
-  // Security: Input validation
-  useEffect(() => {
-    if (!nftContract || !tokenId) {
-      setError('Invalid NFT contract or token ID');
-      setLoading(false);
-      return;
-    }
-    
-    if (!ethers.isAddress(nftContract)) {
-      setError('Invalid contract address format');
-      setLoading(false);
-      return;
-    }
-
-    loadWalletData();
-    loadNFTImage();
-  }, [nftContract, tokenId, account, loadWalletData, loadNFTImage]);
+  // Security: Input validation - moved after function declarations
 
   // Security: Safe TBA address calculation with error handling
   const calculateTBAAddress = useCallback(async (): Promise<string> => {
@@ -210,6 +194,24 @@ export const TBAWalletInterface: React.FC<WalletInterfaceProps> = ({
       return '0.00';
     }
   };
+
+  // Security: Input validation useEffect
+  useEffect(() => {
+    if (!nftContract || !tokenId) {
+      setError('Invalid NFT contract or token ID');
+      setLoading(false);
+      return;
+    }
+    
+    if (!ethers.isAddress(nftContract)) {
+      setError('Invalid contract address format');
+      setLoading(false);
+      return;
+    }
+
+    loadWalletData();
+    loadNFTImage();
+  }, [nftContract, tokenId, account, loadWalletData, loadNFTImage]);
 
   if (loading) {
     return (
