@@ -80,7 +80,7 @@ export const GasEstimationModal: React.FC<GasEstimationModalProps> = ({
               <li>• A Token Bound Account wallet will be created</li>
               <li>• Metadata will be stored on IPFS permanently</li>
               <li>• Transaction will be recorded on blockchain</li>
-              <li>• You'll receive a shareable link and QR code</li>
+              <li>• You&apos;ll receive a shareable link and QR code</li>
             </ul>
           </div>
 
@@ -89,7 +89,7 @@ export const GasEstimationModal: React.FC<GasEstimationModalProps> = ({
             <h4 className="font-semibold text-yellow-800 mb-2">⚠️ Important Notice:</h4>
             <p className="text-sm text-yellow-700">
               This is a real blockchain transaction on Base Sepolia testnet. 
-              You'll need testnet ETH to pay for gas. This transaction cannot be reversed once confirmed.
+              You&apos;ll need testnet ETH to pay for gas. This transaction cannot be reversed once confirmed.
             </p>
           </div>
 

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { ethers } from 'ethers';
 
 interface SwapModalProps {
@@ -58,7 +58,7 @@ export const SwapModal: React.FC<SwapModalProps> = ({
   };
 
   // Calculate swap quote
-  const calculateQuote = async (amount: string) => {
+  const calculateQuote = useCallback(async (amount: string) => {
     if (!amount || parseFloat(amount) <= 0) {
       setQuote(null);
       setToAmount('');
@@ -110,7 +110,7 @@ export const SwapModal: React.FC<SwapModalProps> = ({
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [fromToken, toToken]);
 
   // Handle amount input
   useEffect(() => {

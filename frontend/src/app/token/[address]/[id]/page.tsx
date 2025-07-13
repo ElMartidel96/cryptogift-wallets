@@ -230,7 +230,7 @@ export default function TokenPage() {
                               className="w-full bg-gradient-to-r from-orange-500 to-orange-600 text-white py-3 px-6 rounded-lg hover:from-orange-600 hover:to-orange-700 transition-all duration-200 font-medium flex items-center justify-center space-x-2"
                             >
                               <span className="text-lg">💎</span>
-                              <span>Open MetaMask-Style Wallet</span>
+                              <span>Open CG Wallet</span>
                               <span className="text-xs bg-white bg-opacity-20 px-2 py-1 rounded">NEW</span>
                             </button>
                             <p className="text-xs text-gray-500 text-center mt-2">

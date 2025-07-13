@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useActiveAccount } from 'thirdweb/react';
 import { createThirdwebClient, getContract, readContract } from 'thirdweb';
 import { baseSepolia } from 'thirdweb/chains';
@@ -104,7 +104,7 @@ export const TBAWalletInterface: React.FC<WalletInterfaceProps> = ({
   };
 
   // Security: Protected data loading with error boundaries
-  const loadWalletData = async () => {
+  const loadWalletData = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -157,7 +157,7 @@ export const TBAWalletInterface: React.FC<WalletInterfaceProps> = ({
     } finally {
       setLoading(false);
     }
-  };
+  }, [nftContract, tokenId]);
 
   // Security: Safe address formatting
   const formatAddress = (address: string): string => {
@@ -211,11 +211,22 @@ export const TBAWalletInterface: React.FC<WalletInterfaceProps> = ({
       <div className="bg-gradient-to-r from-orange-400 to-orange-600 text-white p-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center">
-              <span className="text-orange-600 font-bold text-sm">TBA</span>
+            <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center relative">
+              {/* CG Wallet Logo - Replace with actual logo */}
+              <img 
+                src="/images/cg-wallet-logo.png" 
+                alt="CG Wallet" 
+                className="w-6 h-6 object-contain"
+                onError={(e) => {
+                  // Fallback if logo not found
+                  e.currentTarget.style.display = 'none';
+                  e.currentTarget.nextElementSibling.style.display = 'block';
+                }}
+              />
+              <span className="text-orange-600 font-bold text-sm hidden">CG</span>
             </div>
             <div>
-              <h3 className="font-semibold">NFT Wallet</h3>
+              <h3 className="font-semibold">CG Wallet</h3>
               <p className="text-xs opacity-90">Token #{tokenId}</p>
             </div>
           </div>
