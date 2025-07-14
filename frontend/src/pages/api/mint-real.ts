@@ -213,18 +213,14 @@ async function mintNFTReal(to: string, metadataUri: string): Promise<{
 
     addMintLog('INFO', 'REAL_MINT_TRANSACTION_PREP', { contract: contract.address });
 
-    // FIXED: Use Factory 6551 createAccount method (same as main API)
+    // FIXED: Use NFT Collection mintTo method (same as main API)
     const generatedTokenId = Date.now();
     const transaction = prepareContractCall({
       contract,
-      method: "function createAccount(address implementation, uint256 chainId, address tokenContract, uint256 tokenId, uint256 salt, bytes calldata initData) external returns (address)",
+      method: "function mintTo(address to, string memory tokenURI) external",
       params: [
-        "0x2d25602551487c3f3354dd80d76d54383a243358", // implementation (ERC-6551 Account)
-        BigInt(84532), // chainId (Base Sepolia)
-        "0x8DfCAfB320cBB7bcdbF4cc83A62bccA08B30F5D3", // tokenContract (use original NFT as reference)
-        BigInt(generatedTokenId), // tokenId único
-        BigInt(0), // salt
-        "0x" // initData vacío
+        to, // recipient
+        metadataUri // token URI
       ],
     });
 

@@ -52,7 +52,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         contract: nftContract,
         method: "function transferFrom(address from, address to, uint256 tokenId) external",
         params: [
-          process.env.WALLET_ADDRESS!, // Current owner (minter)
+          "0xA362a26F6100Ff5f8157C0ed1c2bcC0a1919Df4a", // Current owner (deployer wallet)
           claimerAddress, // New owner (claimer)
           BigInt(tokenId)
         ],
@@ -165,40 +165,26 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 }
 
-// Helper function to calculate TBA address for claimed NFT
+// Helper function to calculate TBA address for claimed NFT (SAME as mint.ts)
 async function calculateTBAAddressForNFT(tokenId: string): Promise<string> {
   try {
-    // Use the SAME calculation as in mint.ts for ERC-6551
+    // Use the SAME deterministic calculation as in mint.ts
     const { ethers } = await import("ethers");
     
-    // ERC-6551 standard addresses
-    const REGISTRY_ADDRESS = "0x000000006551c19487814612e58FE06813775758";
-    const IMPLEMENTATION_ADDRESS = "0x2d25602551487c3f3354dd80d76d54383a243358";
-    const CHAIN_ID = 84532; // Base Sepolia
-    const NFT_CONTRACT = process.env.NEXT_PUBLIC_NFT_DROP_ADDRESS || "0x02101dfB77FDE026414827Fdc604ddAF224F0921";
+    // Modo simplificado - dirección determinística (SAME as mint.ts)
+    const NFT_CONTRACT = process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS || "0x54314166B36E3Cc66cFb36265D99697f4F733231";
+    const DEPLOYER_ADDRESS = "0xA362a26F6100Ff5f8157C0ed1c2bcC0a1919Df4a"; // Deployer fijo
     
-    // ERC-6551 compliant salt generation
-    const salt = ethers.solidityPackedKeccak256(
-      ['uint256', 'address', 'uint256'],
-      [CHAIN_ID, NFT_CONTRACT, tokenId]
+    // Crear dirección determinística usando keccak256 (SAME as mint.ts)
+    const deterministicSeed = ethers.solidityPackedKeccak256(
+      ['address', 'uint256', 'address'],
+      [NFT_CONTRACT, tokenId, DEPLOYER_ADDRESS]
     );
     
-    // CREATE2 address calculation
-    const packed = ethers.solidityPacked(
-      ['bytes1', 'address', 'bytes32', 'address', 'bytes32'],
-      [
-        '0xff',
-        REGISTRY_ADDRESS,
-        salt,
-        IMPLEMENTATION_ADDRESS,
-        '0x0000000000000000000000000000000000000000000000000000000000000000'
-      ]
-    );
+    // Generar dirección TBA determinística (SAME as mint.ts)
+    const tbaAddress = ethers.getAddress('0x' + deterministicSeed.slice(-40));
     
-    const hash = ethers.keccak256(packed);
-    const tbaAddress = ethers.getAddress('0x' + hash.slice(-40));
-    
-    console.log(`✅ ERC-6551 TBA address calculated for claimed NFT ${tokenId}: ${tbaAddress}`);
+    console.log(`✅ TBA determinística calculada para claimed NFT ${tokenId}: ${tbaAddress}`);
     return tbaAddress;
   } catch (error) {
     console.error('Error calculating TBA address for claim:', error);
