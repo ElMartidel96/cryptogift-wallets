@@ -180,14 +180,14 @@ async function mintNFTGasless(to: string, tokenURI: string, client: any) {
 
     // Use proper thirdweb v5 syntax for prepareContractCall - UPDATED METHOD
     console.log("🔍 GASLESS MINT Step 3d: Preparing contract call");
-    // FIXED: Use Token Drop claim method for playerTOKEN gasless
+    // FIXED: Use NFT Collection mintTo method for classic contract
     const generatedTokenId = Date.now();
     const mintTransaction = prepareContractCall({
       contract: nftContract,
-      method: "function claim(address to, uint256 quantity) public",
+      method: "function mintTo(address to, string memory tokenURI) external",
       params: [
         to, // recipient
-        BigInt(1) // quantity (1 NFT)
+        tokenURI // token URI
       ],
     });
     console.log("✅ GASLESS MINT Step 3d SUCCESS: Contract call prepared");
@@ -394,15 +394,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         address: CRYPTOGIFT_NFT_CONTRACT,
       });
       
-      // Mint NFT usando el método correcto para Token Drop (playerTOKEN)
-      console.log("🔍 Usando método claim de Token Drop (playerTOKEN)...");
+      // Mint NFT usando el método correcto para NFT Collection (contract clásico)
+      console.log("🔍 Usando método mintTo de NFT Collection (contract clásico)...");
       generatedTokenId = Date.now(); // Generate token ID for gas-paid transaction
       var nftTransaction = prepareContractCall({
         contract: cryptoGiftNFTContract,
-        method: "function claim(address to, uint256 quantity) public",
+        method: "function mintTo(address to, string memory tokenURI) external",
         params: [
           to, // recipient
-          BigInt(1) // quantity (1 NFT)
+          metadataUri // token URI
         ],
       });
       
