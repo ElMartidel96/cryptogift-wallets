@@ -329,7 +329,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           setTimeout(() => reject(new Error('Gasless timeout - falling back to gas-paid')), 15000) // 15s timeout
         );
         
-        const gaslessResult = await Promise.race([gaslessPromise, timeoutPromise]);
+        const gaslessResult = await Promise.race([gaslessPromise, timeoutPromise]) as {
+          success: boolean;
+          transactionHash: string;
+          blockNumber: number;
+          gasless: boolean;
+        };
         
         transactionHash = gaslessResult.transactionHash;
         tokenId = Date.now().toString();
