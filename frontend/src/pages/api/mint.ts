@@ -180,18 +180,14 @@ async function mintNFTGasless(to: string, tokenURI: string, client: any) {
 
     // Use proper thirdweb v5 syntax for prepareContractCall - UPDATED METHOD
     console.log("🔍 GASLESS MINT Step 3d: Preparing contract call");
-    // FIXED: Use Factory 6551 createAccount method for gasless
+    // FIXED: Use Token Drop claim method for playerTOKEN gasless
     const generatedTokenId = Date.now();
     const mintTransaction = prepareContractCall({
       contract: nftContract,
-      method: "function createAccount(address implementation, uint256 chainId, address tokenContract, uint256 tokenId, uint256 salt, bytes calldata initData) external returns (address)",
+      method: "function claim(address to, uint256 quantity) public",
       params: [
-        "0x2d25602551487c3f3354dd80d76d54383a243358", // implementation (ERC-6551 Account)
-        BigInt(84532), // chainId (Base Sepolia)
-        "0x8DfCAfB320cBB7bcdbF4cc83A62bccA08B30F5D3", // tokenContract (use original NFT as reference)
-        BigInt(generatedTokenId), // tokenId único
-        BigInt(0), // salt
-        "0x" // initData vacío
+        to, // recipient
+        BigInt(1) // quantity (1 NFT)
       ],
     });
     console.log("✅ GASLESS MINT Step 3d SUCCESS: Contract call prepared");
@@ -398,15 +394,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         address: CRYPTOGIFT_NFT_CONTRACT,
       });
       
-      // Mint NFT usando el método clásico del NFT Collection
-      console.log("🔍 Usando método mintTo de NFT Collection clásico...");
+      // Mint NFT usando el método correcto para Token Drop (playerTOKEN)
+      console.log("🔍 Usando método claim de Token Drop (playerTOKEN)...");
       generatedTokenId = Date.now(); // Generate token ID for gas-paid transaction
       var nftTransaction = prepareContractCall({
         contract: cryptoGiftNFTContract,
-        method: "function mintTo(address to, string memory uri) public returns (uint256)",
+        method: "function claim(address to, uint256 quantity) public",
         params: [
           to, // recipient
-          metadataUri // metadata URI
+          BigInt(1) // quantity (1 NFT)
         ],
       });
       
