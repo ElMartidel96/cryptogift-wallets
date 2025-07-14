@@ -207,7 +207,7 @@ export const ClaimInterface: React.FC<ClaimInterfaceProps> = ({
             <div>
               <p className="font-medium">¡Regalo reclamado exitosamente!</p>
               <p className="text-sm mt-1">
-                {claimResult.claim?.gasless ? 'Transacción sin gas completada' : 'Simulación completada'}
+                {claimResult.claim?.gasless ? 'Transacción gratuita completada' : 'Transacción blockchain completada'}
               </p>
               {claimResult.nft?.tbaAddress && (
                 <p className="text-xs mt-1 font-mono">

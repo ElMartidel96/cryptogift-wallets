@@ -85,13 +85,15 @@ export default function TokenPage() {
 
     setIsLoading(true);
     try {
-      const response = await fetch('/api/claim', {
+      const response = await fetch('/api/claim-nft', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           contractAddress,
           tokenId,
-          to: account?.address,
+          claimerAddress: account?.address,
+          setupGuardians: false,
+          guardianEmails: []
         }),
       });
 

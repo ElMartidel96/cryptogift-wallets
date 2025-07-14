@@ -71,16 +71,51 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       console.log(`✅ Gasless NFT claim successful: tokenId=${tokenId}, tx=${claimTxResult.transactionHash}`);
 
     } catch (gaslessError) {
-      console.warn('Gasless claim failed, using fallback:', gaslessError);
+      console.warn('Gasless claim failed, using gas-paid fallback:', gaslessError);
       
-      // Fallback to simulation for now
-      claimResult = {
-        success: true,
-        gasless: false,
-        transactionHash: `0x${Date.now().toString(16).padStart(64, '0')}`,
-        blockNumber: Math.floor(Date.now() / 15000), // Simulate block number
-        warning: 'Gasless claim failed, using simulation mode'
-      };
+      // FALLBACK: Real gas-paid transaction
+      try {
+        console.log("🔍 FALLBACK: Using gas-paid transferFrom");
+        
+        // Create deployer account for gas-paid transaction
+        const { privateKeyToAccount } = await import("thirdweb/wallets");
+        const account = privateKeyToAccount({
+          client,
+          privateKey: process.env.PRIVATE_KEY_DEPLOY!,
+        });
+
+        // Prepare transfer transaction
+        const transferTransaction = prepareContractCall({
+          contract: nftContract,
+          method: "function transferFrom(address from, address to, uint256 tokenId) external",
+          params: [
+            account.address, // Current owner (our deployer)
+            claimerAddress, // New owner (claimer)
+            BigInt(tokenId)
+          ],
+        });
+
+        // Send gas-paid transaction
+        const { sendTransaction } = await import("thirdweb");
+        const result = await sendTransaction({
+          transaction: transferTransaction,
+          account,
+        });
+
+        claimResult = {
+          success: true,
+          gasless: false,
+          transactionHash: result.transactionHash,
+          blockNumber: 0, // Will be filled when mined
+          message: 'NFT claimed with gas-paid transaction'
+        };
+
+        console.log(`✅ Gas-paid NFT claim successful: tokenId=${tokenId}, tx=${result.transactionHash}`);
+
+      } catch (fallbackError) {
+        console.error('Both gasless and gas-paid claim failed:', fallbackError);
+        throw new Error(`Claim failed: ${fallbackError.message}`);
+      }
     }
 
     // Setup guardians if requested
@@ -133,11 +168,37 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 // Helper function to calculate TBA address for claimed NFT
 async function calculateTBAAddressForNFT(tokenId: string): Promise<string> {
   try {
-    // Use the same calculation as in mint.ts
-    const addressSuffix = tokenId.padStart(40, '0').slice(-40);
-    const tbaAddress = `0x${addressSuffix}`;
+    // Use the SAME calculation as in mint.ts for ERC-6551
+    const { ethers } = await import("ethers");
     
-    console.log(`TBA address calculated for claimed NFT ${tokenId}: ${tbaAddress}`);
+    // ERC-6551 standard addresses
+    const REGISTRY_ADDRESS = "0x000000006551c19487814612e58FE06813775758";
+    const IMPLEMENTATION_ADDRESS = "0x2d25602551487c3f3354dd80d76d54383a243358";
+    const CHAIN_ID = 84532; // Base Sepolia
+    const NFT_CONTRACT = process.env.NEXT_PUBLIC_NFT_DROP_ADDRESS || "0x02101dfB77FDE026414827Fdc604ddAF224F0921";
+    
+    // ERC-6551 compliant salt generation
+    const salt = ethers.solidityPackedKeccak256(
+      ['uint256', 'address', 'uint256'],
+      [CHAIN_ID, NFT_CONTRACT, tokenId]
+    );
+    
+    // CREATE2 address calculation
+    const packed = ethers.solidityPacked(
+      ['bytes1', 'address', 'bytes32', 'address', 'bytes32'],
+      [
+        '0xff',
+        REGISTRY_ADDRESS,
+        salt,
+        IMPLEMENTATION_ADDRESS,
+        '0x0000000000000000000000000000000000000000000000000000000000000000'
+      ]
+    );
+    
+    const hash = ethers.keccak256(packed);
+    const tbaAddress = ethers.getAddress('0x' + hash.slice(-40));
+    
+    console.log(`✅ ERC-6551 TBA address calculated for claimed NFT ${tokenId}: ${tbaAddress}`);
     return tbaAddress;
   } catch (error) {
     console.error('Error calculating TBA address for claim:', error);

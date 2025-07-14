@@ -23,8 +23,8 @@ export const AmountSelector: React.FC<AmountSelectorProps> = ({
   const [customAmount, setCustomAmount] = useState('');
   const [showCustom, setShowCustom] = useState(false);
 
-  const presetAmounts = [25, 50, 100, 250, 500];
-  const minAmount = 5;
+  const presetAmounts = [0, 25, 50, 100, 250, 500]; // Added $0 for testing
+  const minAmount = 0; // TESTING: Allow $0 for testing
   const maxAmount = 10000;
 
   const handlePresetSelect = (preset: number) => {

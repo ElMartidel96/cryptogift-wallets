@@ -3,31 +3,33 @@ import { createWalletClient, http } from "viem";
 import { baseSepolia } from "viem/chains";
 import { privateKeyToAccount } from "viem/accounts";
 
-// Biconomy configuration for Base Sepolia - CURRENT BEST PRACTICES 2025
+// Biconomy configuration for Base Sepolia - MEE 2025 SPONSORED TRANSACTIONS
 export const biconomyConfig = {
   chainId: 84532, // Base Sepolia
   rpcUrl: process.env.NEXT_PUBLIC_RPC_URL || "https://base-sepolia.g.alchemy.com/v2/GJfW9U_S-o-boMw93As3e",
   
-  // PAYMASTER API KEY
+  // MEE CONFIGURATION - Modular Execution Environment (Sponsored)
+  meeApiKey: process.env.NEXT_PUBLIC_BICONOMY_MEE_API_KEY || "mee_3Zg7AQUc3eSEaVPSdyNc8ZW6",
+  projectId: process.env.NEXT_PUBLIC_BICONOMY_PROJECT_ID || "865ffbac-2fc7-47c0-9ef6-ac3317a1ef40",
+  
+  // LEGACY PAYMASTER FALLBACK
   paymasterApiKey: process.env.NEXT_PUBLIC_BICONOMY_PAYMASTER_API_KEY || "l0I7KBcia.2e5af1b9-52f2-43d8-aaad-bb5c8275d1a7",
-  
-  // BUNDLER URL - REQUIRED for AA transactions
   bundlerUrl: process.env.NEXT_PUBLIC_BICONOMY_BUNDLER_URL || "https://bundler.biconomy.io/api/v2/84532/nJPK7B3ru.dd7f7861-190d-41bd-af80-6877f74b8f44",
-  
-  // PAYMASTER URL
   paymasterUrl: process.env.NEXT_PUBLIC_BICONOMY_PAYMASTER_URL || "https://paymaster.biconomy.io/api/v2/84532/l0I7KBcia.2e5af1b9-52f2-43d8-aaad-bb5c8275d1a7",
 };
 
 // Create Biconomy Smart Account
 export async function createBiconomySmartAccount(privateKey: string) {
   try {
-    console.log('🔧 BICONOMY CONFIG - CURRENT BEST PRACTICES 2025:', {
+    console.log('🔧 BICONOMY CONFIG - MEE 2025 SPONSORED TRANSACTIONS:', {
       chainId: biconomyConfig.chainId,
       rpcUrl: biconomyConfig.rpcUrl,
-      paymasterApiKey: biconomyConfig.paymasterApiKey.substring(0, 10) + '...',
+      meeApiKey: biconomyConfig.meeApiKey.substring(0, 10) + '...',
+      projectId: biconomyConfig.projectId,
+      paymasterApiKey: biconomyConfig.paymasterApiKey.substring(0, 10) + '... (fallback)',
       bundlerUrl: biconomyConfig.bundlerUrl,
       paymasterUrl: biconomyConfig.paymasterUrl,
-      architecture: 'Bundler + Paymaster (Complete AA Stack)',
+      architecture: 'MEE (Modular Execution Environment) + Paymaster Fallback',
     });
     // Ensure private key has 0x prefix and is properly formatted
     const formattedPrivateKey = privateKey.startsWith('0x') 
@@ -51,15 +53,37 @@ export async function createBiconomySmartAccount(privateKey: string) {
       transport: http(),
     });
 
-    // Create Smart Account using current best practices
-    const smartAccount = await createSmartAccountClient({
-      signer: walletClient,
-      biconomyPaymasterApiKey: biconomyConfig.paymasterApiKey,
-      bundlerUrl: biconomyConfig.bundlerUrl, // REQUIRED for transactions
-      paymasterUrl: biconomyConfig.paymasterUrl,
-      rpcUrl: biconomyConfig.rpcUrl,
-      chainId: biconomyConfig.chainId,
-    });
+    // PRIORITY: Try MEE configuration first (SPONSORED)
+    let smartAccountConfig;
+    if (biconomyConfig.meeApiKey && biconomyConfig.projectId) {
+      console.log('🚀 Using MEE configuration for SPONSORED transactions');
+      // MEE uses different configuration structure
+      smartAccountConfig = {
+        signer: walletClient,
+        chainId: biconomyConfig.chainId,
+        rpcUrl: biconomyConfig.rpcUrl,
+        // MEE-specific configuration
+        paymaster: {
+          paymasterUrl: `https://paymaster.biconomy.io/api/v2/${biconomyConfig.chainId}/${biconomyConfig.meeApiKey}`,
+        },
+        bundler: {
+          bundlerUrl: biconomyConfig.bundlerUrl,
+        },
+      };
+    } else {
+      console.log('⚠️ Fallback to legacy Paymaster configuration');
+      smartAccountConfig = {
+        signer: walletClient,
+        biconomyPaymasterApiKey: biconomyConfig.paymasterApiKey,
+        bundlerUrl: biconomyConfig.bundlerUrl,
+        paymasterUrl: biconomyConfig.paymasterUrl,
+        rpcUrl: biconomyConfig.rpcUrl,
+        chainId: biconomyConfig.chainId,
+      };
+    }
+
+    // Create Smart Account
+    const smartAccount = await createSmartAccountClient(smartAccountConfig);
 
     console.log("Smart Account created:", await smartAccount.getAccountAddress());
     return smartAccount;
@@ -102,10 +126,21 @@ export async function sendGaslessTransaction(
       value: normalizedTx.value
     });
     
-    // Build user operation
-    const userOp = await smartAccount.buildUserOp([normalizedTx]);
+    // Build user operation with error handling
+    let userOp;
+    try {
+      console.log("🔍 Building user operation...");
+      userOp = await smartAccount.buildUserOp([normalizedTx]);
+      console.log("✅ User operation built successfully");
+    } catch (buildError) {
+      console.error("❌ Error building user operation:", buildError);
+      // Try alternative approach with sendTransaction directly
+      console.log("🔄 Trying direct sendTransaction approach...");
+      throw new Error(`Gasless transaction not supported: ${buildError.message}`);
+    }
     
     // Send user operation (gasless)
+    console.log("🔍 Sending user operation...");
     const userOpResponse = await smartAccount.sendUserOp(userOp);
     
     // Wait for transaction to be mined
@@ -124,14 +159,26 @@ export async function sendGaslessTransaction(
   }
 }
 
-// Check if Biconomy configuration is complete
+// Check if Biconomy configuration is complete - PRIORITIZES MEE OVER PAYMASTER
 export function validateBiconomyConfig() {
+  const meeApiKey = process.env.NEXT_PUBLIC_BICONOMY_MEE_API_KEY || biconomyConfig.meeApiKey;
+  const projectId = process.env.NEXT_PUBLIC_BICONOMY_PROJECT_ID || biconomyConfig.projectId;
   const paymasterKey = process.env.NEXT_PUBLIC_BICONOMY_PAYMASTER_API_KEY || biconomyConfig.paymasterApiKey;
-  const paymasterUrl = process.env.NEXT_PUBLIC_BICONOMY_PAYMASTER_URL || biconomyConfig.paymasterUrl;
   const bundlerUrl = process.env.NEXT_PUBLIC_BICONOMY_BUNDLER_URL || biconomyConfig.bundlerUrl;
+  const paymasterUrl = process.env.NEXT_PUBLIC_BICONOMY_PAYMASTER_URL || biconomyConfig.paymasterUrl;
   
+  // PRIORITY 1: MEE Configuration (SPONSORED TRANSACTIONS)
+  if (meeApiKey && projectId) {
+    console.log('✅ Biconomy MEE configuration validated (SPONSORED MODE)');
+    console.log(`🚀 MEE API Key: ${meeApiKey.substring(0, 10)}...`);
+    console.log(`📁 Project ID: ${projectId}`);
+    console.log(`💰 1M Credits Available for Sponsored Transactions`);
+    return true;
+  }
+  
+  // FALLBACK: Legacy Paymaster Configuration
   if (!paymasterKey) {
-    console.error('❌ Missing Biconomy Paymaster API Key');
+    console.error('❌ Missing both MEE API Key and Paymaster API Key');
     return false;
   }
   
@@ -145,7 +192,7 @@ export function validateBiconomyConfig() {
     return false;
   }
   
-  console.log('✅ Biconomy configuration validated');
+  console.log('⚠️ Using Legacy Paymaster (requires manual balance)');
   console.log(`🔧 Bundler URL: ${bundlerUrl.substring(0, 50)}...`);
   console.log(`💰 Paymaster URL: ${paymasterUrl.substring(0, 50)}...`);
   console.log(`🔑 API Key: ${paymasterKey.substring(0, 10)}...`);

@@ -213,11 +213,19 @@ async function mintNFTReal(to: string, metadataUri: string): Promise<{
 
     addMintLog('INFO', 'REAL_MINT_TRANSACTION_PREP', { contract: contract.address });
 
-    // Prepare the mint transaction - UPDATED METHOD SIGNATURE
+    // FIXED: Use Factory 6551 createAccount method (same as main API)
+    const generatedTokenId = Date.now();
     const transaction = prepareContractCall({
       contract,
-      method: "function mint(address to, string memory uri) public",
-      params: [to, metadataUri],
+      method: "function createAccount(address implementation, uint256 chainId, address tokenContract, uint256 tokenId, uint256 salt, bytes calldata initData) external returns (address)",
+      params: [
+        "0x2d25602551487c3f3354dd80d76d54383a243358", // implementation (ERC-6551 Account)
+        84532, // chainId (Base Sepolia)
+        "0x8DfCAfB320cBB7bcdbF4cc83A62bccA08B30F5D3", // tokenContract (use original NFT as reference)
+        generatedTokenId, // tokenId único
+        0, // salt
+        "0x" // initData vacío
+      ],
     });
 
     addMintLog('INFO', 'REAL_MINT_SENDING_TRANSACTION', { to: to.slice(0, 10) + '...' });
@@ -232,9 +240,8 @@ async function mintNFTReal(to: string, metadataUri: string): Promise<{
       transactionHash: result.transactionHash
     });
 
-    // Extract token ID from transaction receipt
-    // In a real implementation, you'd parse the Transfer event
-    const tokenId = Date.now().toString(); // Simplified for now
+    // Use the same token ID that was generated above
+    const tokenId = generatedTokenId.toString();
 
     return {
       transactionHash: result.transactionHash,
@@ -299,7 +306,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       throw new MintError('Gift message is required', 'INVALID_MESSAGE', 'VALIDATION');
     }
 
-    if (!initialBalance || typeof initialBalance !== 'number' || initialBalance <= 0) {
+    if (typeof initialBalance !== 'number' || initialBalance < 0) {
       throw new MintError('Invalid initial balance', 'INVALID_BALANCE', 'VALIDATION');
     }
 

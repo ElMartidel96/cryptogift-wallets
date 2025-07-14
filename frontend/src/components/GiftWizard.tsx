@@ -367,14 +367,14 @@ export const GiftWizard: React.FC<GiftWizardProps> = ({ isOpen, onClose, referre
 
       // Step 2: Mint NFT with GAS PAYMENT (user confirmed to pay gas)
       addStep('GIFT_WIZARD', 'GAS_PAID_MINT_STARTED', {
-        endpoint: '/api/mint-real',
+        endpoint: '/api/mint',
         to: account?.address,
         imageFile: ipfsCid,
         initialBalance: netAmount,
         filter: wizardData.selectedFilter || 'Original'
       }, 'pending');
 
-      const mintResponse = await fetch('/api/mint-real', {
+      const mintResponse = await fetch('/api/mint', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
