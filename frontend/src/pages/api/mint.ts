@@ -2,7 +2,7 @@ import { NextApiRequest, NextApiResponse } from "next";
 import { createThirdwebClient, getContract, prepareContractCall, sendTransaction } from "thirdweb";
 import { baseSepolia } from "thirdweb/chains";
 import { privateKeyToAccount } from "thirdweb/wallets";
-import { createBiconomySmartAccount, sendGaslessTransaction, validateBiconomyConfig } from "../../lib/biconomy";
+import { createBiconomySmartAccount, sendGaslessTransaction, validateBiconomyConfig, isGaslessAvailable } from "../../lib/biconomy";
 import { addMintLog } from "./debug/mint-logs";
 import { uploadMetadata } from "../../lib/ipfs";
 import { ethers } from "ethers";
@@ -306,37 +306,53 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     let gasless = false;
     let generatedTokenId: number;
 
-    // GASLESS RE-ENABLED: Contract now works with Factory 6551!
-    console.log("🚀 GASLESS RE-ENABLED - Contract Factory 6551 confirmed working");
-    addAPIStep('GASLESS_ENABLED', { reason: 'Factory 6551 contract confirmed working' }, 'success');
+    // PERFORMANCE OPTIMIZED: Fast gasless detection
+    const gaslessAvailable = isGaslessAvailable();
+    console.log(`🚀 FAST GASLESS CHECK: ${gaslessAvailable ? 'Available' : 'Not Available'}`);
+    addAPIStep('GASLESS_FAST_CHECK', { available: gaslessAvailable }, gaslessAvailable ? 'success' : 'skipped');
     
-    // TRY GASLESS FIRST with working Factory 6551
-    try {
-      console.log("🔍 GASLESS MINT: Attempting gasless transaction with Factory 6551");
-      addAPIStep('GASLESS_ATTEMPT', { strategy: 'FACTORY_6551_GASLESS' }, 'pending');
-      
-      // Create client for gasless
-      const client = createThirdwebClient({
-        clientId: process.env.NEXT_PUBLIC_TW_CLIENT_ID!,
-        secretKey: process.env.TW_SECRET_KEY!,
-      });
-      
-      const gaslessResult = await mintNFTGasless(to, metadataUri, client);
-      
-      transactionHash = gaslessResult.transactionHash;
-      tokenId = Date.now().toString();
-      gasless = true;
-      
-      console.log("✅ GASLESS SUCCESS!", { transactionHash, tokenId });
-      addAPIStep('GASLESS_SUCCESS', { transactionHash, tokenId }, 'success');
-      
-    } catch (gaslessError) {
-      console.log("⚠️ GASLESS FAILED, falling back to gas-paid:", gaslessError.message);
-      addAPIStep('GASLESS_FAILED', { error: gaslessError.message }, 'error');
-      
-      // FALLBACK: Direct gas-paid transaction
+    // TRY GASLESS FIRST - Only if fast check passes
+    if (gaslessAvailable) {
+      try {
+        console.log("🔍 GASLESS MINT: Attempting gasless transaction");
+        addAPIStep('GASLESS_ATTEMPT', { strategy: 'OPTIMIZED_GASLESS' }, 'pending');
+        
+        // Create client for gasless (reuse if possible)
+        const client = createThirdwebClient({
+          clientId: process.env.NEXT_PUBLIC_TW_CLIENT_ID!,
+          secretKey: process.env.TW_SECRET_KEY!,
+        });
+        
+        // Set shorter timeout for gasless attempt
+        const gaslessPromise = mintNFTGasless(to, metadataUri, client);
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Gasless timeout - falling back to gas-paid')), 15000) // 15s timeout
+        );
+        
+        const gaslessResult = await Promise.race([gaslessPromise, timeoutPromise]);
+        
+        transactionHash = gaslessResult.transactionHash;
+        tokenId = Date.now().toString();
+        gasless = true;
+        
+        console.log("✅ GASLESS SUCCESS!", { transactionHash, tokenId });
+        addAPIStep('GASLESS_SUCCESS', { transactionHash, tokenId }, 'success');
+        
+      } catch (gaslessError) {
+        console.log("⚠️ GASLESS FAILED (fast fallback):", gaslessError.message);
+        addAPIStep('GASLESS_FAILED', { error: gaslessError.message }, 'error');
+        
+        // Fast fallback - don't wait
+      }
+    } else {
+      console.log("⚡ SKIPPING GASLESS: Fast check failed");
+      addAPIStep('GASLESS_SKIPPED', { reason: 'Fast validation failed' }, 'skipped');
+    }
+    
+    // FALLBACK: Direct gas-paid transaction (if gasless failed or skipped)
+    if (!gasless) {
       console.log("🔍 FALLBACK: Direct gas-paid transaction");
-      addAPIStep('DIRECT_GAS_PAID_ATTEMPT', { strategy: 'FALLBACK_AFTER_GASLESS_FAIL' }, 'pending');
+      addAPIStep('DIRECT_GAS_PAID_ATTEMPT', { strategy: 'FAST_FALLBACK' }, 'pending');
       
       try {
       console.log("🔍 MINT DEBUG: Creating ThirdWeb client");

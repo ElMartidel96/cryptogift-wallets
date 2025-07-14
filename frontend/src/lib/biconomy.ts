@@ -159,7 +159,8 @@ export async function sendGaslessTransaction(
   }
 }
 
-// Check if Biconomy configuration is complete - PRIORITIZES MEE OVER PAYMASTER
+// Check if Biconomy configuration is complete - PRIORITIZES MEE OVER PAYMASTER  
+// OPTIMIZED: Fast validation for better gasless detection speed
 export function validateBiconomyConfig() {
   const meeApiKey = process.env.NEXT_PUBLIC_BICONOMY_MEE_API_KEY || biconomyConfig.meeApiKey;
   const projectId = process.env.NEXT_PUBLIC_BICONOMY_PROJECT_ID || biconomyConfig.projectId;
@@ -167,35 +168,26 @@ export function validateBiconomyConfig() {
   const bundlerUrl = process.env.NEXT_PUBLIC_BICONOMY_BUNDLER_URL || biconomyConfig.bundlerUrl;
   const paymasterUrl = process.env.NEXT_PUBLIC_BICONOMY_PAYMASTER_URL || biconomyConfig.paymasterUrl;
   
+  // FAST VALIDATION: Check environment first
+  const isValidConfig = (meeApiKey && projectId) || (paymasterKey && bundlerUrl && paymasterUrl);
+  
+  if (!isValidConfig) {
+    console.error('❌ No valid Biconomy configuration found');
+    return false;
+  }
+  
   // PRIORITY 1: MEE Configuration (SPONSORED TRANSACTIONS)
   if (meeApiKey && projectId) {
-    console.log('✅ Biconomy MEE configuration validated (SPONSORED MODE)');
-    console.log(`🚀 MEE API Key: ${meeApiKey.substring(0, 10)}...`);
-    console.log(`📁 Project ID: ${projectId}`);
-    console.log(`💰 1M Credits Available for Sponsored Transactions`);
+    console.log('✅ Fast MEE validation passed');
     return true;
   }
   
   // FALLBACK: Legacy Paymaster Configuration
-  if (!paymasterKey) {
-    console.error('❌ Missing both MEE API Key and Paymaster API Key');
-    return false;
-  }
-  
-  if (!bundlerUrl) {
-    console.error('❌ Missing Biconomy Bundler URL');
-    return false;
-  }
-  
-  if (!paymasterUrl) {
-    console.error('❌ Missing Biconomy Paymaster URL');
-    return false;
-  }
-  
-  console.log('⚠️ Using Legacy Paymaster (requires manual balance)');
-  console.log(`🔧 Bundler URL: ${bundlerUrl.substring(0, 50)}...`);
-  console.log(`💰 Paymaster URL: ${paymasterUrl.substring(0, 50)}...`);
-  console.log(`🔑 API Key: ${paymasterKey.substring(0, 10)}...`);
-  
+  console.log('⚠️ Fast Paymaster validation passed');
   return true;
+}
+
+// PERFORMANCE: Fast gasless availability check (no network calls)
+export function isGaslessAvailable(): boolean {
+  return validateBiconomyConfig();
 }

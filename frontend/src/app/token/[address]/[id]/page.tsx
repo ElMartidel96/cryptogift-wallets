@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useActiveAccount, ConnectButton } from 'thirdweb/react';
@@ -12,6 +12,7 @@ import { TBAWalletContainer } from '../../../../components/TBAWallet';
 
 export default function TokenPage() {
   const params = useParams();
+  const searchParams = useSearchParams();
   const [mounted, setMounted] = useState(false);
   const account = useActiveAccount();
   const [nftData, setNftData] = useState<any>(null);
@@ -80,6 +81,14 @@ export default function TokenPage() {
     }
   }, [account, nftData, checkOwnership]);
 
+  // Auto-open wallet if URL parameter is present
+  useEffect(() => {
+    const walletParam = searchParams?.get('wallet');
+    if (walletParam === 'open' && isOwner && account) {
+      setShowTBAWallet(true);
+    }
+  }, [searchParams, isOwner, account]);
+
   const handleClaim = async () => {
     if (!mounted || !account) return;
 
@@ -104,6 +113,12 @@ export default function TokenPage() {
       // Reload data after successful claim
       await loadNFTData();
       setIsOwner(true);
+      
+      // AUTO-LAUNCH: Open wallet interface after successful claim
+      setTimeout(() => {
+        setShowTBAWallet(true);
+      }, 1500); // Small delay to let the success message show
+      
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to claim NFT');
     } finally {
@@ -248,6 +263,7 @@ export default function TokenPage() {
                           claimerAddress={account?.address || ''}
                           isLoading={isLoading}
                           error={error}
+                          onWalletOpen={() => setShowTBAWallet(true)}
                         />
                       )}
                     </div>

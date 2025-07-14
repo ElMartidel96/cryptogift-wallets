@@ -1,4 +1,4 @@
-import { NFTStorage } from 'nft.storage';
+// import { NFTStorage } from 'nft.storage'; // Temporarily disabled due to v3.4.0 module issues
 import { upload } from "thirdweb/storage";
 import { createThirdwebClient } from "thirdweb";
 
@@ -27,10 +27,8 @@ console.log('🔧 ThirdWeb client initialized:', {
   clientIdPreview: process.env.NEXT_PUBLIC_TW_CLIENT_ID?.substring(0, 8) + '...'
 });
 
-// NFT.Storage client (free, permanent storage)
-const nftStorageClient = process.env.NFT_STORAGE_API_KEY 
-  ? new NFTStorage({ token: process.env.NFT_STORAGE_API_KEY })
-  : null;
+// NFT.Storage client (temporarily disabled due to v3.4.0 module issues)
+const nftStorageClient = null; // process.env.NFT_STORAGE_API_KEY ? new NFTStorage({ token: process.env.NFT_STORAGE_API_KEY }) : null;
 
 // Upload providers priority order
 const UPLOAD_PROVIDERS = {

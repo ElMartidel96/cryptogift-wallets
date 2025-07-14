@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
+import Image from 'next/image';
 import { useActiveAccount } from 'thirdweb/react';
 import { createThirdwebClient, getContract, readContract } from 'thirdweb';
 import { baseSepolia } from 'thirdweb/chains';
@@ -250,10 +251,12 @@ export const TBAWalletInterface: React.FC<WalletInterfaceProps> = ({
           <div className="flex items-center space-x-3">
             {/* CG Wallet Logo - ALWAYS FIXED for branding */}
             <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center relative">
-              <img 
+              <Image 
                 src="/images/cg-wallet-logo.png" 
                 alt="CG Wallet" 
-                className="w-6 h-6 object-contain"
+                width={24}
+                height={24}
+                className="object-contain"
                 onError={(e) => {
                   // Fallback if logo not found
                   e.currentTarget.style.display = 'none';
@@ -266,10 +269,12 @@ export const TBAWalletInterface: React.FC<WalletInterfaceProps> = ({
             
             {/* NFT Preview - Shows user's NFT */}
             <div className="w-10 h-10 rounded-lg overflow-hidden border-2 border-white border-opacity-30">
-              <img 
+              <Image 
                 src={nftImageUrl || '/images/nft-placeholder.png'}
                 alt={`NFT #${tokenId}`}
-                className="w-full h-full object-cover"
+                width={40}
+                height={40}
+                className="object-cover"
                 onError={(e) => {
                   // Fallback for NFT image
                   e.currentTarget.src = '/images/nft-placeholder.png';
@@ -312,10 +317,12 @@ export const TBAWalletInterface: React.FC<WalletInterfaceProps> = ({
       <div className="p-4 bg-gradient-to-b from-gray-50 to-white">
         <div className="text-center mb-4">
           <div className="w-24 h-24 mx-auto rounded-xl overflow-hidden shadow-lg border-2 border-orange-200">
-            <img 
+            <Image 
               src={nftImageUrl || '/images/nft-placeholder.png'}
               alt={`Your NFT #${tokenId}`}
-              className="w-full h-full object-cover"
+              width={96}
+              height={96}
+              className="object-cover"
               onError={(e) => {
                 e.currentTarget.src = '/images/nft-placeholder.png';
               }}

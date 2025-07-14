@@ -11,6 +11,7 @@ interface ClaimInterfaceProps {
   isLoading: boolean;
   error: string | null;
   onClaimSuccess?: (result: any) => void;
+  onWalletOpen?: () => void; // Callback to open wallet after guardian setup
 }
 
 export const ClaimInterface: React.FC<ClaimInterfaceProps> = ({
@@ -20,7 +21,8 @@ export const ClaimInterface: React.FC<ClaimInterfaceProps> = ({
   claimerAddress,
   isLoading: externalLoading,
   error: externalError,
-  onClaimSuccess
+  onClaimSuccess,
+  onWalletOpen
 }) => {
   const [showGuardianSetup, setShowGuardianSetup] = useState(false);
   const [guardians, setGuardians] = useState(['', '', '']);
@@ -103,6 +105,12 @@ export const ClaimInterface: React.FC<ClaimInterfaceProps> = ({
       
       if (result.success && result.guardians?.success) {
         console.log('✅ Guardians configured successfully');
+        // Auto-open wallet after guardian setup
+        setTimeout(() => {
+          if (onWalletOpen) {
+            onWalletOpen();
+          }
+        }, 1000); // Small delay to show success
       } else {
         console.warn('Guardian setup had issues:', result.guardians);
       }
@@ -270,7 +278,15 @@ export const ClaimInterface: React.FC<ClaimInterfaceProps> = ({
 
           <div className="flex gap-3">
             <button
-              onClick={() => setShowGuardianSetup(false)}
+              onClick={() => {
+                setShowGuardianSetup(false);
+                // Auto-open wallet when skipping guardian setup
+                setTimeout(() => {
+                  if (onWalletOpen) {
+                    onWalletOpen();
+                  }
+                }, 500);
+              }}
               className="flex-1 py-3 border border-gray-300 rounded-lg font-medium hover:bg-gray-50 transition-colors"
             >
               Ahora No
@@ -301,7 +317,7 @@ export const ClaimInterface: React.FC<ClaimInterfaceProps> = ({
           
           <div className="flex gap-3">
             <Link
-              href={`/wallet/${claimResult?.nft?.tbaAddress || claimerAddress}`}
+              href={`/token/${contractAddress}/${tokenId}?wallet=open`}
               className="flex-1 py-3 bg-gradient-to-r from-green-500 to-blue-500 text-white rounded-lg font-medium hover:from-green-600 hover:to-blue-600 transition-all text-center"
             >
               Ver Mi Wallet

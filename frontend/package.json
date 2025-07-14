@@ -22,7 +22,7 @@
     "formidable": "^3.5.4",
     "jspdf": "^3.0.1",
     "next": "15.3.5",
-    "nft.storage": "^7.2.0",
+    "nft.storage": "^3.4.0",
     "qrcode": "^1.5.4",
     "qrcode.react": "^4.2.0",
     "react": "^18.3.1",

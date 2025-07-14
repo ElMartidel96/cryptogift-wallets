@@ -45,8 +45,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         params: [BigInt(tokenId)],
       });
       console.log("✅ Token URI found:", tokenURI);
+      
+      // Handle IPFS URLs
+      if (tokenURI.startsWith("ipfs://")) {
+        tokenURI = tokenURI.replace("ipfs://", "https://nftstorage.link/ipfs/");
+      }
     } catch (tokenURIError) {
       console.log("⚠️ No tokenURI found, using Factory approach");
+      console.log("Contract:", contractAddress, "TokenId:", tokenId);
       // For Factory 6551 contracts, we need to construct metadata differently
       // The token was created via createAccount, so metadata should be in our system
     }
@@ -69,7 +75,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       id: tokenId,
       name: `CryptoGift NFT-Wallet #${tokenId}`,
       description: "Un regalo cripto único con wallet integrada ERC-6551. Contiene criptomonedas reales que puedes usar inmediatamente.",
-      image: "https://ipfs.io/ipfs/bafkreid5283bf31e9e50dfcb42b3eb821c722441b4b2ed3efb3f1ef08", // Default image from our uploads
+      image: "/images/cg-wallet-placeholder.png", // Better fallback image
       attributes: [
         {
           trait_type: "Initial Balance",
@@ -91,22 +97,34 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     };
 
     // If we have a tokenURI, try to fetch metadata
-    if (tokenURI && tokenURI.startsWith("https://")) {
+    if (tokenURI && (tokenURI.startsWith("https://") || tokenURI.startsWith("http://"))) {
       try {
-        const metadataResponse = await fetch(tokenURI);
+        console.log("🔍 Fetching metadata from:", tokenURI);
+        const metadataResponse = await fetch(tokenURI, {
+          timeout: 10000 // 10 second timeout
+        });
         if (metadataResponse.ok) {
           const metadata = await metadataResponse.json();
+          console.log("✅ Raw metadata from IPFS:", metadata);
+          
+          // Handle image URLs
+          let imageUrl = metadata.image || nft.image;
+          if (imageUrl && imageUrl.startsWith("ipfs://")) {
+            imageUrl = imageUrl.replace("ipfs://", "https://nftstorage.link/ipfs/");
+          }
+          
           nft = {
             id: tokenId,
             name: metadata.name || nft.name,
             description: metadata.description || nft.description,
-            image: metadata.image || nft.image,
+            image: imageUrl,
             attributes: metadata.attributes || nft.attributes
           };
-          console.log("✅ Metadata loaded from IPFS:", metadata);
+          console.log("✅ Processed NFT data:", { name: nft.name, image: nft.image });
         }
       } catch (metadataError) {
-        console.log("⚠️ Failed to load metadata from IPFS, using defaults");
+        console.log("⚠️ Failed to load metadata from IPFS:", metadataError.message);
+        console.log("Using defaults for token", tokenId);
       }
     }
     
