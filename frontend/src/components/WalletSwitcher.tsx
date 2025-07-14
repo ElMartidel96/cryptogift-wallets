@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from 'react';
+import Image from 'next/image';
 import { useActiveWallet } from '../hooks/useActiveWallet';
 import { TBAWalletContainer } from './TBAWallet';
 
@@ -43,9 +44,11 @@ export const WalletSwitcher: React.FC<WalletSwitcherProps> = ({
           {/* Wallet Icon */}
           <div className="w-8 h-8 rounded-full flex items-center justify-center bg-gray-100">
             {walletType === 'TBA' ? (
-              <img 
+              <Image 
                 src={tbaWallet?.image || '/images/nft-placeholder.png'}
                 alt="TBA Wallet"
+                width={24}
+                height={24}
                 className="w-6 h-6 rounded-full object-cover"
                 onError={(e) => {
                   e.currentTarget.src = '/images/nft-placeholder.png';
@@ -127,9 +130,11 @@ export const WalletSwitcher: React.FC<WalletSwitcherProps> = ({
                     }`}
                   >
                     <div className="w-8 h-8 rounded-full overflow-hidden border border-gray-200">
-                      <img 
+                      <Image 
                         src={tbaWallet.image}
                         alt="TBA Wallet"
+                        width={32}
+                        height={32}
                         className="w-full h-full object-cover"
                         onError={(e) => {
                           e.currentTarget.src = '/images/nft-placeholder.png';

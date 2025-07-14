@@ -1,6 +1,8 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import Link from 'next/link';
+import Image from 'next/image';
 import { useActiveAccount, ConnectButton } from 'thirdweb/react';
 import { client } from '../client';
 import { TBAWalletContainer } from '../../components/TBAWallet';
@@ -34,14 +36,7 @@ export default function MyWalletsPage() {
     setMounted(true);
   }, []);
 
-  // Load user's wallets
-  useEffect(() => {
-    if (account?.address) {
-      loadUserWallets();
-    }
-  }, [account]);
-
-  const loadUserWallets = async () => {
+  const loadUserWallets = useCallback(async () => {
     if (!account?.address) return;
     
     setIsLoading(true);
@@ -73,7 +68,14 @@ export default function MyWalletsPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [account]);
+
+  // Load user's wallets
+  useEffect(() => {
+    if (account?.address) {
+      loadUserWallets();
+    }
+  }, [account, loadUserWallets]);
 
   const handleWalletSelect = (wallet: UserWallet) => {
     setSelectedWallet(wallet);
@@ -153,12 +155,12 @@ export default function MyWalletsPage() {
                 <p className="text-gray-600 mb-6">
                   Crea o recibe tu primer CryptoGift para empezar
                 </p>
-                <a
+                <Link
                   href="/"
                   className="inline-block px-6 py-3 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
                 >
                   Crear Mi Primer Regalo
-                </a>
+                </Link>
               </div>
             ) : (
               <div className="grid gap-4">
@@ -175,9 +177,11 @@ export default function MyWalletsPage() {
                       <div className="flex items-center space-x-4">
                         {/* NFT Image */}
                         <div className="w-12 h-12 rounded-lg overflow-hidden border-2 border-orange-200">
-                          <img
+                          <Image
                             src={wallet.image}
                             alt={wallet.name}
+                            width={48}
+                            height={48}
                             className="w-full h-full object-cover"
                             onError={(e) => {
                               e.currentTarget.src = '/images/nft-placeholder.png';
@@ -270,12 +274,12 @@ export default function MyWalletsPage() {
           <div className="bg-white rounded-2xl shadow-xl p-6">
             <h3 className="text-xl font-bold text-gray-800 mb-4">Acciones Rápidas</h3>
             <div className="flex flex-wrap justify-center gap-4">
-              <a
+              <Link
                 href="/"
                 className="px-6 py-3 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
               >
                 🎁 Crear Nuevo Regalo
-              </a>
+              </Link>
               <a
                 href="/knowledge"
                 className="px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
