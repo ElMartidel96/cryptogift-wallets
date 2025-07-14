@@ -28,12 +28,12 @@ export const GasEstimationModal: React.FC<GasEstimationModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-xl shadow-2xl w-96 max-w-90vw overflow-hidden">
-        {/* Header */}
-        <div className="bg-gradient-to-r from-orange-500 to-orange-600 text-white p-4">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-md max-h-[90vh] flex flex-col overflow-hidden">
+        {/* Header - Fixed */}
+        <div className="bg-gradient-to-r from-orange-500 to-orange-600 text-white p-3">
           <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold">⚠️ Gasless Failed - Gas Required</h3>
+            <h3 className="text-base font-semibold">⚠️ Gas Required</h3>
             <button
               onClick={onClose}
               className="text-white hover:text-gray-200 text-xl"
@@ -43,92 +43,73 @@ export const GasEstimationModal: React.FC<GasEstimationModalProps> = ({
           </div>
         </div>
 
-        {/* Content */}
-        <div className="p-6 space-y-4">
-          {/* Gas Details */}
-          <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
-            <h4 className="font-semibold text-orange-800 mb-2">⚠️ Gasless Transaction Failed</h4>
-            <p className="text-sm text-orange-700 mb-3">
-              The paymaster couldn&apos;t sponsor this transaction. You&apos;ll need to pay a small gas fee to proceed.
+        {/* Content - Scrollable */}
+        <div className="flex-1 overflow-y-auto p-4 space-y-3">
+          {/* Gas Details - Compact */}
+          <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
+            <p className="text-sm text-orange-700 mb-2">
+              Gasless failed. You&apos;ll pay a small gas fee (~$0.04).
             </p>
-            <h4 className="font-semibold text-orange-800 mb-3">💡 Transaction Details</h4>
-            <div className="space-y-2 text-sm">
-              <div className="flex justify-between">
+            <div className="grid grid-cols-2 gap-2 text-xs">
+              <div>
                 <span className="text-gray-600">Network:</span>
-                <span className="font-medium">{networkName}</span>
+                <div className="font-medium">{networkName}</div>
               </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Estimated Gas:</span>
-                <span className="font-medium">{estimatedGas} gas units</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Gas Price:</span>
-                <span className="font-medium">{gasPrice} gwei</span>
-              </div>
-              <div className="flex justify-between border-t pt-2">
-                <span className="text-gray-800 font-semibold">Total Cost:</span>
-                <span className="font-bold text-blue-600">{totalCost} ETH</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">USD Equivalent:</span>
-                <span className="text-gray-600">~${(parseFloat(totalCost) * 3000).toFixed(2)}</span>
+              <div>
+                <span className="text-gray-600">Cost:</span>
+                <div className="font-bold text-blue-600">{totalCost} ETH</div>
               </div>
             </div>
           </div>
 
-          {/* What happens */}
-          <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-            <h4 className="font-semibold text-green-800 mb-2">✅ What will happen:</h4>
-            <ul className="text-sm text-green-700 space-y-1">
-              <li>• Your NFT will be minted on Base Sepolia</li>
-              <li>• A Token Bound Account wallet will be created</li>
-              <li>• Metadata will be stored on IPFS permanently</li>
-              <li>• Transaction will be recorded on blockchain</li>
-              <li>• You&apos;ll receive a shareable link and QR code</li>
+          {/* What happens - Compact */}
+          <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+            <h4 className="font-semibold text-green-800 text-sm mb-2">✅ What happens:</h4>
+            <ul className="text-xs text-green-700 space-y-1">
+              <li>• NFT minted + TBA wallet created</li>
+              <li>• Metadata stored on IPFS</li>
+              <li>• Shareable link generated</li>
             </ul>
           </div>
 
-          {/* Important notice */}
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-            <h4 className="font-semibold text-yellow-800 mb-2">⚠️ Important Notice:</h4>
-            <p className="text-sm text-yellow-700">
-              This is a real blockchain transaction on Base Sepolia testnet. 
-              You&apos;ll need testnet ETH to pay for gas. This transaction cannot be reversed once confirmed.
+          {/* Important notice - Compact */}
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+            <p className="text-xs text-yellow-700">
+              ⚠️ Real blockchain transaction. You need testnet ETH. Cannot be reversed.
             </p>
           </div>
 
-          {/* User confirmation */}
-          <div className="bg-gray-50 rounded-lg p-4">
-            <label className="flex items-start space-x-3">
+          {/* User confirmation - Compact */}
+          <div className="bg-gray-50 rounded-lg p-3">
+            <label className="flex items-start space-x-2">
               <input
                 type="checkbox"
                 checked={understood}
                 onChange={(e) => setUnderstood(e.target.checked)}
                 className="mt-1 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
               />
-              <span className="text-sm text-gray-700">
-                I understand that this will execute a real blockchain transaction and I will pay gas fees. 
-                I have sufficient ETH in my wallet to cover the transaction cost.
+              <span className="text-xs text-gray-700">
+                I understand this executes a real transaction and I will pay gas fees.
               </span>
             </label>
           </div>
         </div>
 
-        {/* Actions */}
-        <div className="p-4 border-t border-gray-200 bg-gray-50">
-          <div className="flex space-x-3">
+        {/* Actions - Fixed */}
+        <div className="p-3 border-t border-gray-200 bg-gray-50">
+          <div className="flex space-x-2">
             <button
               onClick={onClose}
-              className="flex-1 py-2 px-4 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100"
+              className="flex-1 py-2 px-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 text-sm"
             >
               Cancel
             </button>
             <button
               onClick={onConfirm}
               disabled={!understood}
-              className="flex-1 py-2 px-4 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex-1 py-2 px-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
             >
-              Confirm & Pay Gas
+              Confirm & Pay
             </button>
           </div>
         </div>
