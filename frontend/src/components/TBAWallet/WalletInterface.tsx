@@ -90,35 +90,34 @@ export const TBAWalletInterface: React.FC<WalletInterfaceProps> = ({
     }
   }, [nftContract, tokenId]);
 
-  // Load NFT image from contract metadata
+  // Load NFT image from our improved API
   const loadNFTImage = useCallback(async () => {
     try {
-      const nftContract_instance = getContract({
-        client,
-        chain: baseSepolia,
-        address: nftContract,
-      });
-
-      // Get token URI
-      const tokenURI = await readContract({
-        contract: nftContract_instance,
-        method: "function tokenURI(uint256) view returns (string)",
-        params: [BigInt(tokenId)]
-      });
-
-      // Fetch metadata
-      const metadataResponse = await fetch(tokenURI);
-      const metadata = await metadataResponse.json();
+      console.log('🖼️ Loading NFT image for', { nftContract, tokenId });
       
-      if (metadata.image) {
-        // Handle IPFS URLs
-        const imageUrl = metadata.image.startsWith('ipfs://') 
-          ? metadata.image.replace('ipfs://', 'https://nftstorage.link/ipfs/')
-          : metadata.image;
-        setNftImageUrl(imageUrl);
+      // Use our improved NFT API that handles metadata properly
+      const response = await fetch(`/api/nft/${nftContract}/${tokenId}`);
+      if (response.ok) {
+        const nftData = await response.json();
+        console.log('✅ NFT data loaded:', nftData);
+        
+        if (nftData.image) {
+          // Handle different image URL formats
+          let imageUrl = nftData.image;
+          if (imageUrl.startsWith('ipfs://')) {
+            imageUrl = imageUrl.replace('ipfs://', 'https://nftstorage.link/ipfs/');
+          }
+          console.log('🖼️ Setting NFT image URL:', imageUrl);
+          setNftImageUrl(imageUrl);
+        } else {
+          console.warn('⚠️ No image found in NFT data');
+          setNftImageUrl('/images/nft-placeholder.png');
+        }
+      } else {
+        throw new Error(`API response: ${response.status}`);
       }
     } catch (error) {
-      console.error('Error loading NFT image:', error);
+      console.error('❌ Error loading NFT image:', error);
       setNftImageUrl('/images/nft-placeholder.png');
     }
   }, [nftContract, tokenId]);

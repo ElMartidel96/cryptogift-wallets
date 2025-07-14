@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useActiveAccount, ConnectButton } from 'thirdweb/react';
 import { client } from '../app/client';
+import { WalletSwitcher } from './WalletSwitcher';
 
 export const Navbar: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -68,13 +69,17 @@ export const Navbar: React.FC = () => {
             </Link>
             
             {mounted && (
-              <ConnectButton
-                client={client}
-                appMetadata={{
-                  name: "CryptoGift Wallets",
-                  url: "https://cryptogift-wallets.vercel.app",
-                }}
-              />
+              account ? (
+                <WalletSwitcher className="min-w-[200px]" />
+              ) : (
+                <ConnectButton
+                  client={client}
+                  appMetadata={{
+                    name: "CryptoGift Wallets",
+                    url: "https://cryptogift-wallets.vercel.app",
+                  }}
+                />
+              )
             )}
           </div>
 
@@ -129,13 +134,17 @@ export const Navbar: React.FC = () => {
               </Link>
               
               <div className="pt-4">
-                <ConnectButton
-                  client={client}
-                  appMetadata={{
-                    name: "CryptoGift Wallets",
-                    url: "https://cryptogift-wallets.vercel.app",
-                  }}
-                />
+                {account ? (
+                  <WalletSwitcher className="w-full" />
+                ) : (
+                  <ConnectButton
+                    client={client}
+                    appMetadata={{
+                      name: "CryptoGift Wallets",
+                      url: "https://cryptogift-wallets.vercel.app",
+                    }}
+                  />
+                )}
               </div>
             </div>
           </div>

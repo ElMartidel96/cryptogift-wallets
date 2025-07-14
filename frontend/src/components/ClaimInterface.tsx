@@ -316,12 +316,19 @@ export const ClaimInterface: React.FC<ClaimInterfaceProps> = ({
           </p>
           
           <div className="flex gap-3">
-            <Link
-              href={`/token/${contractAddress}/${tokenId}?wallet=open`}
+            <button
+              onClick={() => {
+                if (onWalletOpen) {
+                  onWalletOpen();
+                } else {
+                  // Fallback: redirect to token page with wallet open
+                  window.location.href = `/token/${contractAddress}/${tokenId}?wallet=open`;
+                }
+              }}
               className="flex-1 py-3 bg-gradient-to-r from-green-500 to-blue-500 text-white rounded-lg font-medium hover:from-green-600 hover:to-blue-600 transition-all text-center"
             >
               Ver Mi Wallet
-            </Link>
+            </button>
             <button
               onClick={() => setShowGuardianSetup(true)}
               className="flex-1 py-3 border border-gray-300 rounded-lg font-medium hover:bg-gray-50 transition-colors"
