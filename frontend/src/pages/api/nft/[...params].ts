@@ -100,9 +100,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (tokenURI && (tokenURI.startsWith("https://") || tokenURI.startsWith("http://"))) {
       try {
         console.log("🔍 Fetching metadata from:", tokenURI);
+        // Create controller for timeout
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+        
         const metadataResponse = await fetch(tokenURI, {
-          timeout: 10000 // 10 second timeout
+          signal: controller.signal
         });
+        clearTimeout(timeoutId);
         if (metadataResponse.ok) {
           const metadata = await metadataResponse.json();
           console.log("✅ Raw metadata from IPFS:", metadata);
@@ -123,7 +128,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           console.log("✅ Processed NFT data:", { name: nft.name, image: nft.image });
         }
       } catch (metadataError) {
-        console.log("⚠️ Failed to load metadata from IPFS:", metadataError.message);
+        console.log("⚠️ Failed to load metadata from IPFS:", metadataError instanceof Error ? metadataError.message : 'Unknown error');
         console.log("Using defaults for token", tokenId);
       }
     }
