@@ -107,10 +107,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         method: "function createAccount(address implementation, uint256 chainId, address tokenContract, uint256 tokenId, uint256 salt, bytes calldata initData) external returns (address)",
         params: [
           "0x2d25602551487c3f3354dd80d76d54383a243358", // Implementation ERC-6551
-          84532, // Base Sepolia chain ID
+          BigInt(84532), // Base Sepolia chain ID
           process.env.NEXT_PUBLIC_FACTORY_6551_ADDRESS!, // Token contract (self-reference)
-          tokenId, // Unique token ID
-          0, // Salt
+          BigInt(tokenId), // Unique token ID
+          BigInt(0), // Salt
           "0x" // No init data
         ],
       });
