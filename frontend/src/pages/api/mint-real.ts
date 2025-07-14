@@ -220,10 +220,10 @@ async function mintNFTReal(to: string, metadataUri: string): Promise<{
       method: "function createAccount(address implementation, uint256 chainId, address tokenContract, uint256 tokenId, uint256 salt, bytes calldata initData) external returns (address)",
       params: [
         "0x2d25602551487c3f3354dd80d76d54383a243358", // implementation (ERC-6551 Account)
-        84532, // chainId (Base Sepolia)
+        BigInt(84532), // chainId (Base Sepolia)
         "0x8DfCAfB320cBB7bcdbF4cc83A62bccA08B30F5D3", // tokenContract (use original NFT as reference)
-        generatedTokenId, // tokenId único
-        0, // salt
+        BigInt(generatedTokenId), // tokenId único
+        BigInt(0), // salt
         "0x" // initData vacío
       ],
     });
