@@ -5,6 +5,9 @@ import { useActiveAccount, ConnectButton, TransactionButton } from 'thirdweb/rea
 import { prepareContractCall, getContract } from 'thirdweb';
 import { baseSepolia, base } from 'thirdweb/chains';
 import { client } from '../client';
+import { BalanceHistoryPanel } from '../../components/referrals/BalanceHistoryPanel';
+import { EarningsHistoryPanel } from '../../components/referrals/EarningsHistoryPanel';
+import { FriendsTrackingPanel } from '../../components/referrals/FriendsTrackingPanel';
 
 export default function ReferralsPage() {
   const [mounted, setMounted] = useState(false);
@@ -18,6 +21,11 @@ export default function ReferralsPage() {
   });
   const [copied, setCopied] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  
+  // Panel states
+  const [showBalanceHistory, setShowBalanceHistory] = useState(false);
+  const [showEarningsHistory, setShowEarningsHistory] = useState(false);
+  const [showFriendsTracking, setShowFriendsTracking] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -123,7 +131,10 @@ export default function ReferralsPage() {
         <div className="max-w-6xl mx-auto space-y-8">
           {/* Stats Overview */}
           <div className="grid md:grid-cols-4 gap-6">
-            <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100">
+            <button
+              onClick={() => setShowBalanceHistory(true)}
+              className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100 hover:shadow-xl hover:border-green-200 transition-all duration-200 transform hover:scale-105 cursor-pointer"
+            >
               <div className="text-center">
                 <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
                   <svg className="w-6 h-6 text-green-600" fill="currentColor" viewBox="0 0 20 20">
@@ -134,10 +145,14 @@ export default function ReferralsPage() {
                   ${parseFloat(referralData.balance).toFixed(2)}
                 </div>
                 <div className="text-sm text-gray-600">Balance Disponible</div>
+                <div className="text-xs text-green-600 mt-1">📊 Ver historial</div>
               </div>
-            </div>
+            </button>
 
-            <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100">
+            <button
+              onClick={() => setShowEarningsHistory(true)}
+              className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100 hover:shadow-xl hover:border-blue-200 transition-all duration-200 transform hover:scale-105 cursor-pointer"
+            >
               <div className="text-center">
                 <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
                   <svg className="w-6 h-6 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
@@ -148,10 +163,14 @@ export default function ReferralsPage() {
                   ${parseFloat(referralData.totalEarned).toFixed(2)}
                 </div>
                 <div className="text-sm text-gray-600">Total Ganado</div>
+                <div className="text-xs text-blue-600 mt-1">💎 Ver detalles</div>
               </div>
-            </div>
+            </button>
 
-            <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100">
+            <button
+              onClick={() => setShowFriendsTracking(true)}
+              className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100 hover:shadow-xl hover:border-purple-200 transition-all duration-200 transform hover:scale-105 cursor-pointer"
+            >
               <div className="text-center">
                 <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-3">
                   <svg className="w-6 h-6 text-purple-600" fill="currentColor" viewBox="0 0 20 20">
@@ -162,8 +181,9 @@ export default function ReferralsPage() {
                   {referralData.referralCount}
                 </div>
                 <div className="text-sm text-gray-600">Amigos Invitados</div>
+                <div className="text-xs text-purple-600 mt-1">👥 Ver tracking</div>
               </div>
-            </div>
+            </button>
 
             <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100">
               <div className="text-center">
@@ -328,6 +348,25 @@ export default function ReferralsPage() {
           </div>
         </div>
       </div>
+      
+      {/* Modals */}
+      <BalanceHistoryPanel
+        isOpen={showBalanceHistory}
+        onClose={() => setShowBalanceHistory(false)}
+        userAddress={account?.address || ''}
+      />
+      
+      <EarningsHistoryPanel
+        isOpen={showEarningsHistory}
+        onClose={() => setShowEarningsHistory(false)}
+        userAddress={account?.address || ''}
+      />
+      
+      <FriendsTrackingPanel
+        isOpen={showFriendsTracking}
+        onClose={() => setShowFriendsTracking(false)}
+        userAddress={account?.address || ''}
+      />
     </div>
   );
 }

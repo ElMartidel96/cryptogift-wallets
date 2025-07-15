@@ -1,6 +1,8 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import fs from 'fs';
 import path from 'path';
+import { getNFTMetadata } from '../../../lib/nftMetadataStore';
+import { promises as fsPromises } from 'fs';
 
 // In-memory storage for production (simple fallback)
 let inMemoryTraces: any[] = [];
@@ -94,8 +96,89 @@ function handleInMemoryStorage(req: NextApiRequest, res: NextApiResponse) {
   }
 }
 
+// NFT Metadata Flow Diagnostic
+async function handleNFTFlowDiagnostic(req: NextApiRequest, res: NextApiResponse) {
+  const { contractAddress, tokenId } = req.body;
+
+  try {
+    const trace = {
+      timestamp: new Date().toISOString(),
+      contractAddress,
+      tokenId,
+      checks: {
+        serverMetadata: null,
+        tmpFiles: [],
+        clientStorageTest: null,
+        environment: {
+          nodeEnv: process.env.NODE_ENV,
+          vercelEnv: process.env.VERCEL_ENV,
+          workingDir: process.cwd(),
+          tmpDir: '/tmp',
+          storageDir: '/tmp/nft-metadata'
+        }
+      }
+    };
+
+    // 1. Check server metadata storage
+    try {
+      const serverMetadata = await getNFTMetadata(contractAddress, tokenId);
+      trace.checks.serverMetadata = {
+        found: !!serverMetadata,
+        data: serverMetadata,
+        status: 'success'
+      };
+    } catch (error) {
+      trace.checks.serverMetadata = {
+        found: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+        status: 'error'
+      };
+    }
+
+    // 2. Check /tmp directory contents
+    try {
+      const tmpDir = '/tmp/nft-metadata';
+      const files = await fsPromises.readdir(tmpDir).catch(() => []);
+      trace.checks.tmpFiles = files.map(file => ({
+        name: file,
+        path: path.join(tmpDir, file),
+        isTarget: file === `${contractAddress.toLowerCase()}_${tokenId}.json`
+      }));
+    } catch (error) {
+      trace.checks.tmpFiles = [];
+    }
+
+    // 3. Test file write permissions
+    try {
+      const testFile = '/tmp/test-write.json';
+      await fsPromises.writeFile(testFile, JSON.stringify({ test: true }));
+      await fsPromises.unlink(testFile);
+      trace.checks.writePermissions = { status: 'success' };
+    } catch (error) {
+      trace.checks.writePermissions = {
+        status: 'error',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    }
+
+    console.log('🔍 NFT Flow trace:', trace);
+    res.status(200).json(trace);
+  } catch (error) {
+    console.error('❌ NFT Flow trace error:', error);
+    res.status(500).json({ 
+      error: 'NFT Flow trace failed', 
+      details: error instanceof Error ? error.message : 'Unknown error' 
+    });
+  }
+}
+
 // Flow trace persistence and retrieval
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  // Check if this is an NFT metadata diagnostic request
+  if (req.method === 'POST' && req.body.contractAddress && req.body.tokenId) {
+    return handleNFTFlowDiagnostic(req, res);
+  }
+  
   // For production/Vercel compatibility, use in-memory storage with fallback
   const isProduction = process.env.NODE_ENV === 'production';
   

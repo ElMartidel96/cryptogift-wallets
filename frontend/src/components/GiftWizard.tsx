@@ -15,7 +15,7 @@ import { CryptoGiftError, parseApiError, logError } from '../lib/errorHandler';
 import { ErrorModal } from './ErrorModal';
 import { GasEstimationModal } from './GasEstimationModal';
 import { startTrace, addStep, addDecision, addError, finishTrace } from '../lib/flowTracker';
-import { storeNFTMetadataClient, NFTMetadata } from '../lib/clientMetadataStore';
+import { storeNFTMetadataClient, getNFTMetadataClient, NFTMetadata } from '../lib/clientMetadataStore';
 
 interface GiftWizardProps {
   isOpen: boolean;
@@ -279,6 +279,10 @@ export const GiftWizard: React.FC<GiftWizardProps> = ({ isOpen, onClose, referre
     // Store NFT metadata on client for future retrieval
     try {
       console.log('💾 Storing NFT metadata on client...');
+      console.log('🔍 Contract address:', process.env.NEXT_PUBLIC_NFT_DROP_ADDRESS);
+      console.log('🔍 Token ID:', tokenId);
+      console.log('🔍 IPFS CID:', ipfsCid);
+      
       const nftMetadata: NFTMetadata = {
         contractAddress: process.env.NEXT_PUBLIC_NFT_DROP_ADDRESS || '',
         tokenId: tokenId,
@@ -305,8 +309,13 @@ export const GiftWizard: React.FC<GiftWizardProps> = ({ isOpen, onClose, referre
         owner: account?.address
       };
       
+      console.log('📦 Metadata to store:', nftMetadata);
       storeNFTMetadataClient(nftMetadata);
       console.log('✅ NFT metadata stored on client');
+      
+      // Verify it was stored
+      const storedCheck = getNFTMetadataClient(nftMetadata.contractAddress, nftMetadata.tokenId);
+      console.log('🔍 Verification check:', storedCheck);
     } catch (metadataError) {
       console.error('⚠️ Failed to store NFT metadata on client:', metadataError);
     }
@@ -453,6 +462,10 @@ export const GiftWizard: React.FC<GiftWizardProps> = ({ isOpen, onClose, referre
       // Store NFT metadata on client for future retrieval
       try {
         console.log('💾 Storing NFT metadata on client (gas-paid)...');
+        console.log('🔍 Contract address (gas-paid):', process.env.NEXT_PUBLIC_NFT_DROP_ADDRESS);
+        console.log('🔍 Token ID (gas-paid):', tokenId);
+        console.log('🔍 IPFS CID (gas-paid):', ipfsCid);
+        
         const nftMetadata: NFTMetadata = {
           contractAddress: process.env.NEXT_PUBLIC_NFT_DROP_ADDRESS || '',
           tokenId: tokenId,
@@ -479,8 +492,13 @@ export const GiftWizard: React.FC<GiftWizardProps> = ({ isOpen, onClose, referre
           owner: account?.address
         };
         
+        console.log('📦 Metadata to store (gas-paid):', nftMetadata);
         storeNFTMetadataClient(nftMetadata);
         console.log('✅ NFT metadata stored on client (gas-paid)');
+        
+        // Verify it was stored
+        const storedCheck = getNFTMetadataClient(nftMetadata.contractAddress, nftMetadata.tokenId);
+        console.log('🔍 Verification check (gas-paid):', storedCheck);
       } catch (metadataError) {
         console.error('⚠️ Failed to store NFT metadata on client (gas-paid):', metadataError);
       }

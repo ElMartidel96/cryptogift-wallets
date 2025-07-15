@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { getNFTMetadataClient, resolveIPFSUrlClient } from '../lib/clientMetadataStore';
+import { FlowDiagnostic } from './FlowDiagnostic';
 
 interface ImageDebuggerProps {
   nftContract: string;
@@ -215,7 +216,7 @@ export const ImageDebugger: React.FC<ImageDebuggerProps> = ({
 
       {/* Debug Info Panel */}
       {showDebug && (
-        <div className="absolute top-full left-0 right-0 mt-2 bg-black text-green-400 text-xs p-3 rounded-lg font-mono z-50 max-h-64 overflow-y-auto">
+        <div className="absolute top-full left-0 right-0 mt-2 bg-black text-green-400 text-xs p-3 rounded-lg font-mono z-50 max-h-96 overflow-y-auto">
           <div className="flex justify-between items-center mb-2">
             <span className="font-bold">🐛 Debug Info</span>
             <button
@@ -273,6 +274,16 @@ export const ImageDebugger: React.FC<ImageDebuggerProps> = ({
               🔄 Re-test
             </button>
           </div>
+        </div>
+      )}
+      
+      {/* Flow Diagnostic Panel */}
+      {showDebug && (
+        <div className="absolute top-full left-0 right-0 mt-80 z-40">
+          <FlowDiagnostic 
+            contractAddress={nftContract} 
+            tokenId={tokenId} 
+          />
         </div>
       )}
     </div>

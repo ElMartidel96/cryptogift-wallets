@@ -18,6 +18,11 @@ const Footer = dynamic(() => import("./Footer").then(mod => ({ default: mod.Foot
   loading: () => <div className="h-32 bg-gray-900" />
 });
 
+const MintDebugger = dynamic(() => import("./MintDebugger").then(mod => ({ default: mod.MintDebugger })), {
+  ssr: false,
+  loading: () => null
+});
+
 interface ClientLayoutProps {
   children: React.ReactNode;
 }
@@ -32,6 +37,7 @@ export function ClientLayout({ children }: ClientLayoutProps) {
             {children}
           </main>
           <Footer />
+          <MintDebugger />
         </div>
       </ErrorBoundary>
     </ThirdwebWrapper>
