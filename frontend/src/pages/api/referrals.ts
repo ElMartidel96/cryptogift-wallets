@@ -1,6 +1,7 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import { createThirdwebClient, getContract, readContract } from "thirdweb";
 import { baseSepolia } from "thirdweb/chains";
+import { getReferralStats } from "../../lib/referralDatabase";
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
@@ -22,14 +23,25 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       secretKey: process.env.TW_SECRET_KEY!,
     });
 
-    // Simplified referral data - TODO: implement with thirdweb v5 readContract
+    // Get real referral statistics from database
+    console.log('📊 Loading real referral stats for address:', address);
+    const stats = await getReferralStats(address);
+    
     const referralData = {
-      balance: "0",
-      totalEarned: "0",
-      referralCount: 0,
-      pendingRewards: "0",
+      balance: stats.totalEarnings.toString(),
+      totalEarned: stats.totalEarnings.toString(),
+      referralCount: stats.totalReferrals,
+      pendingRewards: stats.pendingRewards.toString(),
+      conversionRate: stats.conversionRate,
+      activeReferrals: stats.activeReferrals,
       referralUrl: `${process.env.NEXT_PUBLIC_APP_URL || 'https://cryptogift-wallets.vercel.app'}/?ref=${address}`,
     };
+    
+    console.log('✅ Real referral data loaded:', {
+      totalReferrals: stats.totalReferrals,
+      totalEarnings: stats.totalEarnings,
+      conversionRate: stats.conversionRate
+    });
 
     res.status(200).json({
       success: true,

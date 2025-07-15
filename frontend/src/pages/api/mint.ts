@@ -7,6 +7,8 @@ import { addMintLog } from "./debug/mint-logs";
 import { uploadMetadata } from "../../lib/ipfs";
 import { ethers } from "ethers";
 import { storeNFTMetadata, createNFTMetadata } from "../../lib/nftMetadataStore";
+import { trackReferralActivation, generateUserDisplay } from "../../lib/referralDatabase";
+import { REFERRAL_COMMISSION_PERCENT } from "../../lib/constants";
 
 // Add flow tracking to API
 let currentFlowTrace: any = null;
@@ -494,6 +496,57 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://cryptogift-wallets.vercel.app';
     const shareUrl = `${baseUrl}/token/${process.env.NEXT_PUBLIC_NFT_DROP_ADDRESS}/${tokenId}`;
     const qrCode = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(shareUrl)}`;
+
+    // Track referral activation if referrer is provided
+    if (referrer) {
+      try {
+        console.log('🔗 Processing referral activation for:', { referrer, recipient: to?.slice(0, 10) + '...' });
+        
+        // Generate user display identifier for the gift recipient
+        const referredIdentifier = generateUserDisplay(to);
+        
+        // Calculate commission (20% of platform earnings, not of gift amount)
+        // Assuming platform takes 4% of gift amount, so commission is 20% of that 4%
+        const platformFee = initialBalance * 0.04; // 4% platform fee
+        const commission = platformFee * (REFERRAL_COMMISSION_PERCENT / 100); // 20% of platform fee
+        
+        await trackReferralActivation(referrer, referredIdentifier, {
+          tokenId,
+          amount: initialBalance,
+          commission,
+          transactionHash
+        });
+        
+        console.log('✅ Referral activation tracked successfully:', {
+          referrer: referrer?.slice(0, 10) + '...',
+          referredIdentifier,
+          tokenId,
+          commission,
+          giftAmount: initialBalance
+        });
+        
+        addMintLog('SUCCESS', 'REFERRAL_ACTIVATION_TRACKED', {
+          referrer: referrer?.slice(0, 10) + '...',
+          referredIdentifier,
+          tokenId,
+          commission,
+          giftAmount: initialBalance,
+          platformFee
+        });
+        
+      } catch (referralError) {
+        console.error('⚠️ Error tracking referral activation:', referralError);
+        addMintLog('WARN', 'REFERRAL_TRACKING_FAILED', {
+          referrer: referrer?.slice(0, 10) + '...',
+          error: referralError.message,
+          tokenId
+        });
+        // Don't fail the whole mint for referral tracking issues
+      }
+    } else {
+      console.log('ℹ️ No referrer provided - skipping referral tracking');
+      addMintLog('INFO', 'NO_REFERRER_PROVIDED', { tokenId });
+    }
 
     const finalResult = {
       success: true,

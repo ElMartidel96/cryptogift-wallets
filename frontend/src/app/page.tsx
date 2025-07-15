@@ -24,6 +24,9 @@ export default function Home() {
       setReferrer(ref);
       // Store in localStorage for later use
       localStorage.setItem("referrer", ref);
+      
+      // Track referral click in real-time
+      trackReferralClick(ref);
     } else {
       // Check localStorage for existing referrer
       const storedRef = localStorage.getItem("referrer");
@@ -32,6 +35,35 @@ export default function Home() {
       }
     }
   }, [searchParams]);
+
+  // Function to track referral clicks
+  const trackReferralClick = async (referrerAddress: string) => {
+    try {
+      console.log('🔗 Tracking referral click for:', referrerAddress);
+      
+      const response = await fetch('/api/referrals/track-click', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          referrerAddress,
+          userAgent: navigator.userAgent,
+          source: 'direct' // Can be enhanced to detect actual source
+        }),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log('✅ Referral click tracked successfully:', result);
+      } else {
+        console.warn('⚠️ Failed to track referral click:', response.statusText);
+      }
+    } catch (error) {
+      console.error('❌ Error tracking referral click:', error);
+      // Don't throw error to avoid disrupting user experience
+    }
+  };
 
   const handleCreateGift = () => {
     setShowWizard(true);
