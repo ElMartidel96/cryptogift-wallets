@@ -35,7 +35,6 @@ export const FriendsTrackingPanel: React.FC<FriendsTrackingPanelProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [filter, setFilter] = useState<'all' | 'registered' | 'activated' | 'active'>('all');
   const [sortBy, setSortBy] = useState<'date' | 'earnings' | 'activity'>('date');
-  const [realTimeUpdates, setRealTimeUpdates] = useState(true);
 
   useEffect(() => {
     if (isOpen && userAddress) {
@@ -43,16 +42,16 @@ export const FriendsTrackingPanel: React.FC<FriendsTrackingPanelProps> = ({
     }
   }, [isOpen, userAddress, filter, sortBy]);
 
-  // Real-time updates
+  // Real-time updates every 30 seconds
   useEffect(() => {
-    if (isOpen && realTimeUpdates) {
+    if (isOpen) {
       const interval = setInterval(() => {
         loadFriendsData();
       }, 30000); // Update every 30 seconds
 
       return () => clearInterval(interval);
     }
-  }, [isOpen, realTimeUpdates]);
+  }, [isOpen]);
 
   const loadFriendsData = async () => {
     setIsLoading(true);
@@ -146,7 +145,7 @@ export const FriendsTrackingPanel: React.FC<FriendsTrackingPanelProps> = ({
         <div className="bg-gradient-to-r from-purple-500 to-pink-500 text-white p-6">
           <div className="flex justify-between items-center">
             <div>
-              <h2 className="text-2xl font-bold">👥 Tracking de Amigos Invitados</h2>
+              <h2 className="text-2xl font-bold">👥 Tracking de Usuarios Invitados</h2>
               <p className="text-purple-100 mt-1">Seguimiento en tiempo real de tus referidos</p>
             </div>
             <div className="flex items-center gap-4">
@@ -276,16 +275,6 @@ export const FriendsTrackingPanel: React.FC<FriendsTrackingPanelProps> = ({
               </button>
             </div>
 
-            <button
-              onClick={() => setRealTimeUpdates(!realTimeUpdates)}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                realTimeUpdates 
-                  ? 'bg-green-500 text-white' 
-                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-              }`}
-            >
-              {realTimeUpdates ? '⏸️ Pausar' : '▶️ Reanudar'}
-            </button>
           </div>
         </div>
 

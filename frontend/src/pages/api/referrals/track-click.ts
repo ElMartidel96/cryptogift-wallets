@@ -13,8 +13,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    // Generate user display identifier
-    const referredIdentifier = generateUserDisplay(referredAddress, referredEmail);
+    // Get IP address from request
+    const ipAddress = req.headers['x-forwarded-for'] as string || 
+                     req.headers['x-real-ip'] as string || 
+                     req.socket.remoteAddress || 
+                     'unknown';
+    
+    // Use first IP if multiple (proxy chain)
+    const clientIP = Array.isArray(ipAddress) ? ipAddress[0] : ipAddress.split(',')[0];
+    
+    // Generate user display identifier - prefer user data, fallback to IP-based
+    const referredIdentifier = (referredAddress || referredEmail) ? 
+      generateUserDisplay(referredAddress, referredEmail) : 
+      `ip_${clientIP.split('.').slice(-2).join('.')}`;
     
     // Determine source from user agent or provided source
     let detectedSource = source;
@@ -26,7 +37,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       else detectedSource = 'Direct';
     }
 
-    await trackReferralClick(referrerAddress, referredIdentifier, detectedSource);
+    await trackReferralClick(referrerAddress, referredIdentifier, detectedSource, clientIP);
 
     console.log('✅ Referral click tracked:', {
       referrerAddress,

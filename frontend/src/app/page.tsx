@@ -2,18 +2,21 @@
 
 import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
-import { ConnectButton } from "thirdweb/react";
+import { ConnectButton, useActiveAccount } from "thirdweb/react";
 import { client } from "./client";
 import { GiftWizard } from "../components/GiftWizard";
 import { HeroSection } from "../components/HeroSection";
 import { FeatureSection } from "../components/FeatureSection";
 import { StatsSection } from "../components/StatsSection";
+import { ReferralWelcomeBanner } from "../components/ReferralWelcomeBanner";
 
 export default function Home() {
   const [showWizard, setShowWizard] = useState(false);
   const [referrer, setReferrer] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
+  const [showWelcomeBanner, setShowWelcomeBanner] = useState(false);
   const searchParams = useSearchParams();
+  const account = useActiveAccount();
 
   useEffect(() => {
     setMounted(true);
@@ -24,6 +27,12 @@ export default function Home() {
       setReferrer(ref);
       // Store in localStorage for later use
       localStorage.setItem("referrer", ref);
+      
+      // Show welcome banner for referred users
+      const hasSeenBanner = localStorage.getItem(`referral-banner-${ref}`);
+      if (!hasSeenBanner) {
+        setShowWelcomeBanner(true);
+      }
       
       // Track referral click in real-time
       trackReferralClick(ref);
@@ -65,8 +74,49 @@ export default function Home() {
     }
   };
 
+  // Auto-upgrade IP-based account when user connects wallet
+  useEffect(() => {
+    if (account?.address && mounted) {
+      upgradeIPAccount(account.address);
+    }
+  }, [account?.address, mounted]);
+
+  const upgradeIPAccount = async (userAddress: string) => {
+    try {
+      console.log('🔄 Attempting to upgrade IP-based account for connected wallet');
+      
+      const response = await fetch('/api/referrals/upgrade-ip-account', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userAddress
+        }),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log('✅ IP account upgrade successful:', result);
+      } else {
+        console.warn('⚠️ IP account upgrade failed:', response.statusText);
+      }
+    } catch (error) {
+      console.error('❌ Error upgrading IP account:', error);
+      // Don't throw error to avoid disrupting user experience
+    }
+  };
+
   const handleCreateGift = () => {
     setShowWizard(true);
+  };
+
+  const handleCloseBanner = () => {
+    setShowWelcomeBanner(false);
+    // Mark this referrer's banner as seen
+    if (referrer) {
+      localStorage.setItem(`referral-banner-${referrer}`, 'seen');
+    }
   };
 
   return (
@@ -153,6 +203,14 @@ export default function Home() {
           isOpen={showWizard}
           onClose={() => setShowWizard(false)}
           referrer={referrer}
+        />
+      )}
+
+      {/* Referral Welcome Banner */}
+      {showWelcomeBanner && referrer && (
+        <ReferralWelcomeBanner
+          referrerAddress={referrer}
+          onClose={handleCloseBanner}
         />
       )}
     </main>

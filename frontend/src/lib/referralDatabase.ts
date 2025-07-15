@@ -9,6 +9,7 @@ export interface ReferralRecord {
   referrerAddress: string;
   referredAddress?: string;
   referredEmail?: string;
+  referredIP?: string; // IP address for automatic account creation
   referredUserDisplay: string;
   registrationDate: string;
   status: 'registered' | 'activated' | 'active';
@@ -16,6 +17,7 @@ export interface ReferralRecord {
   lastActivity: string;
   gifts: GiftRecord[];
   totalEarnings: number;
+  isIPBased?: boolean; // Flag to indicate if account was created automatically by IP
 }
 
 export interface GiftRecord {
@@ -62,40 +64,89 @@ async function saveReferrals(referrals: ReferralRecord[]): Promise<void> {
   await fs.writeFile(REFERRALS_FILE, JSON.stringify(referrals, null, 2));
 }
 
-export async function trackReferralClick(referrerAddress: string, referredIdentifier: string, source?: string): Promise<void> {
+export async function trackReferralClick(referrerAddress: string, referredIdentifier: string, source?: string, ipAddress?: string): Promise<void> {
   console.log('🔗 Tracking referral click:', { referrerAddress, referredIdentifier, source });
   
   const referrals = await loadReferrals();
   
-  // Check if this referral already exists
+  // Check if this referral already exists (by IP or identifier)
   const existingReferral = referrals.find(r => 
     r.referrerAddress.toLowerCase() === referrerAddress.toLowerCase() && 
-    r.referredUserDisplay === referredIdentifier
+    (r.referredUserDisplay === referredIdentifier || (ipAddress && r.referredIP === ipAddress))
   );
   
   if (existingReferral) {
-    // Update last activity
+    // Update last activity and merge information
     existingReferral.lastActivity = new Date().toISOString();
+    if (ipAddress && !existingReferral.referredIP) {
+      existingReferral.referredIP = ipAddress;
+    }
+    if (!existingReferral.isIPBased && referredIdentifier.startsWith('ip_')) {
+      // This was an IP-based account, keep it marked as such
+      existingReferral.isIPBased = true;
+    }
     console.log('📝 Updated existing referral activity');
   } else {
     // Create new referral record
+    const isIPBasedAccount = !referredIdentifier || referredIdentifier.startsWith('ip_');
+    const displayIdentifier = isIPBasedAccount && ipAddress ? 
+      `ip_${ipAddress.split('.').slice(-2).join('.')}` : // Show last 2 IP octets for privacy
+      referredIdentifier;
+    
     const newReferral: ReferralRecord = {
       id: `ref_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       referrerAddress: referrerAddress.toLowerCase(),
-      referredUserDisplay: referredIdentifier,
+      referredIP: ipAddress,
+      referredUserDisplay: displayIdentifier,
       registrationDate: new Date().toISOString(),
       status: 'registered',
       source: source || 'direct',
       lastActivity: new Date().toISOString(),
       gifts: [],
-      totalEarnings: 0
+      totalEarnings: 0,
+      isIPBased: isIPBasedAccount
     };
     
     referrals.push(newReferral);
-    console.log('✅ Created new referral record:', newReferral.id);
+    console.log('✅ Created new referral record:', newReferral.id, isIPBasedAccount ? '(IP-based)' : '(user-based)');
   }
   
   await saveReferrals(referrals);
+}
+
+// Function to upgrade IP-based account to user account when they connect wallet/email
+export async function upgradeIPAccountToUser(ipAddress: string, userAddress?: string, userEmail?: string): Promise<void> {
+  console.log('🔄 Upgrading IP-based account to user account:', { ipAddress, userAddress: userAddress?.slice(0, 10) + '...', userEmail });
+  
+  const referrals = await loadReferrals();
+  
+  // Find IP-based referral record
+  const ipReferral = referrals.find(r => r.referredIP === ipAddress && r.isIPBased);
+  
+  if (ipReferral) {
+    // Update with user information
+    if (userAddress) {
+      ipReferral.referredAddress = userAddress.toLowerCase();
+    }
+    if (userEmail) {
+      ipReferral.referredEmail = userEmail;
+    }
+    
+    // Update display identifier
+    ipReferral.referredUserDisplay = generateUserDisplay(userAddress, userEmail);
+    ipReferral.isIPBased = false; // No longer IP-based
+    ipReferral.lastActivity = new Date().toISOString();
+    
+    console.log('✅ Upgraded IP-based referral to user account:', {
+      id: ipReferral.id,
+      newDisplay: ipReferral.referredUserDisplay,
+      referrer: ipReferral.referrerAddress.slice(0, 10) + '...'
+    });
+    
+    await saveReferrals(referrals);
+  } else {
+    console.log('ℹ️ No IP-based referral found for upgrade:', ipAddress);
+  }
 }
 
 export async function trackReferralActivation(

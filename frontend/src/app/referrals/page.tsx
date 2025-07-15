@@ -182,7 +182,7 @@ export default function ReferralsPage() {
                 <div className="text-2xl font-bold text-purple-600">
                   {referralData.referralCount}
                 </div>
-                <div className="text-sm text-gray-600">Amigos Invitados</div>
+                <div className="text-sm text-gray-600">Usuarios Invitados</div>
                 <div className="text-xs text-purple-600 mt-1">👥 Ver tracking</div>
               </div>
             </button>
@@ -327,31 +327,31 @@ export default function ReferralsPage() {
               </div>
             </div>
             
-            <div className="mt-8 bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-6">
-              <h4 className="font-bold text-lg mb-4 text-center">🎯 Beneficios Adicionales</h4>
+            <div className="mt-8 bg-white border-2 border-purple-200 rounded-xl p-6 shadow-lg">
+              <h4 className="font-bold text-lg mb-4 text-center text-purple-800">🎯 Beneficios Adicionales</h4>
               <div className="grid md:grid-cols-2 gap-4 text-sm">
                 <div className="flex items-start space-x-2">
-                  <span className="text-green-500">✅</span>
-                  <div>
-                    <strong>Tracking en tiempo real:</strong> Ve cada visita, registro y activación al instante
+                  <span className="text-green-600 font-bold">✅</span>
+                  <div className="text-gray-800">
+                    <strong className="text-purple-700">Tracking en tiempo real:</strong> Ve cada visita, registro y activación al instante
                   </div>
                 </div>
                 <div className="flex items-start space-x-2">
-                  <span className="text-green-500">✅</span>
-                  <div>
-                    <strong>Comisiones escalables:</strong> 20% inicial que puede crecer hasta 40%
+                  <span className="text-green-600 font-bold">✅</span>
+                  <div className="text-gray-800">
+                    <strong className="text-purple-700">Comisiones escalables:</strong> 20% inicial que puede crecer hasta 40%
                   </div>
                 </div>
                 <div className="flex items-start space-x-2">
-                  <span className="text-green-500">✅</span>
-                  <div>
-                    <strong>Pagos automáticos:</strong> Sin gestión manual, todo se procesa automáticamente
+                  <span className="text-green-600 font-bold">✅</span>
+                  <div className="text-gray-800">
+                    <strong className="text-purple-700">Pagos automáticos:</strong> Sin gestión manual, todo se procesa automáticamente
                   </div>
                 </div>
                 <div className="flex items-start space-x-2">
-                  <span className="text-green-500">✅</span>
-                  <div>
-                    <strong>Datos protegidos:</strong> Privacidad total de tus referidos mantenida
+                  <span className="text-green-600 font-bold">✅</span>
+                  <div className="text-gray-800">
+                    <strong className="text-purple-700">Datos protegidos:</strong> Privacidad total de tus referidos mantenida
                   </div>
                 </div>
               </div>
