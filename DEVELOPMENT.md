@@ -2,7 +2,79 @@
 
 This file provides development guidance and context for the CryptoGift NFT-Wallet platform.
 
-## ⚡ LATEST SESSION UPDATES (July 14, 2025)
+## ⚡ LATEST SESSION UPDATES (July 15, 2025)
+
+### 🚀 COMPLETE REFERRALS SYSTEM 2.0 ENHANCEMENT
+
+**DEPLOYMENT SUCCESSFUL ✅ - Major Referrals System Overhaul**
+
+#### **🎯 New Features Implemented:**
+- ✅ **Interactive Pending Rewards Panel**: Real-time tracking with date filtering (hoy, ayer, esta semana)
+- ✅ **Commission Structure Updated**: Changed from 2% to 20-40% escalable system
+- ✅ **Enhanced Earnings Calculator**: Psychological wording with "comunidad de influencia" approach
+- ✅ **Comprehensive Tips Page**: Multi-category strategies for different audiences
+- ✅ **Work With Us Section**: Colaborator/shareholder program with application system
+- ✅ **"How It Works" Section**: Bold subtitles, detailed benefits, tracking transparency
+- ✅ **System-wide Commission Update**: All references updated to new 20-40% model
+
+#### **🔧 Technical Implementation:**
+- ✅ **PendingRewardsPanel Component**: Date categorization, filtering, real-time updates
+- ✅ **Tips Page Architecture**: Multi-category tips (General, Social, Crypto, Business)
+- ✅ **Commission Constants**: Added `REFERRAL_COMMISSION_PERCENT = 20%` constant
+- ✅ **API Endpoints**: New `/api/referrals/pending-rewards` with mock data structure
+- ✅ **Enhanced UX**: Clickable stats cards with hover effects and visual indicators
+- ✅ **Psychological Optimization**: Numbers and wording designed to increase conversion
+
+#### **💰 New Commission Model:**
+- **Base Rate**: 20% de las ganancias generadas (instead of 2% del monto)
+- **Escalable**: Can grow to 30-40% based on performance
+- **Psychological Impact**: Appears higher while being more sustainable
+- **Updated Everywhere**: WalletInterface, QRShare, EarningsHistory, Tips page
+
+#### **📊 Enhanced Analytics:**
+- **Pending Rewards Tracking**: By day (today, yesterday, this week, this month)
+- **Real-time Updates**: 30-second refresh intervals
+- **Conversion Metrics**: Success rates, retention stats, growth indicators
+- **Transparent Processing**: Shows exact reasons for pending status
+
+#### **🎨 User Experience Improvements:**
+- **Clickable Stats Cards**: All 4 main stats now open detailed panels
+- **Visual Indicators**: Hover effects, scale animations, color coding
+- **Intuitive Navigation**: Clear CTAs and progress indicators
+- **Mobile Responsive**: All panels optimized for mobile viewing
+
+#### **📚 Tips Page Features:**
+- **Multi-Category Strategy**: General, Social Media, Crypto Community, Business
+- **Practical Examples**: Real text suggestions and implementation guides
+- **Success Metrics**: Conversion rates, retention data, growth benchmarks
+- **Collaboration Framework**: Clear path to become platform stakeholder
+
+#### **🤝 Work With Us Integration:**
+- **Positioning**: Collaborator = Shareholder (not employee)
+- **Benefits**: Participation in platform profits, escalable commissions
+- **Application Process**: Structured form with experience assessment
+- **Growth Opportunities**: Clear advancement path with increasing benefits
+
+#### **Files Modified/Created:**
+```
+- src/app/referrals/page.tsx - Enhanced main referrals page
+- src/app/referrals/tips/page.tsx - NEW: Comprehensive tips page
+- src/components/referrals/PendingRewardsPanel.tsx - NEW: Pending rewards panel
+- src/pages/api/referrals/pending-rewards.ts - NEW: Pending rewards API
+- src/components/QRShare.tsx - Commission updated to 20%
+- src/components/WalletInterface.tsx - Commission updated to 20%
+- src/components/referrals/EarningsHistoryPanel.tsx - Commission updated to 20-40%
+- src/lib/constants.ts - Added REFERRAL_COMMISSION_PERCENT constant
+```
+
+#### **🔄 Attribution Standards:**
+- **Made by**: mbxarts.com The Moon in a Box property
+- **Co-Author**: Godez22
+- **Applied to**: All commit messages and documentation
+
+---
+
+## ⚡ PREVIOUS SESSION UPDATES (July 14, 2025)
 
 ### 🎉 PRODUCTION DEPLOYMENT SUCCESSFUL
 - ✅ **2 NFTs Successfully Created**: Token IDs `1752470070652` and `1752470075797`
@@ -581,8 +653,8 @@ NEXT_PUBLIC_TW_CLIENT_ID=9183b572b02ec88dd4d8f20c3ed847d3    ✅ Required for ot
 - `refactor:` reestructuración sin cambios funcionales
 - `security:` mejoras de seguridad
 - **Una funcionalidad = un commit** para rollbacks quirúrgicos
-- **Siempre incluir**: `🚀 Developed by mbxarts.com THE MOON IN A BOX LLC` en commit messages
-- **Co-Author format**: `Co-Authored-By: mbxarts.com THE MOON IN A BOX LLC <noreply@mbxarts.com>`
+- **Siempre incluir**: `Made by mbxarts.com The Moon in a Box property` en commit messages
+- **Co-Author format**: `Co-Author: Godez22`
 
 #### Security Rules (Applied Automatically)
 ```bash
