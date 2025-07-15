@@ -109,6 +109,7 @@ async function handleNFTFlowDiagnostic(req: NextApiRequest, res: NextApiResponse
         serverMetadata: null,
         tmpFiles: [],
         clientStorageTest: null,
+        writePermissions: null,
         environment: {
           nodeEnv: process.env.NODE_ENV,
           vercelEnv: process.env.VERCEL_ENV,
