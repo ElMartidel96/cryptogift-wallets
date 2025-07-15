@@ -150,8 +150,8 @@ export const FriendsTrackingPanel: React.FC<FriendsTrackingPanelProps> = ({
             </div>
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2">
-                <div className={`w-3 h-3 rounded-full ${realTimeUpdates ? 'bg-green-400' : 'bg-gray-400'}`}></div>
-                <span className="text-sm">{realTimeUpdates ? 'En vivo' : 'Pausado'}</span>
+                <div className="w-3 h-3 rounded-full bg-green-400"></div>
+                <span className="text-sm">En vivo</span>
               </div>
               <button
                 onClick={onClose}
