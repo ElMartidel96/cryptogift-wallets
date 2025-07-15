@@ -515,12 +515,25 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Store NFT metadata for later retrieval
     try {
       console.log("💾 Storing NFT metadata for retrieval...");
+      console.log("🔍 Debug storage parameters:", {
+        contractAddress: process.env.NEXT_PUBLIC_NFT_DROP_ADDRESS,
+        tokenId: tokenId,
+        imageFile: imageFile,
+        metadataUri: metadataUri,
+        giftMessage: giftMessage,
+        initialBalance: initialBalance,
+        filter: filter,
+        to: to,
+        transactionHash: transactionHash
+      });
       
       // Extract image CID from imageFile parameter
       let imageIpfsCid = imageFile;
       if (imageFile && imageFile.startsWith('ipfs://')) {
         imageIpfsCid = imageFile.replace('ipfs://', '');
       }
+      
+      console.log("🔍 Processed imageIpfsCid:", imageIpfsCid);
       
       const nftMetadata = createNFTMetadata({
         contractAddress: process.env.NEXT_PUBLIC_NFT_DROP_ADDRESS || '',
@@ -555,11 +568,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         owner: to
       });
       
+      console.log("🔍 Created NFT metadata object:", nftMetadata);
+      
       await storeNFTMetadata(nftMetadata);
       console.log("✅ NFT metadata stored successfully");
       
     } catch (metadataError) {
       console.error("⚠️ Failed to store NFT metadata:", metadataError);
+      console.error("📍 Full metadata error:", metadataError);
       // Don't fail the whole mint for this
     }
 

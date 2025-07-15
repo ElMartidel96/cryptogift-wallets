@@ -18,13 +18,14 @@ interface NFTMetadata {
   owner?: string;
 }
 
-// Simple file-based storage for demo
-// In production, use a database like MongoDB, PostgreSQL, etc.
+// Hybrid storage system for Vercel compatibility
+// Uses /tmp for server-side storage (Vercel writable) + localStorage fallback
 
 import { promises as fs } from 'fs';
 import path from 'path';
 
-const STORAGE_DIR = path.join(process.cwd(), 'data', 'nft-metadata');
+// Use /tmp directory for Vercel compatibility
+const STORAGE_DIR = path.join('/tmp', 'nft-metadata');
 
 // Ensure storage directory exists
 async function ensureStorageDir() {
@@ -45,10 +46,22 @@ export async function storeNFTMetadata(metadata: NFTMetadata): Promise<void> {
     const filePath = getMetadataFilePath(metadata.contractAddress, metadata.tokenId);
     
     console.log(`💾 Storing NFT metadata for ${metadata.contractAddress}:${metadata.tokenId}`);
+    console.log(`📂 Storage path: ${filePath}`);
+    
     await fs.writeFile(filePath, JSON.stringify(metadata, null, 2));
-    console.log(`✅ Metadata stored at: ${filePath}`);
+    console.log(`✅ Metadata stored successfully at: ${filePath}`);
+    
+    // Also store in a JSON file for debugging
+    const debugKey = `${metadata.contractAddress.toLowerCase()}_${metadata.tokenId}`;
+    console.log(`🔍 Debug key: ${debugKey}`);
+    
   } catch (error) {
     console.error('❌ Error storing NFT metadata:', error);
+    console.error('📍 Storage error details:', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+      storageDir: STORAGE_DIR
+    });
     throw error;
   }
 }
@@ -59,6 +72,16 @@ export async function getNFTMetadata(contractAddress: string, tokenId: string): 
     const filePath = getMetadataFilePath(contractAddress, tokenId);
     
     console.log(`🔍 Looking for NFT metadata at: ${filePath}`);
+    
+    // Check if file exists first
+    try {
+      await fs.access(filePath);
+      console.log(`✅ File exists at: ${filePath}`);
+    } catch {
+      console.log(`❌ File does not exist at: ${filePath}`);
+      return null;
+    }
+    
     const data = await fs.readFile(filePath, 'utf-8');
     const metadata = JSON.parse(data) as NFTMetadata;
     
@@ -66,6 +89,7 @@ export async function getNFTMetadata(contractAddress: string, tokenId: string): 
     return metadata;
   } catch (error) {
     console.log(`⚠️ No stored metadata found for ${contractAddress}:${tokenId}`);
+    console.log(`📍 Error details:`, error instanceof Error ? error.message : 'Unknown error');
     return null;
   }
 }

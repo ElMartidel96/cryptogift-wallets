@@ -75,20 +75,29 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     let nft;
     
     console.log("🔍 Checking for stored metadata...");
+    console.log("🔍 Search parameters:", { contractAddress, tokenId });
+    
     const storedMetadata = await getNFTMetadata(contractAddress, tokenId);
     
     if (storedMetadata) {
       console.log("✅ Found stored metadata!");
+      console.log("📄 Stored metadata content:", storedMetadata);
+      
       // Use stored metadata with IPFS resolution
+      const resolvedImageUrl = resolveIPFSUrl(storedMetadata.image);
+      console.log("🔗 Resolved image URL:", resolvedImageUrl);
+      
       nft = {
         id: tokenId,
         name: storedMetadata.name,
         description: storedMetadata.description,
-        image: resolveIPFSUrl(storedMetadata.image),
+        image: resolvedImageUrl,
         attributes: storedMetadata.attributes || []
       };
     } else {
-      console.log("⚠️ No stored metadata, using defaults");
+      console.log("⚠️ No stored metadata found, using defaults");
+      console.log("📂 Searched in contract:", contractAddress, "tokenId:", tokenId);
+      
       // Fallback to defaults
       nft = {
         id: tokenId,
