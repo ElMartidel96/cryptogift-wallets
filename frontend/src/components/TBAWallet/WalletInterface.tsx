@@ -249,14 +249,14 @@ export const TBAWalletInterface: React.FC<WalletInterfaceProps> = ({
       <div className="bg-gradient-to-r from-orange-400 to-orange-600 text-white p-4 flex-shrink-0">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            {/* CG Wallet Logo - ALWAYS FIXED for branding */}
-            <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center relative">
+            {/* CG Wallet Logo - Official Logo */}
+            <div className="w-8 h-8 rounded-full flex items-center justify-center relative overflow-hidden">
               <Image 
-                src="/images/cg-wallet-logo.png" 
+                src="/cg-wallet-logo.png" 
                 alt="CG Wallet" 
-                width={24}
-                height={24}
-                className="object-contain"
+                width={32}
+                height={32}
+                className="object-contain w-full h-full"
                 onError={(e) => {
                   // Fallback if logo not found
                   e.currentTarget.style.display = 'none';
@@ -264,7 +264,9 @@ export const TBAWalletInterface: React.FC<WalletInterfaceProps> = ({
                   if (nextEl) nextEl.style.display = 'block';
                 }}
               />
-              <span className="text-orange-600 font-bold text-sm hidden">CG</span>
+              <div className="absolute inset-0 bg-white rounded-full flex items-center justify-center hidden">
+                <span className="text-orange-600 font-bold text-xs">CG</span>
+              </div>
             </div>
             
             {/* NFT Preview - Shows user's NFT with Debug */}

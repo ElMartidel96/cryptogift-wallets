@@ -24,6 +24,27 @@ export const ExtensionInstaller: React.FC<ExtensionInstallerProps> = ({
   useEffect(() => {
     detectBrowser();
     checkIfInstalled();
+    
+    // Listen for PWA installation events
+    const handleAppInstalled = () => {
+      console.log('✅ PWA was installed successfully');
+      sessionStorage.setItem('pwa-install-prompted', 'true');
+      checkIfInstalled(); // Re-check installation status
+    };
+    
+    const handleBeforeInstallPrompt = (e: Event) => {
+      console.log('💡 PWA install prompt available');
+      e.preventDefault();
+      (window as any).deferredPrompt = e;
+    };
+    
+    window.addEventListener('appinstalled', handleAppInstalled);
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    
+    return () => {
+      window.removeEventListener('appinstalled', handleAppInstalled);
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    };
   }, []);
 
   const detectBrowser = () => {
@@ -43,12 +64,34 @@ export const ExtensionInstaller: React.FC<ExtensionInstallerProps> = ({
   };
 
   const checkIfInstalled = () => {
-    // Check if the wallet is already installed as a PWA or browser extension
+    // Check multiple PWA installation indicators
+    let isInstalled = false;
+    
+    // Method 1: Check localStorage
     const installedWallets = JSON.parse(localStorage.getItem('installedCGWallets') || '[]');
-    const isCurrentWalletInstalled = installedWallets.some((w: any) => 
+    const isStoredAsInstalled = installedWallets.some((w: any) => 
       w.nftContract === walletData.nftContract && w.tokenId === walletData.tokenId
     );
-    setIsInstalled(isCurrentWalletInstalled);
+    
+    // Method 2: Check if running in standalone mode (actual PWA)
+    const isStandaloneMode = window.matchMedia('(display-mode: standalone)').matches ||
+                             (window.navigator as any).standalone === true ||
+                             document.referrer.includes('android-app://');
+    
+    // Method 3: Check if app was installed (beforeinstallprompt was used)
+    const hasBeenPromptedForInstall = sessionStorage.getItem('pwa-install-prompted') === 'true';
+    
+    // Consider installed if stored locally OR actually running as PWA
+    isInstalled = isStoredAsInstalled || (isStandaloneMode && hasBeenPromptedForInstall);
+    
+    console.log('🔍 PWA Installation Check:', {
+      isStoredAsInstalled,
+      isStandaloneMode,
+      hasBeenPromptedForInstall,
+      finalDecision: isInstalled
+    });
+    
+    setIsInstalled(isInstalled);
   };
 
   const installExtension = async () => {
@@ -155,13 +198,30 @@ export const ExtensionInstaller: React.FC<ExtensionInstallerProps> = ({
         // Trigger PWA install prompt if available
         if ((window as any).deferredPrompt) {
           const deferredPrompt = (window as any).deferredPrompt;
-          deferredPrompt.prompt();
-          const { outcome } = await deferredPrompt.userChoice;
-          console.log(`PWA install outcome: ${outcome}`);
-          (window as any).deferredPrompt = null;
+          
+          try {
+            deferredPrompt.prompt();
+            const { outcome } = await deferredPrompt.userChoice;
+            console.log(`PWA install outcome: ${outcome}`);
+            
+            if (outcome === 'accepted') {
+              console.log('✅ PWA installation accepted by user');
+              sessionStorage.setItem('pwa-install-prompted', 'true');
+              // Don't immediately mark as installed, wait for appinstalled event
+            } else {
+              console.log('❌ PWA installation dismissed by user');
+              throw new Error('Usuario canceló la instalación');
+            }
+            
+            (window as any).deferredPrompt = null;
+          } catch (promptError) {
+            console.error('❌ Error with install prompt:', promptError);
+            showInstallInstructions();
+          }
         } else {
-          // Fallback: Show instructions
+          // Fallback: Show instructions and mark as "installed" (manual)
           showInstallInstructions();
+          sessionStorage.setItem('pwa-install-prompted', 'true');
         }
         
       } catch (error) {
@@ -299,10 +359,14 @@ export const ExtensionInstaller: React.FC<ExtensionInstallerProps> = ({
           ) : (
             <div className="space-y-2">
               <button
-                onClick={() => window.open(`/token/${walletData.nftContract}/${walletData.tokenId}?wallet=open&pwa=true`, '_blank')}
+                onClick={() => {
+                  // For PWA, we navigate to the wallet directly
+                  const walletUrl = `/token/${walletData.nftContract}/${walletData.tokenId}?wallet=open&pwa=true`;
+                  window.location.href = walletUrl;
+                }}
                 className="w-full py-2 px-4 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium"
               >
-                🚀 Abrir App Instalada
+                🚀 Abrir Mi Wallet
               </button>
               <button
                 onClick={uninstallExtension}

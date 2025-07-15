@@ -6,6 +6,7 @@ import { createBiconomySmartAccount, sendGaslessTransaction, validateBiconomyCon
 import { addMintLog } from "./debug/mint-logs";
 import { uploadMetadata } from "../../lib/ipfs";
 import { ethers } from "ethers";
+import { storeNFTMetadata, createNFTMetadata } from "../../lib/nftMetadataStore";
 
 // Add flow tracking to API
 let currentFlowTrace: any = null;
@@ -510,6 +511,57 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     
     addMintLog('SUCCESS', 'MINT_COMPLETE', finalResult);
     addAPIStep('MINT_API_SUCCESS', finalResult, 'success');
+
+    // Store NFT metadata for later retrieval
+    try {
+      console.log("💾 Storing NFT metadata for retrieval...");
+      
+      // Extract image CID from imageFile parameter
+      let imageIpfsCid = imageFile;
+      if (imageFile && imageFile.startsWith('ipfs://')) {
+        imageIpfsCid = imageFile.replace('ipfs://', '');
+      }
+      
+      const nftMetadata = createNFTMetadata({
+        contractAddress: process.env.NEXT_PUBLIC_NFT_DROP_ADDRESS || '',
+        tokenId: tokenId,
+        name: `CryptoGift NFT-Wallet #${tokenId}`,
+        description: giftMessage || 'Un regalo cripto único creado con amor',
+        imageIpfsCid: imageIpfsCid,
+        metadataIpfsCid: metadataUri.startsWith('ipfs://') ? metadataUri.replace('ipfs://', '') : undefined,
+        attributes: [
+          {
+            trait_type: "Initial Balance",
+            value: `${initialBalance} USDC`
+          },
+          {
+            trait_type: "Filter",
+            value: filter || "Original"
+          },
+          {
+            trait_type: "Creation Date",
+            value: new Date().toISOString()
+          },
+          {
+            trait_type: "Network",
+            value: "Base Sepolia"
+          },
+          {
+            trait_type: "Wallet Type",
+            value: "ERC-6551 Token Bound Account"
+          }
+        ],
+        mintTransactionHash: transactionHash,
+        owner: to
+      });
+      
+      await storeNFTMetadata(nftMetadata);
+      console.log("✅ NFT metadata stored successfully");
+      
+    } catch (metadataError) {
+      console.error("⚠️ Failed to store NFT metadata:", metadataError);
+      // Don't fail the whole mint for this
+    }
 
     res.status(200).json({
       ...finalResult,

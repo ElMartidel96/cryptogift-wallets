@@ -1,6 +1,7 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import { createThirdwebClient, getContract, readContract } from "thirdweb";
 import { baseSepolia } from "thirdweb/chains";
+import { getNFTMetadata, resolveIPFSUrl } from "../../../lib/nftMetadataStore";
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'GET') {
@@ -70,31 +71,50 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       owner = process.env.WALLET_ADDRESS || "0xA362a26F6100Ff5f8157C0ed1c2bcC0a1919Df4a";
     }
 
-    // Get metadata from IPFS/database or use defaults
-    let nft = {
-      id: tokenId,
-      name: `CryptoGift NFT-Wallet #${tokenId}`,
-      description: "Un regalo cripto único con wallet integrada ERC-6551. Contiene criptomonedas reales que puedes usar inmediatamente.",
-      image: "/images/cg-wallet-placeholder.png", // Better fallback image
-      attributes: [
-        {
-          trait_type: "Initial Balance",
-          value: "0 USDC"
-        },
-        {
-          trait_type: "Filter",
-          value: "Original"
-        },
-        {
-          trait_type: "Wallet Type",
-          value: "ERC-6551 Token Bound Account"
-        },
-        {
-          trait_type: "Network",
-          value: "Base Sepolia"
-        }
-      ]
-    };
+    // First, try to get stored metadata from our system
+    let nft;
+    
+    console.log("🔍 Checking for stored metadata...");
+    const storedMetadata = await getNFTMetadata(contractAddress, tokenId);
+    
+    if (storedMetadata) {
+      console.log("✅ Found stored metadata!");
+      // Use stored metadata with IPFS resolution
+      nft = {
+        id: tokenId,
+        name: storedMetadata.name,
+        description: storedMetadata.description,
+        image: resolveIPFSUrl(storedMetadata.image),
+        attributes: storedMetadata.attributes || []
+      };
+    } else {
+      console.log("⚠️ No stored metadata, using defaults");
+      // Fallback to defaults
+      nft = {
+        id: tokenId,
+        name: `CryptoGift NFT-Wallet #${tokenId}`,
+        description: "Un regalo cripto único con wallet integrada ERC-6551. Contiene criptomonedas reales que puedes usar inmediatamente.",
+        image: "/images/cg-wallet-placeholder.png", // Better fallback image
+        attributes: [
+          {
+            trait_type: "Initial Balance",
+            value: "0 USDC"
+          },
+          {
+            trait_type: "Filter",
+            value: "Original"
+          },
+          {
+            trait_type: "Wallet Type",
+            value: "ERC-6551 Token Bound Account"
+          },
+          {
+            trait_type: "Network",
+            value: "Base Sepolia"
+          }
+        ]
+      };
+    }
 
     // If we have a tokenURI, try to fetch metadata
     if (tokenURI && (tokenURI.startsWith("https://") || tokenURI.startsWith("http://"))) {
