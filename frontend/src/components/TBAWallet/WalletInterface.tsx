@@ -6,6 +6,7 @@ import { useActiveAccount } from 'thirdweb/react';
 import { createThirdwebClient, getContract, readContract } from 'thirdweb';
 import { baseSepolia } from 'thirdweb/chains';
 import { ethers } from 'ethers';
+import { ImageDebugger } from '../ImageDebugger';
 
 // Security: Type definitions for type safety
 interface TBAWalletData {
@@ -243,9 +244,9 @@ export const TBAWalletInterface: React.FC<WalletInterfaceProps> = ({
   }
 
   return (
-    <div className="bg-white rounded-xl shadow-2xl w-96 h-600 overflow-hidden">
+    <div className="w-full h-full bg-white flex flex-col overflow-hidden">
       {/* Header - MetaMask Style */}
-      <div className="bg-gradient-to-r from-orange-400 to-orange-600 text-white p-4">
+      <div className="bg-gradient-to-r from-orange-400 to-orange-600 text-white p-4 flex-shrink-0">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
             {/* CG Wallet Logo - ALWAYS FIXED for branding */}
@@ -266,18 +267,12 @@ export const TBAWalletInterface: React.FC<WalletInterfaceProps> = ({
               <span className="text-orange-600 font-bold text-sm hidden">CG</span>
             </div>
             
-            {/* NFT Preview - Shows user's NFT */}
-            <div className="w-10 h-10 rounded-lg overflow-hidden border-2 border-white border-opacity-30">
-              <Image 
-                src={nftImageUrl || '/images/nft-placeholder.png'}
-                alt={`NFT #${tokenId}`}
-                width={40}
-                height={40}
-                className="object-cover"
-                onError={(e) => {
-                  // Fallback for NFT image
-                  e.currentTarget.src = '/images/nft-placeholder.png';
-                }}
+            {/* NFT Preview - Shows user's NFT with Debug */}
+            <div className="w-10 h-10">
+              <ImageDebugger 
+                nftContract={nftContract}
+                tokenId={tokenId}
+                className="w-full h-full"
               />
             </div>
             
@@ -312,19 +307,16 @@ export const TBAWalletInterface: React.FC<WalletInterfaceProps> = ({
         </div>
       </div>
 
-      {/* NFT Display Section */}
-      <div className="p-4 bg-gradient-to-b from-gray-50 to-white">
+      {/* Scrollable Content */}
+      <div className="flex-1 overflow-y-auto">
+        {/* NFT Display Section */}
+        <div className="p-4 bg-gradient-to-b from-gray-50 to-white">
         <div className="text-center mb-4">
-          <div className="w-24 h-24 mx-auto rounded-xl overflow-hidden shadow-lg border-2 border-orange-200">
-            <Image 
-              src={nftImageUrl || '/images/nft-placeholder.png'}
-              alt={`Your NFT #${tokenId}`}
-              width={96}
-              height={96}
-              className="object-cover"
-              onError={(e) => {
-                e.currentTarget.src = '/images/nft-placeholder.png';
-              }}
+          <div className="w-24 h-24 mx-auto">
+            <ImageDebugger 
+              nftContract={nftContract}
+              tokenId={tokenId}
+              className="w-full h-full rounded-xl overflow-hidden shadow-lg border-2 border-orange-200"
             />
           </div>
           <p className="text-xs text-gray-500 mt-2">Your NFT-Wallet</p>
@@ -475,6 +467,7 @@ export const TBAWalletInterface: React.FC<WalletInterfaceProps> = ({
           </button>
         </div>
       </div>
+      </div> {/* Close scrollable content */}
     </div>
   );
 };

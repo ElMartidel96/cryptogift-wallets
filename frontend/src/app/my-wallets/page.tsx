@@ -5,7 +5,10 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useActiveAccount, ConnectButton } from 'thirdweb/react';
 import { client } from '../client';
-import { TBAWalletContainer } from '../../components/TBAWallet';
+import { RightSlideWallet } from '../../components/TBAWallet/RightSlideWallet';
+import { ExtensionInstaller } from '../../components/BrowserExtension/ExtensionInstaller';
+import { AdvancedSecurity } from '../../components/Security/AdvancedSecurity';
+import { AccountManagement } from '../../components/Account/AccountManagement';
 
 interface UserWallet {
   id: string;
@@ -233,40 +236,40 @@ export default function MyWalletsPage() {
         {/* Features Grid */}
         <div className="max-w-4xl mx-auto grid md:grid-cols-3 gap-6">
           {/* Browser Extension */}
-          <div className="bg-white rounded-2xl p-6 shadow-lg">
-            <div className="text-3xl mb-4">🌐</div>
-            <h3 className="font-bold text-gray-800 mb-3">Extensión del Navegador</h3>
-            <p className="text-sm text-gray-600 mb-4">
-              Agrega tu wallet como extensión para acceso rápido
-            </p>
-            <button className="w-full bg-purple-500 text-white py-2 rounded-lg hover:bg-purple-600 transition-colors text-sm">
-              Instalar Extensión
-            </button>
-          </div>
+          {activeWallet && wallets.length > 0 && (() => {
+            const wallet = wallets.find(w => w.id === activeWallet);
+            return wallet ? (
+              <ExtensionInstaller
+                walletData={{
+                  nftContract: wallet.nftContract,
+                  tokenId: wallet.tokenId,
+                  tbaAddress: wallet.tbaAddress,
+                  name: wallet.name,
+                  image: wallet.image
+                }}
+                className="shadow-lg"
+              />
+            ) : null;
+          })()}
 
-          {/* Wallet Security */}
-          <div className="bg-white rounded-2xl p-6 shadow-lg">
-            <div className="text-3xl mb-4">🔒</div>
-            <h3 className="font-bold text-gray-800 mb-3">Seguridad Avanzada</h3>
-            <p className="text-sm text-gray-600 mb-4">
-              Configura recuperación social y autenticación 2FA
-            </p>
-            <button className="w-full bg-green-500 text-white py-2 rounded-lg hover:bg-green-600 transition-colors text-sm">
-              Configurar Seguridad
-            </button>
-          </div>
+          {/* Advanced Security */}
+          {activeWallet && wallets.length > 0 && (() => {
+            const wallet = wallets.find(w => w.id === activeWallet);
+            return wallet ? (
+              <AdvancedSecurity
+                walletAddress={wallet.tbaAddress}
+                className="rounded-2xl shadow-lg"
+              />
+            ) : null;
+          })()}
 
           {/* Account Management */}
-          <div className="bg-white rounded-2xl p-6 shadow-lg">
-            <div className="text-3xl mb-4">⚙️</div>
-            <h3 className="font-bold text-gray-800 mb-3">Gestión de Cuenta</h3>
-            <p className="text-sm text-gray-600 mb-4">
-              Accede a servicios internos y configuración avanzada
-            </p>
-            <button className="w-full bg-orange-500 text-white py-2 rounded-lg hover:bg-orange-600 transition-colors text-sm">
-              Configurar Cuenta
-            </button>
-          </div>
+          {account && (
+            <AccountManagement
+              walletAddress={account.address}
+              className="rounded-2xl shadow-lg"
+            />
+          )}
         </div>
 
         {/* Quick Actions */}
@@ -297,18 +300,14 @@ export default function MyWalletsPage() {
         </div>
       </div>
 
-      {/* TBA Wallet Modal */}
+      {/* TBA Wallet Slide Panel */}
       {showWalletInterface && selectedWallet && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="relative">
-            <TBAWalletContainer
-              nftContract={selectedWallet.nftContract}
-              tokenId={selectedWallet.tokenId}
-              onClose={() => setShowWalletInterface(false)}
-              className="mx-auto"
-            />
-          </div>
-        </div>
+        <RightSlideWallet
+          isOpen={showWalletInterface}
+          onClose={() => setShowWalletInterface(false)}
+          nftContract={selectedWallet.nftContract}
+          tokenId={selectedWallet.tokenId}
+        />
       )}
     </div>
   );

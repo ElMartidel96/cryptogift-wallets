@@ -8,7 +8,7 @@ import { useActiveAccount, ConnectButton } from 'thirdweb/react';
 import { client } from '../../../client';
 import { WalletInterface } from '../../../../components/WalletInterface';
 import { ClaimInterface } from '../../../../components/ClaimInterface';
-import { TBAWalletContainer } from '../../../../components/TBAWallet';
+import { RightSlideWallet } from '../../../../components/TBAWallet/RightSlideWallet';
 
 export default function TokenPage() {
   const params = useParams();
@@ -302,18 +302,14 @@ export default function TokenPage() {
         </div>
       </div>
 
-      {/* TBA Wallet Modal */}
+      {/* TBA Wallet Slide Panel */}
       {showTBAWallet && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="relative">
-            <TBAWalletContainer
-              nftContract={contractAddress}
-              tokenId={tokenId}
-              onClose={() => setShowTBAWallet(false)}
-              className="mx-auto"
-            />
-          </div>
-        </div>
+        <RightSlideWallet
+          isOpen={showTBAWallet}
+          onClose={() => setShowTBAWallet(false)}
+          nftContract={contractAddress}
+          tokenId={tokenId}
+        />
       )}
     </div>
   );

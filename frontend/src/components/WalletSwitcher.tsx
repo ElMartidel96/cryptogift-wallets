@@ -3,7 +3,8 @@
 import React, { useState } from 'react';
 import Image from 'next/image';
 import { useActiveWallet } from '../hooks/useActiveWallet';
-import { TBAWalletContainer } from './TBAWallet';
+import { RightSlideWallet } from './TBAWallet/RightSlideWallet';
+import { ImageDebugger } from './ImageDebugger';
 
 interface WalletSwitcherProps {
   className?: string;
@@ -43,16 +44,11 @@ export const WalletSwitcher: React.FC<WalletSwitcherProps> = ({
         >
           {/* Wallet Icon */}
           <div className="w-8 h-8 rounded-full flex items-center justify-center bg-gray-100">
-            {walletType === 'TBA' ? (
-              <Image 
-                src={tbaWallet?.image || '/images/nft-placeholder.png'}
-                alt="TBA Wallet"
-                width={24}
-                height={24}
-                className="w-6 h-6 rounded-full object-cover"
-                onError={(e) => {
-                  e.currentTarget.src = '/images/nft-placeholder.png';
-                }}
+            {walletType === 'TBA' && tbaWallet ? (
+              <ImageDebugger 
+                nftContract={tbaWallet.nftContract}
+                tokenId={tbaWallet.tokenId}
+                className="w-6 h-6 rounded-full overflow-hidden"
               />
             ) : (
               <span className="text-blue-600 font-bold text-sm">EOA</span>
@@ -130,15 +126,10 @@ export const WalletSwitcher: React.FC<WalletSwitcherProps> = ({
                     }`}
                   >
                     <div className="w-8 h-8 rounded-full overflow-hidden border border-gray-200">
-                      <Image 
-                        src={tbaWallet.image}
-                        alt="TBA Wallet"
-                        width={32}
-                        height={32}
-                        className="w-full h-full object-cover"
-                        onError={(e) => {
-                          e.currentTarget.src = '/images/nft-placeholder.png';
-                        }}
+                      <ImageDebugger 
+                        nftContract={tbaWallet.nftContract}
+                        tokenId={tbaWallet.tokenId}
+                        className="w-full h-full"
                       />
                     </div>
                     <div className="flex-1 text-left">
@@ -198,18 +189,14 @@ export const WalletSwitcher: React.FC<WalletSwitcherProps> = ({
         )}
       </div>
 
-      {/* TBA Wallet Modal */}
+      {/* TBA Wallet Slide Panel */}
       {showTBAWallet && tbaWallet && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="relative">
-            <TBAWalletContainer
-              nftContract={tbaWallet.nftContract}
-              tokenId={tbaWallet.tokenId}
-              onClose={() => setShowTBAWallet(false)}
-              className="mx-auto"
-            />
-          </div>
-        </div>
+        <RightSlideWallet
+          isOpen={showTBAWallet}
+          onClose={() => setShowTBAWallet(false)}
+          nftContract={tbaWallet.nftContract}
+          tokenId={tbaWallet.tokenId}
+        />
       )}
     </>
   );
