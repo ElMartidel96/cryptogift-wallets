@@ -15,6 +15,7 @@ import { CryptoGiftError, parseApiError, logError } from '../lib/errorHandler';
 import { ErrorModal } from './ErrorModal';
 import { GasEstimationModal } from './GasEstimationModal';
 import { startTrace, addStep, addDecision, addError, finishTrace } from '../lib/flowTracker';
+import { storeNFTMetadataClient, NFTMetadata } from '../lib/clientMetadataStore';
 
 interface GiftWizardProps {
   isOpen: boolean;
@@ -275,6 +276,41 @@ export const GiftWizard: React.FC<GiftWizardProps> = ({ isOpen, onClose, referre
       fullResponse: mintResult
     }, 'success');
     
+    // Store NFT metadata on client for future retrieval
+    try {
+      console.log('💾 Storing NFT metadata on client...');
+      const nftMetadata: NFTMetadata = {
+        contractAddress: process.env.NEXT_PUBLIC_NFT_DROP_ADDRESS || '',
+        tokenId: tokenId,
+        name: `CryptoGift NFT-Wallet #${tokenId}`,
+        description: wizardData.message || 'Un regalo cripto único creado con amor',
+        image: `ipfs://${ipfsCid}`,
+        imageIpfsCid: ipfsCid,
+        attributes: [
+          {
+            trait_type: "Initial Balance",
+            value: `${netAmount} USDC`
+          },
+          {
+            trait_type: "Filter",
+            value: wizardData.selectedFilter || "Original"
+          },
+          {
+            trait_type: "Creation Date",
+            value: new Date().toISOString()
+          }
+        ],
+        createdAt: new Date().toISOString(),
+        mintTransactionHash: mintResult.transactionHash,
+        owner: account?.address
+      };
+      
+      storeNFTMetadataClient(nftMetadata);
+      console.log('✅ NFT metadata stored on client');
+    } catch (metadataError) {
+      console.error('⚠️ Failed to store NFT metadata on client:', metadataError);
+    }
+    
     // CRITICAL DECISION POINT: Was it actually gasless?
     addDecision('GIFT_WIZARD', 'isTransactionGasless', gasless, {
       tokenId,
@@ -413,6 +449,41 @@ export const GiftWizard: React.FC<GiftWizardProps> = ({ isOpen, onClose, referre
         message,
         fullResponse: mintResult
       }, 'success');
+      
+      // Store NFT metadata on client for future retrieval
+      try {
+        console.log('💾 Storing NFT metadata on client (gas-paid)...');
+        const nftMetadata: NFTMetadata = {
+          contractAddress: process.env.NEXT_PUBLIC_NFT_DROP_ADDRESS || '',
+          tokenId: tokenId,
+          name: `CryptoGift NFT-Wallet #${tokenId}`,
+          description: wizardData.message || 'Un regalo cripto único creado con amor',
+          image: `ipfs://${ipfsCid}`,
+          imageIpfsCid: ipfsCid,
+          attributes: [
+            {
+              trait_type: "Initial Balance",
+              value: `${netAmount} USDC`
+            },
+            {
+              trait_type: "Filter",
+              value: wizardData.selectedFilter || "Original"
+            },
+            {
+              trait_type: "Creation Date",
+              value: new Date().toISOString()
+            }
+          ],
+          createdAt: new Date().toISOString(),
+          mintTransactionHash: mintResult.transactionHash,
+          owner: account?.address
+        };
+        
+        storeNFTMetadataClient(nftMetadata);
+        console.log('✅ NFT metadata stored on client (gas-paid)');
+      } catch (metadataError) {
+        console.error('⚠️ Failed to store NFT metadata on client (gas-paid):', metadataError);
+      }
       
       // CRITICAL DECISION POINT: Confirm this was a gas-paid transaction
       addDecision('GIFT_WIZARD', 'isTransactionGasPaid', !gasless, {

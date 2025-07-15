@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
+import { getNFTMetadataClient, resolveIPFSUrlClient } from '../lib/clientMetadataStore';
 
 interface ImageDebuggerProps {
   nftContract: string;
@@ -33,6 +34,40 @@ export const ImageDebugger: React.FC<ImageDebuggerProps> = ({
     };
 
     try {
+      // Step 0: Check client storage first
+      debug.steps.push('0️⃣ Checking client storage...');
+      const clientMetadata = getNFTMetadataClient(nftContract, tokenId);
+      
+      if (clientMetadata) {
+        debug.steps.push('✅ Found client metadata');
+        debug.clientMetadata = clientMetadata;
+        
+        const clientImageUrl = resolveIPFSUrlClient(clientMetadata.image);
+        debug.steps.push('1️⃣ Testing client image URL...');
+        
+        try {
+          const clientResponse = await fetch(clientImageUrl, { method: 'HEAD' });
+          debug.clientImageTest = {
+            url: clientImageUrl,
+            status: clientResponse.status,
+            ok: clientResponse.ok
+          };
+          
+          if (clientResponse.ok) {
+            setImageUrl(clientImageUrl);
+            debug.steps.push('✅ Client image URL working');
+            debug.finalSource = 'client';
+            setDebugInfo(debug);
+            setIsLoading(false);
+            return;
+          }
+        } catch (error) {
+          debug.steps.push('❌ Client image URL failed');
+        }
+      } else {
+        debug.steps.push('⚠️ No client metadata found');
+      }
+      
       // Step 1: Test our NFT API
       debug.steps.push('1️⃣ Testing NFT API...');
       const apiResponse = await fetch(`/api/nft/${nftContract}/${tokenId}`);
