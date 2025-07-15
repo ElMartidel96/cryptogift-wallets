@@ -227,7 +227,7 @@ export const WalletInterface: React.FC<WalletInterfaceProps> = ({
       <div className="bg-gradient-to-r from-yellow-400 to-orange-400 rounded-2xl p-6 text-white">
         <h3 className="font-bold mb-2">💰 ¿Quieres ganar dinero?</h3>
         <p className="text-sm opacity-90 mb-4">
-          Invita a tus amigos y gana el 2% de cada regalo que creen usando tu link.
+          Invita a tus amigos y gana el 20% de las ganancias generadas con tu link.
         </p>
         <a
           href="/referrals"

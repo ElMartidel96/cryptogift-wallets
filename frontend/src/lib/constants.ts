@@ -28,6 +28,7 @@ export const PAYMASTER_URL = process.env.NEXT_PUBLIC_PAYMASTER_URL || "https://p
 
 // Configuration
 export const CREATION_FEE_PERCENT = parseInt(process.env.NEXT_PUBLIC_CREATION_FEE_PERCENT || "4");
+export const REFERRAL_COMMISSION_PERCENT = parseInt(process.env.NEXT_PUBLIC_REFERRAL_COMMISSION_PERCENT || "20");
 export const IPFS_GATEWAY = process.env.NEXT_PUBLIC_IPFS_GATEWAY || "https://gateway.pinata.cloud/ipfs/";
 
 // Biconomy Configuration

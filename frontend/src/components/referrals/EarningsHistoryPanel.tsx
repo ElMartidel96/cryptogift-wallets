@@ -301,7 +301,7 @@ export const EarningsHistoryPanel: React.FC<EarningsHistoryPanelProps> = ({
         {/* Footer */}
         <div className="p-4 bg-gray-50 border-t">
           <div className="text-center text-sm text-gray-600">
-            💡 Ganas el 2% del monto de cada regalo creado por tus referidos
+            💡 Ganas el 20% de las ganancias generadas por tus referidos (hasta 30-40% según desempeño)
           </div>
         </div>
       </div>

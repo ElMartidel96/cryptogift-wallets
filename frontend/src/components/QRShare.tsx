@@ -200,7 +200,7 @@ Bienvenid@ al futuro de los regalos 💎✨`;
       {/* Referral Earning */}
       <div className="text-center p-4 bg-gradient-to-r from-yellow-50 to-orange-50 rounded-xl border border-yellow-200">
         <p className="text-sm text-orange-700">
-          💰 <strong>¿Sabías que puedes ganar dinero?</strong> Por cada amigo que cree un regalo usando tu link de referido, ganarás el 2% del monto. 
+          💰 <strong>¿Sabías que puedes ganar dinero?</strong> Por cada amigo que cree un regalo usando tu link de referido, ganarás el 20% de las ganancias generadas. 
           <br />
           <a href="/referrals" className="text-orange-600 hover:underline font-medium">
             Ver mi panel de referidos →

@@ -8,6 +8,7 @@ import { client } from '../client';
 import { BalanceHistoryPanel } from '../../components/referrals/BalanceHistoryPanel';
 import { EarningsHistoryPanel } from '../../components/referrals/EarningsHistoryPanel';
 import { FriendsTrackingPanel } from '../../components/referrals/FriendsTrackingPanel';
+import { PendingRewardsPanel } from '../../components/referrals/PendingRewardsPanel';
 
 export default function ReferralsPage() {
   const [mounted, setMounted] = useState(false);
@@ -26,6 +27,7 @@ export default function ReferralsPage() {
   const [showBalanceHistory, setShowBalanceHistory] = useState(false);
   const [showEarningsHistory, setShowEarningsHistory] = useState(false);
   const [showFriendsTracking, setShowFriendsTracking] = useState(false);
+  const [showPendingRewards, setShowPendingRewards] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -185,7 +187,10 @@ export default function ReferralsPage() {
               </div>
             </button>
 
-            <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100">
+            <button
+              onClick={() => setShowPendingRewards(true)}
+              className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100 hover:shadow-xl hover:border-yellow-200 transition-all duration-200 transform hover:scale-105 cursor-pointer"
+            >
               <div className="text-center">
                 <div className="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-3">
                   <svg className="w-6 h-6 text-yellow-600" fill="currentColor" viewBox="0 0 20 20">
@@ -196,8 +201,9 @@ export default function ReferralsPage() {
                   ${parseFloat(referralData.pendingRewards).toFixed(2)}
                 </div>
                 <div className="text-sm text-gray-600">Pendiente</div>
+                <div className="text-xs text-yellow-600 mt-1">⏳ Ver detalles</div>
               </div>
-            </div>
+            </button>
           </div>
 
           {/* Withdraw Section */}
@@ -288,9 +294,11 @@ export default function ReferralsPage() {
                 <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
                   <span className="text-2xl">📤</span>
                 </div>
-                <h3 className="font-bold mb-2">1. Comparte tu Link</h3>
+                <h3 className="font-bold mb-2 text-blue-600">1. Comparte tu Link</h3>
                 <p className="text-sm text-gray-600">
-                  Envía tu link de referido a amigos por WhatsApp, redes sociales o email
+                  Envía tu link de referido a amigos por WhatsApp, redes sociales o email. 
+                  <strong> El sistema rastrea cada visita en tiempo real</strong> para que tengas 
+                  transparencia total del proceso.
                 </p>
               </div>
 
@@ -298,9 +306,11 @@ export default function ReferralsPage() {
                 <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
                   <span className="text-2xl">🎁</span>
                 </div>
-                <h3 className="font-bold mb-2">2. Ellos Crean Regalos</h3>
+                <h3 className="font-bold mb-2 text-green-600">2. Ellos Crean Regalos</h3>
                 <p className="text-sm text-gray-600">
-                  Cuando tus amigos creen NFT-wallets, generas comisiones automáticamente
+                  Cuando tus referidos creen NFT-wallets, <strong>ves la activación instantánea</strong> 
+                  en tu panel de tracking. Cada regalo genera comisiones automáticamente sin 
+                  intervención manual.
                 </p>
               </div>
 
@@ -308,42 +318,88 @@ export default function ReferralsPage() {
                 <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
                   <span className="text-2xl">💰</span>
                 </div>
-                <h3 className="font-bold mb-2">3. Ganas Dinero</h3>
+                <h3 className="font-bold mb-2 text-purple-600">3. Ganas Dinero</h3>
                 <p className="text-sm text-gray-600">
-                  Obtienes el 2% del monto de cada regalo que creen usando tu link
+                  Obtienes <strong>20% de las ganancias generadas</strong> con tu enlace, 
+                  que puede <strong>subir hasta 30-40%</strong> dependiendo de tu desempeño 
+                  y volumen de referidos activos.
                 </p>
+              </div>
+            </div>
+            
+            <div className="mt-8 bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-6">
+              <h4 className="font-bold text-lg mb-4 text-center">🎯 Beneficios Adicionales</h4>
+              <div className="grid md:grid-cols-2 gap-4 text-sm">
+                <div className="flex items-start space-x-2">
+                  <span className="text-green-500">✅</span>
+                  <div>
+                    <strong>Tracking en tiempo real:</strong> Ve cada visita, registro y activación al instante
+                  </div>
+                </div>
+                <div className="flex items-start space-x-2">
+                  <span className="text-green-500">✅</span>
+                  <div>
+                    <strong>Comisiones escalables:</strong> 20% inicial que puede crecer hasta 40%
+                  </div>
+                </div>
+                <div className="flex items-start space-x-2">
+                  <span className="text-green-500">✅</span>
+                  <div>
+                    <strong>Pagos automáticos:</strong> Sin gestión manual, todo se procesa automáticamente
+                  </div>
+                </div>
+                <div className="flex items-start space-x-2">
+                  <span className="text-green-500">✅</span>
+                  <div>
+                    <strong>Datos protegidos:</strong> Privacidad total de tus referidos mantenida
+                  </div>
+                </div>
               </div>
             </div>
           </div>
 
           {/* Earnings Calculator */}
           <div className="bg-gradient-to-r from-purple-500 to-pink-500 rounded-2xl p-8 text-white">
-            <h2 className="text-2xl font-bold mb-6">Calculadora de Ganancias</h2>
+            <h2 className="text-2xl font-bold mb-6">💰 Calculadora de Potencial de Ganancias</h2>
             
             <div className="grid md:grid-cols-3 gap-6 text-center">
-              <div>
-                <div className="text-3xl font-bold mb-2">$20</div>
-                <div className="text-purple-100 text-sm mb-2">Si invitas 10 amigos</div>
-                <div className="text-xs text-purple-200">Promedio $100 por regalo</div>
+              <div className="bg-white bg-opacity-10 rounded-xl p-4">
+                <div className="text-4xl font-bold mb-2">$40</div>
+                <div className="text-purple-100 text-sm mb-2">Si tu comunidad de influencia alcanza 10 personas</div>
+                <div className="text-xs text-purple-200">Promedio $50 por regalo • 20% comisión</div>
               </div>
 
-              <div>
-                <div className="text-3xl font-bold mb-2">$100</div>
-                <div className="text-purple-100 text-sm mb-2">Si invitas 50 amigos</div>
-                <div className="text-xs text-purple-200">Promedio $100 por regalo</div>
+              <div className="bg-white bg-opacity-10 rounded-xl p-4">
+                <div className="text-4xl font-bold mb-2">$200</div>
+                <div className="text-purple-100 text-sm mb-2">Si tu público potencial llega a 50 personas</div>
+                <div className="text-xs text-purple-200">Promedio $50 por regalo • 20% comisión</div>
               </div>
 
-              <div>
-                <div className="text-3xl font-bold mb-2">$500</div>
-                <div className="text-purple-100 text-sm mb-2">Si invitas 250 amigos</div>
-                <div className="text-xs text-purple-200">Promedio $100 por regalo</div>
+              <div className="bg-white bg-opacity-10 rounded-xl p-4">
+                <div className="text-4xl font-bold mb-2">$1,000</div>
+                <div className="text-purple-100 text-sm mb-2">Si tu red de contactos alcanza 250 personas</div>
+                <div className="text-xs text-purple-200">Promedio $50 por regalo • 20% comisión</div>
               </div>
             </div>
 
-            <div className="text-center mt-6">
-              <p className="text-purple-100 text-sm">
-                💡 Cada amigo que invites puede a su vez invitar a otros, ¡creando un efecto multiplicador!
-              </p>
+            <div className="text-center mt-8">
+              <div className="bg-white bg-opacity-10 rounded-xl p-4 mb-4">
+                <p className="text-purple-100 text-sm mb-2">
+                  🚀 <strong>Potencial de crecimiento:</strong> Tu comisión puede aumentar hasta 30-40% 
+                  según tu desempeño y volumen de referidos activos
+                </p>
+                <p className="text-purple-100 text-sm">
+                  🌟 <strong>Efecto multiplicador:</strong> Cada persona que invites puede traer a otras, 
+                  expandiendo tu red de ganancias exponencialmente
+                </p>
+              </div>
+              
+              <a 
+                href="/referrals/tips" 
+                className="inline-flex items-center px-6 py-3 bg-white text-purple-600 rounded-xl font-bold hover:bg-purple-50 transition-colors"
+              >
+                💡 ¿Quieres saber tips para ganar más dinero con este sistema?
+              </a>
             </div>
           </div>
         </div>
@@ -365,6 +421,12 @@ export default function ReferralsPage() {
       <FriendsTrackingPanel
         isOpen={showFriendsTracking}
         onClose={() => setShowFriendsTracking(false)}
+        userAddress={account?.address || ''}
+      />
+      
+      <PendingRewardsPanel
+        isOpen={showPendingRewards}
+        onClose={() => setShowPendingRewards(false)}
         userAddress={account?.address || ''}
       />
     </div>
