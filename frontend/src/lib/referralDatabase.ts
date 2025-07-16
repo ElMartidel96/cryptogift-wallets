@@ -163,15 +163,45 @@ export async function trackReferralActivation(
   
   const referrals = await loadReferrals();
   
-  const referral = referrals.find(r => 
-    r.referrerAddress.toLowerCase() === referrerAddress.toLowerCase() && 
-    r.referredUserDisplay === referredIdentifier
-  );
+  // Find referral by multiple criteria to handle IP->Wallet transitions
+  const referral = referrals.find(r => {
+    if (r.referrerAddress.toLowerCase() !== referrerAddress.toLowerCase()) {
+      return false;
+    }
+    
+    // Direct match by display identifier
+    if (r.referredUserDisplay === referredIdentifier) {
+      return true;
+    }
+    
+    // Check if this is an IP-based account that now has a wallet address
+    // Extract wallet address from referredIdentifier if it's a wallet format
+    if (referredIdentifier.startsWith('...') && referredIdentifier.length === 9) {
+      const walletSuffix = referredIdentifier.substring(3);
+      // Check if the referral has a wallet address that matches this suffix
+      if (r.referredAddress && r.referredAddress.toLowerCase().endsWith(walletSuffix.toLowerCase())) {
+        return true;
+      }
+    }
+    
+    return false;
+  });
   
   if (referral) {
     // Update referral status
     referral.status = referral.gifts.length > 0 ? 'active' : 'activated';
     referral.lastActivity = new Date().toISOString();
+    
+    // Update display identifier to most recent info (IP-based -> Wallet-based)
+    if (referral.isIPBased && referredIdentifier.startsWith('...')) {
+      const oldDisplay = referral.referredUserDisplay;
+      referral.referredUserDisplay = referredIdentifier;
+      referral.isIPBased = false;
+      console.log('🔄 Upgraded referral display from IP-based to wallet-based:', {
+        oldDisplay,
+        newDisplay: referredIdentifier
+      });
+    }
     
     // Add gift record
     const giftRecord: GiftRecord = {

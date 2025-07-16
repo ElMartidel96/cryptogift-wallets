@@ -500,10 +500,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Track referral activation if referrer is provided
     if (referrer) {
       try {
-        console.log('🔗 Processing referral activation for:', { referrer, recipient: to?.slice(0, 10) + '...' });
+        console.log('🔗 Processing referral activation for:', { 
+          referrer: referrer?.slice(0, 10) + '...', 
+          recipient: to?.slice(0, 10) + '...',
+          fullRecipient: to
+        });
         
         // Generate user display identifier for the gift recipient
         const referredIdentifier = generateUserDisplay(to);
+        
+        console.log('🎯 Generated referredIdentifier for activation:', {
+          referredIdentifier,
+          recipientAddress: to?.slice(0, 10) + '...'
+        });
         
         // Calculate commission (20% of platform earnings, not of gift amount)
         // Assuming platform takes 4% of gift amount, so commission is 20% of that 4%
