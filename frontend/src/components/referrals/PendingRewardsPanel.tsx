@@ -151,12 +151,32 @@ export const PendingRewardsPanel: React.FC<PendingRewardsPanelProps> = ({
               <h2 className="text-2xl font-bold">⏳ Recompensas Pendientes</h2>
               <p className="text-yellow-100 mt-1">Seguimiento detallado de tus comisiones en proceso</p>
             </div>
-            <button
-              onClick={onClose}
-              className="text-white hover:text-gray-200 text-2xl"
-            >
-              ✕
-            </button>
+            <div className="flex items-center gap-4">
+              <button
+                onClick={loadPendingRewards}
+                disabled={isLoading}
+                className={`flex items-center gap-2 px-3 py-1 bg-white bg-opacity-20 rounded-lg transition-all duration-200 group ${
+                  isLoading 
+                    ? 'opacity-75 cursor-not-allowed' 
+                    : 'hover:bg-opacity-30'
+                }`}
+                title="Actualizar recompensas pendientes"
+              >
+                <div className={`w-4 h-4 text-white ${isLoading ? 'animate-spin' : 'group-hover:animate-spin'}`}>
+                  <svg viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 4V2C6.48 2 2 6.48 2 12s4.48 10 10 10c5.09 0 9.29-3.83 9.88-8.72-.01-.08-.01-.16-.01-.24 0-.55-.45-1-1-1s-1 .45-1 1c0 .06 0 .12.01.18C19.42 17.94 16.01 20 12 20c-4.41 0-8-3.59-8-8s3.59-8 8-8z"/>
+                    <path d="M12 4l2 2-2 2"/>
+                  </svg>
+                </div>
+                <span className="text-sm">{isLoading ? 'Cargando...' : 'Actualizar'}</span>
+              </button>
+              <button
+                onClick={onClose}
+                className="text-white hover:text-gray-200 text-2xl"
+              >
+                ✕
+              </button>
+            </div>
           </div>
         </div>
 

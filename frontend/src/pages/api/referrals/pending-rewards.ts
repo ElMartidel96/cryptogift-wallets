@@ -1,4 +1,5 @@
 import { NextApiRequest, NextApiResponse } from 'next';
+import { getUserPendingRewards } from '../../../lib/referralDatabase';
 
 interface PendingReward {
   id: string;
@@ -13,57 +14,6 @@ interface PendingReward {
   dayCategory: 'today' | 'yesterday' | 'this_week' | 'this_month' | 'older';
 }
 
-// Mock data for demonstration - replace with actual database queries
-const mockPendingRewards: PendingReward[] = [
-  {
-    id: '1',
-    date: new Date().toISOString(), // Today
-    amount: 8.0,
-    referredUser: '0x1234567890123456789012345678901234567890',
-    referredUserDisplay: '...567890',
-    giftAmount: 40.0,
-    giftTokenId: '150',
-    estimatedCompletionDate: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(), // 2 hours from now
-    reason: 'blockchain_confirmation',
-    dayCategory: 'today'
-  },
-  {
-    id: '2',
-    date: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(), // Yesterday
-    amount: 12.0,
-    referredUser: '0x9876543210987654321098765432109876543210',
-    referredUserDisplay: '...543210',
-    giftAmount: 60.0,
-    giftTokenId: '151',
-    estimatedCompletionDate: new Date(Date.now() + 4 * 60 * 60 * 1000).toISOString(), // 4 hours from now
-    reason: 'payment_processing',
-    dayCategory: 'yesterday'
-  },
-  {
-    id: '3',
-    date: new Date().toISOString(), // Today
-    amount: 6.0,
-    referredUser: '0x5555555555555555555555555555555555555555',
-    referredUserDisplay: '...555555',
-    giftAmount: 30.0,
-    giftTokenId: '152',
-    estimatedCompletionDate: new Date(Date.now() + 1 * 60 * 60 * 1000).toISOString(), // 1 hour from now
-    reason: 'fraud_review',
-    dayCategory: 'today'
-  },
-  {
-    id: '4',
-    date: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(), // 3 days ago
-    amount: 10.0,
-    referredUser: '0x1111111111111111111111111111111111111111',
-    referredUserDisplay: '...111111',
-    giftAmount: 50.0,
-    giftTokenId: '153',
-    estimatedCompletionDate: new Date(Date.now() + 12 * 60 * 60 * 1000).toISOString(), // 12 hours from now
-    reason: 'manual_review',
-    dayCategory: 'this_week'
-  }
-];
 
 function categorizePendingRewards(rewards: PendingReward[]): PendingReward[] {
   const now = new Date();
@@ -106,8 +56,14 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
   }
 
   try {
+    console.log('📊 Loading real pending rewards for address:', address);
+    
+    // Get real pending rewards from database
+    const realPendingRewards = await getUserPendingRewards(address);
+    console.log('🔍 Found real pending rewards:', realPendingRewards.length);
+    
     // Categorize rewards by day
-    let categorizedRewards = categorizePendingRewards(mockPendingRewards);
+    let categorizedRewards = categorizePendingRewards(realPendingRewards);
 
     // Filter by date category
     if (dateFilter && dateFilter !== 'all') {
@@ -137,6 +93,14 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
       return counts;
     }, {});
 
+    console.log('✅ Real pending rewards loaded successfully:', {
+      totalCount: categorizedRewards.length,
+      totalPending,
+      todayCount,
+      yesterdayCount,
+      filterApplied: dateFilter
+    });
+
     res.status(200).json({
       success: true,
       pendingRewards: categorizedRewards,
@@ -152,7 +116,7 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
       }
     });
   } catch (error) {
-    console.error('Error fetching pending rewards:', error);
+    console.error('❌ Error fetching real pending rewards:', error);
     res.status(500).json({ error: 'Failed to fetch pending rewards' });
   }
 }

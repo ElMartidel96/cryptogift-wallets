@@ -28,6 +28,9 @@ export interface GiftRecord {
   date: string;
   transactionHash?: string;
   status: 'completed' | 'pending';
+  paymentStatus?: 'paid' | 'pending_blockchain' | 'pending_payment' | 'pending_review';
+  estimatedPaymentDate?: string;
+  pendingReason?: 'blockchain_confirmation' | 'payment_processing' | 'fraud_review' | 'manual_review';
 }
 
 export interface ReferralStats {
@@ -203,7 +206,8 @@ export async function trackReferralActivation(
       });
     }
     
-    // Add gift record
+    // Add gift record with realistic pending status (testnet = pending blockchain confirmation)
+    const isTestnet = process.env.NEXT_PUBLIC_CHAIN_ID === '84532'; // Base Sepolia
     const giftRecord: GiftRecord = {
       id: `gift_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       tokenId: giftData.tokenId,
@@ -211,7 +215,12 @@ export async function trackReferralActivation(
       commission: giftData.commission,
       date: new Date().toISOString(),
       transactionHash: giftData.transactionHash,
-      status: 'completed'
+      status: 'completed', // Gift is completed
+      paymentStatus: isTestnet ? 'pending_blockchain' : 'paid', // But payment pending on testnet
+      pendingReason: isTestnet ? 'blockchain_confirmation' : undefined,
+      estimatedPaymentDate: isTestnet ? 
+        new Date(Date.now() + (1 + Math.random() * 4) * 60 * 60 * 1000).toISOString() : // 1-5 hours
+        undefined
     };
     
     referral.gifts.push(giftRecord);
@@ -271,6 +280,34 @@ export async function getUserEarningsHistory(referrerAddress: string) {
   }
   
   return earnings.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+}
+
+export async function getUserPendingRewards(referrerAddress: string) {
+  const referrals = await loadReferrals();
+  const userReferrals = referrals.filter(r => r.referrerAddress.toLowerCase() === referrerAddress.toLowerCase());
+  
+  const pendingRewards = [];
+  for (const referral of userReferrals) {
+    for (const gift of referral.gifts) {
+      // Only include rewards that are pending payment
+      if (gift.paymentStatus && gift.paymentStatus !== 'paid') {
+        pendingRewards.push({
+          id: gift.id,
+          date: gift.date,
+          amount: gift.commission,
+          referredUser: referral.referredAddress || '',
+          referredUserDisplay: referral.referredUserDisplay,
+          giftAmount: gift.amount,
+          giftTokenId: gift.tokenId,
+          estimatedCompletionDate: gift.estimatedPaymentDate || new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+          reason: gift.pendingReason || 'blockchain_confirmation',
+          transactionHash: gift.transactionHash
+        });
+      }
+    }
+  }
+  
+  return pendingRewards.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 }
 
 // Helper function to generate user display identifier
