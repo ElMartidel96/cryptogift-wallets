@@ -21,6 +21,7 @@ export default function TokenPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showTBAWallet, setShowTBAWallet] = useState(false);
+  const [isRegenerating, setIsRegenerating] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -126,6 +127,43 @@ export default function TokenPage() {
     }
   };
 
+  const regenerateMetadata = async () => {
+    if (!contractAddress || !tokenId) return;
+    
+    setIsRegenerating(true);
+    try {
+      console.log('🔄 Regenerating metadata for token:', { contractAddress, tokenId });
+      
+      const response = await fetch('/api/nft/regenerate-metadata', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contractAddress,
+          tokenId
+        })
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log('✅ Metadata regenerated successfully:', result);
+        
+        // Reload NFT data to show the regenerated metadata
+        await loadNFTData();
+        
+        alert('¡Metadata regenerada exitosamente! La imagen debería mostrarse ahora.');
+      } else {
+        const error = await response.json();
+        console.error('❌ Failed to regenerate metadata:', error);
+        alert(`Error al regenerar metadata: ${error.error}`);
+      }
+    } catch (error) {
+      console.error('❌ Error regenerating metadata:', error);
+      alert('Error al regenerar metadata. Verifica la consola para más detalles.');
+    } finally {
+      setIsRegenerating(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -189,6 +227,33 @@ export default function TokenPage() {
                     height={500}
                     className="w-full rounded-2xl shadow-lg"
                   />
+                  
+                  {/* Debug: Regenerate Metadata Button */}
+                  {(nftData.image.includes('placeholder') || nftData.image.includes('cg-wallet-placeholder')) && (
+                    <div className="mt-4 p-3 bg-yellow-50 rounded-lg border border-yellow-200">
+                      <p className="text-sm text-yellow-800 mb-2">
+                        ⚠️ Mostrando imagen placeholder. La imagen real puede haberse perdido.
+                      </p>
+                      <button
+                        onClick={regenerateMetadata}
+                        disabled={isRegenerating}
+                        className={`w-full px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                          isRegenerating
+                            ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                            : 'bg-blue-500 text-white hover:bg-blue-600'
+                        }`}
+                      >
+                        {isRegenerating ? (
+                          <>
+                            <span className="inline-block animate-spin mr-2">🔄</span>
+                            Regenerando...
+                          </>
+                        ) : (
+                          '🔄 Recuperar Imagen Real'
+                        )}
+                      </button>
+                    </div>
+                  )}
                 </div>
                 
                 <div className="md:w-1/2 p-8">

@@ -39,23 +39,66 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     let owner = "0x0000000000000000000000000000000000000000";
     
     try {
-      // Try reading tokenURI - this might fail for Factory contracts
+      // Try reading tokenURI from contract first
       tokenURI = await readContract({
         contract: nftContract,
         method: "function tokenURI(uint256 tokenId) view returns (string)",
         params: [BigInt(tokenId)],
       });
-      console.log("✅ Token URI found:", tokenURI);
+      console.log("✅ Token URI found on contract:", tokenURI);
       
-      // Handle IPFS URLs
-      if (tokenURI.startsWith("ipfs://")) {
-        tokenURI = tokenURI.replace("ipfs://", "https://nftstorage.link/ipfs/");
+      // If we got a tokenURI, try to fetch the metadata directly from IPFS
+      if (tokenURI) {
+        let ipfsMetadataUrl = tokenURI;
+        
+        // Convert IPFS URLs to gateway URLs with fallback strategy
+        if (tokenURI.startsWith("ipfs://")) {
+          const cid = tokenURI.replace("ipfs://", "");
+          // Try multiple IPFS gateways for better reliability
+          const gateways = [
+            `https://nftstorage.link/ipfs/${cid}`,
+            `https://ipfs.io/ipfs/${cid}`,
+            `https://gateway.pinata.cloud/ipfs/${cid}`,
+            `https://cloudflare-ipfs.com/ipfs/${cid}`
+          ];
+          
+          for (const gateway of gateways) {
+            try {
+              console.log(`🔍 Trying IPFS gateway: ${gateway}`);
+              const controller = new AbortController();
+              const timeoutId = setTimeout(() => controller.abort(), 5000);
+              
+              const metadataResponse = await fetch(gateway, { 
+                signal: controller.signal,
+                headers: { 'Accept': 'application/json' }
+              });
+              
+              clearTimeout(timeoutId);
+              
+              if (metadataResponse.ok) {
+                const metadata = await metadataResponse.json();
+                console.log("✅ Retrieved metadata from IPFS:", metadata);
+                
+                // Return the real metadata with proper image URL
+                return res.status(200).json({
+                  ...metadata,
+                  tokenId,
+                  contractAddress,
+                  owner,
+                  source: 'contract_ipfs',
+                  gateway: gateway
+                });
+              }
+            } catch (gatewayError) {
+              console.log(`⚠️ Gateway ${gateway} failed:`, gatewayError.message);
+              continue; // Try next gateway
+            }
+          }
+        }
       }
     } catch (tokenURIError) {
-      console.log("⚠️ No tokenURI found, using Factory approach");
+      console.log("⚠️ No tokenURI found on contract, checking stored metadata");
       console.log("Contract:", contractAddress, "TokenId:", tokenId);
-      // For Factory 6551 contracts, we need to construct metadata differently
-      // The token was created via createAccount, so metadata should be in our system
     }
     
     // Try to read owner

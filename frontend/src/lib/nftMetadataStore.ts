@@ -186,3 +186,45 @@ export function resolveIPFSUrl(ipfsUrl: string): string {
   
   return ipfsUrl;
 }
+
+// Enhanced IPFS URL resolution with fallback testing
+export async function resolveIPFSUrlWithFallback(ipfsUrl: string): Promise<string> {
+  if (!ipfsUrl.startsWith('ipfs://')) {
+    return ipfsUrl;
+  }
+  
+  const cid = ipfsUrl.replace('ipfs://', '');
+  const gateways = [
+    `https://nftstorage.link/ipfs/${cid}`,
+    `https://ipfs.io/ipfs/${cid}`,
+    `https://gateway.pinata.cloud/ipfs/${cid}`,
+    `https://cloudflare-ipfs.com/ipfs/${cid}`
+  ];
+  
+  // Try each gateway with timeout
+  for (const gateway of gateways) {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 3000);
+      
+      const response = await fetch(gateway, { 
+        method: 'HEAD', // Just check if resource exists
+        signal: controller.signal
+      });
+      
+      clearTimeout(timeoutId);
+      
+      if (response.ok) {
+        console.log(`✅ IPFS gateway working: ${gateway}`);
+        return gateway;
+      }
+    } catch (error) {
+      console.log(`⚠️ IPFS gateway failed: ${gateway}`, error.message);
+      continue;
+    }
+  }
+  
+  // If all gateways fail, return the first one as fallback
+  console.log('⚠️ All IPFS gateways failed, using default');
+  return gateways[0];
+}

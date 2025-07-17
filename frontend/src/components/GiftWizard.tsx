@@ -296,8 +296,8 @@ export const GiftWizard: React.FC<GiftWizardProps> = ({ isOpen, onClose, referre
         tokenId: tokenId,
         name: `CryptoGift NFT-Wallet #${tokenId}`,
         description: wizardData.message || 'Un regalo cripto único creado con amor',
-        image: `ipfs://${ipfsCid}`,
-        imageIpfsCid: ipfsCid,
+        image: `ipfs://${actualImageCid}`,
+        imageIpfsCid: actualImageCid,
         attributes: [
           {
             trait_type: "Initial Balance",
@@ -482,8 +482,8 @@ export const GiftWizard: React.FC<GiftWizardProps> = ({ isOpen, onClose, referre
           tokenId: tokenId,
           name: `CryptoGift NFT-Wallet #${tokenId}`,
           description: wizardData.message || 'Un regalo cripto único creado con amor',
-          image: `ipfs://${ipfsCid}`,
-          imageIpfsCid: ipfsCid,
+          image: `ipfs://${actualImageCid}`,
+          imageIpfsCid: actualImageCid,
           attributes: [
             {
               trait_type: "Initial Balance",
