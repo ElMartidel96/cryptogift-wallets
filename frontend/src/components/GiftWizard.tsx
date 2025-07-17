@@ -224,14 +224,22 @@ export const GiftWizard: React.FC<GiftWizardProps> = ({ isOpen, onClose, referre
       throw new Error('Upload failed');
     }
 
-    const { ipfsCid } = await uploadResponse.json();
-    addStep('GIFT_WIZARD', 'IPFS_UPLOAD_SUCCESS', { ipfsCid }, 'success');
+    const { ipfsCid, imageIpfsCid } = await uploadResponse.json();
+    addStep('GIFT_WIZARD', 'IPFS_UPLOAD_SUCCESS', { 
+      metadataCid: ipfsCid, 
+      imageCid: imageIpfsCid,
+      // Use imageIpfsCid if available (filtered images), fallback to ipfsCid (original images)
+      actualImageCid: imageIpfsCid || ipfsCid
+    }, 'success');
 
+    // Determine correct image CID to use (prioritize actual image over metadata)
+    const actualImageCid = imageIpfsCid || ipfsCid;
+    
     // Step 2: Try gasless mint using /api/mint (which tries gasless first)
     addStep('GIFT_WIZARD', 'GASLESS_API_CALL_STARTED', {
       endpoint: '/api/mint',
       to: account?.address,
-      imageFile: ipfsCid,
+      imageFile: actualImageCid, // Use actual image CID, not metadata CID
       initialBalance: netAmount,
       filter: wizardData.selectedFilter || 'Original'
     }, 'pending');
@@ -241,7 +249,7 @@ export const GiftWizard: React.FC<GiftWizardProps> = ({ isOpen, onClose, referre
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         to: account?.address,
-        imageFile: ipfsCid,
+        imageFile: actualImageCid, // Use actual image CID instead of metadata CID
         giftMessage: wizardData.message || 'Un regalo cripto único creado con amor',
         initialBalance: netAmount,
         filter: wizardData.selectedFilter || 'Original',
@@ -408,13 +416,16 @@ export const GiftWizard: React.FC<GiftWizardProps> = ({ isOpen, onClose, referre
         throw new Error(errorData.message || `Upload failed with status ${uploadResponse.status}`);
       }
 
-      const { ipfsCid } = await uploadResponse.json();
+      const { ipfsCid, imageIpfsCid } = await uploadResponse.json();
+      
+      // Determine correct image CID to use (prioritize actual image over metadata)
+      const actualImageCid = imageIpfsCid || ipfsCid;
 
       // Step 2: Mint NFT with GAS PAYMENT (user confirmed to pay gas)
       addStep('GIFT_WIZARD', 'GAS_PAID_MINT_STARTED', {
         endpoint: '/api/mint',
         to: account?.address,
-        imageFile: ipfsCid,
+        imageFile: actualImageCid, // Use actual image CID instead of metadata CID
         initialBalance: netAmount,
         filter: wizardData.selectedFilter || 'Original'
       }, 'pending');
@@ -424,7 +435,7 @@ export const GiftWizard: React.FC<GiftWizardProps> = ({ isOpen, onClose, referre
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           to: account?.address,
-          imageFile: ipfsCid, // Send IPFS CID from upload
+          imageFile: actualImageCid, // Send actual image CID, not metadata CID
           giftMessage: wizardData.message || 'Un regalo cripto único creado con amor',
           initialBalance: netAmount, // Net amount after fees
           filter: wizardData.selectedFilter || 'Original',

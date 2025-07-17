@@ -276,11 +276,27 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
     }
 
-    // Create metadata
+    // Create metadata following NFT standards
+    // Ensure imageFile has proper IPFS format
+    const imageUri = imageFile.startsWith('ipfs://') ? imageFile : `ipfs://${imageFile}`;
+    
+    console.log('🖼️ NFT Image URI for metadata:', {
+      originalImageFile: imageFile,
+      finalImageUri: imageUri,
+      isIPFSFormat: imageFile.startsWith('ipfs://'),
+      imageFileType: typeof imageFile
+    });
+    
+    addMintLog('INFO', 'NFT_IMAGE_URI_PREPARED', {
+      originalImageFile: imageFile,
+      finalImageUri: imageUri,
+      isIPFSFormat: imageFile.startsWith('ipfs://')
+    });
+    
     const metadata = {
       name: "CryptoGift Wallet",
       description: giftMessage,
-      image: imageFile,
+      image: imageUri, // NFT standard: should point directly to image file
       attributes: [
         {
           trait_type: "Initial Balance",
