@@ -277,8 +277,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // Create metadata following NFT standards
-    // Ensure imageFile has proper IPFS format
-    const imageUri = imageFile.startsWith('ipfs://') ? imageFile : `ipfs://${imageFile}`;
+    // Clean and ensure imageFile has proper IPFS format (avoid double prefix)
+    const cleanImageFile = imageFile.replace(/^ipfs:\/\//, ''); // Remove existing prefix if any
+    const imageUri = `ipfs://${cleanImageFile}`;
     
     console.log('🖼️ NFT Image URI for metadata:', {
       originalImageFile: imageFile,
