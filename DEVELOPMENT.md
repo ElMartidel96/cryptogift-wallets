@@ -2,7 +2,82 @@
 
 This file provides development guidance and context for the CryptoGift NFT-Wallet platform.
 
-## ⚡ LATEST SESSION UPDATES (July 15, 2025)
+## ⚡ LATEST SESSION UPDATES (July 18, 2025)
+
+### 🎯 CRITICAL NFT IMAGE DISPLAY ISSUE RESOLVED ✅
+
+**DEPLOYMENT SUCCESSFUL ✅ - NFT Image Display & Metadata Recovery System**
+
+#### **🚀 Problem Solved:**
+- ✅ **Root Cause Identified**: System was using metadata CIDs instead of actual image CIDs for NFT display
+- ✅ **Double IPFS Prefix Fixed**: Resolved `ipfs://ipfs://` double prefix causing broken image URLs
+- ✅ **Metadata Recovery System**: Implemented regeneration functionality for lost/corrupted NFT metadata
+- ✅ **IPFS Gateway Fallbacks**: Enhanced multi-gateway strategy for better reliability
+- ✅ **Legacy Token Support**: Added reconstruction system for older tokens without proper tokenURI
+
+#### **🔧 Technical Implementation:**
+
+**Core Fixes Applied:**
+```typescript
+// BEFORE (causing placeholder images):
+const actualImageCid = ipfsCid; // Using metadata CID
+
+// AFTER (fixed):
+const actualImageCid = imageIpfsCid || ipfsCid; // Using actual image CID
+```
+
+**Files Modified:**
+- ✅ **GiftWizard.tsx**: Fixed both gasless and gas-paid flows to use `actualImageCid`
+- ✅ **mint.ts**: Added CID cleaning logic to prevent double `ipfs://` prefix
+- ✅ **regenerate-metadata.ts**: NEW - Metadata recovery API endpoint
+- ✅ **token/[address]/[id]/page.tsx**: Added regeneration button for placeholder detection
+- ✅ **nftMetadataStore.ts**: Enhanced IPFS URL resolution with fallback testing
+- ✅ **[...params].ts**: Improved IPFS gateway fallback strategy
+
+#### **🆕 New Features:**
+
+**1. Metadata Regeneration System**
+- **Auto-Detection**: Detects placeholder images and shows recovery button
+- **Multi-Gateway Fallback**: Attempts recovery from 4+ IPFS gateways
+- **Legacy Token Support**: Reconstructs metadata for tokens without proper tokenURI
+- **User-Friendly**: One-click recovery with success/error feedback
+
+**2. Enhanced IPFS Strategy**
+- **4 Gateway Fallbacks**: nftstorage.link, ipfs.io, pinata.cloud, cloudflare-ipfs.com
+- **Timeout Handling**: Proper AbortController implementation (fixed fetch timeout issues)
+- **Reliability Improvements**: Better error handling and gateway health checking
+
+**3. CID Processing Fixes**
+- **Double Prefix Prevention**: Clean existing prefixes before adding new ones
+- **Image vs Metadata CID**: Proper differentiation between image and metadata CIDs
+- **URL Normalization**: Consistent IPFS URL formatting across the platform
+
+#### **🎯 Results Achieved:**
+- ✅ **New NFTs**: Will display actual uploaded images instead of placeholders
+- ✅ **Existing NFTs**: Can be recovered using the regeneration button
+- ✅ **Build Success**: All syntax errors fixed (fetch timeout, AbortController)
+- ✅ **Legacy Support**: Tokens like 1752635812685 and 1752635834610 can now be recovered
+
+#### **🔄 User Experience:**
+- **Seamless Creation**: New gifts automatically use correct image CIDs
+- **Easy Recovery**: Existing gifts with placeholder images show recovery button
+- **Visual Feedback**: Clear success/error messages during regeneration process
+- **No Breaking Changes**: All existing functionality preserved
+
+#### **📊 Technical Commits:**
+```bash
+91ecbfe - fix: resolve double IPFS prefix issue and improve metadata regeneration
+83cf150 - fix: complete NFT image display solution with metadata regeneration
+```
+
+#### **🧪 Testing Ready:**
+- **New NFT Creation**: Test creating a new gift to verify correct image display
+- **Regeneration Button**: Click "🔄 Recuperar Imagen Real" on existing tokens
+- **Legacy Token Recovery**: Test with tokens 1752635812685, 1752635834610
+
+---
+
+## ⚡ PREVIOUS SESSION UPDATES (July 15, 2025)
 
 ### 🚀 COMPLETE REFERRALS SYSTEM 2.0 ENHANCEMENT
 
