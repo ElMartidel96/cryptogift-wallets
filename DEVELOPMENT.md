@@ -4,9 +4,206 @@ This file provides development guidance and context for the CryptoGift NFT-Walle
 
 ## ⚡ LATEST SESSION UPDATES (July 19, 2025)
 
+### 🛡️ COMPREHENSIVE GUARDIAN SYSTEM WITH EXTREME SECURITY ✅
+
+**DEPLOYMENT SUCCESSFUL ✅ - Complete Guardian Security System with Educational UI**
+
+#### **🚨 CRITICAL PROBLEMS SOLVED:**
+- ✅ **NFT Metadata Caching Issue**: Fixed unique metadata IDs to prevent same wallet creating multiple gifts with identical images
+- ✅ **Guardian System Backend**: Implemented complete multi-signature social recovery with cryptographic verification
+- ✅ **Educational Guardian UI**: Added comprehensive importance notices and "Learn More" educational content
+- ✅ **Redis Persistence**: Migrated from ephemeral /tmp/ storage to persistent Redis for metadata and guardian data
+- ✅ **TypeScript Compilation**: Resolved all build errors for successful production deployment
+
+#### **🔧 Core Guardian Security Features Implemented:**
+
+**1. Backend Guardian System (Extreme Security)**
+```typescript
+// guardianSystem.ts - Multi-signature social recovery
+export class GuardianSecuritySystem {
+  // Setup: 2-3 guardians with cryptographic verification
+  async setupGuardians(walletAddress, guardians, requiredSignatures = 2)
+  
+  // Verification: Time-delayed verification with secure codes
+  async verifyGuardian(walletAddress, guardianAddress, verificationCode, signature?)
+  
+  // Recovery: Multi-signature social recovery process
+  async initiateRecovery(originalWallet, newWallet, initiatingGuardian, reason)
+  
+  // Security: Emergency override and system suspension
+  async emergencyRecoveryOverride(walletAddress, adminKey, reason)
+}
+```
+
+**2. Enhanced Guardian UI with Educational Content**
+```typescript
+// GuardiansModal.tsx - Comprehensive educational wizard
+interface GuardianFormData {
+  address: string;                    // Email or wallet address
+  nickname: string;                   // User-friendly name
+  relationship: string;               // family | friend | colleague
+  verificationMethod: 'email' | 'wallet_signature';
+}
+
+// Educational Features:
+- 🚨 Critical importance badge and warnings
+- 📚 "Saber más" educational modal with detailed process explanation
+- 🎯 Step-by-step wizard (Info → Setup → Verification)
+- 💡 Real-time security level indicators
+- ⚠️ Consequence comparison (With vs Without guardians)
+```
+
+**3. WalletInterface Guardian Integration**
+```typescript
+// Enhanced guardian button with importance notice
+<div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4">
+  <p className="text-sm font-medium text-yellow-800">
+    <strong>¡Es FUNDAMENTAL configurar guardianes!</strong> 
+    Sin ellos, podrías perder acceso permanente a tus fondos.
+  </p>
+  <button onClick={() => setShowGuardiansModal(true)}>
+    📚 Saber más sobre la importancia
+  </button>
+</div>
+```
+
+**4. NFT Metadata Persistence Fix**
+```typescript
+// nftMetadataStore.ts - Redis-based persistent storage
+interface NFTMetadata {
+  uniqueMetadataId?: string;    // Unique ID per NFT creation (FIXED)
+  creatorWallet?: string;       // Track creator for debugging
+  // ... other metadata fields
+}
+
+// Fixed: Each wallet creates unique metadata instead of cache conflicts
+const nftMetadata = createNFTMetadata({
+  // ... existing params
+  creatorWallet: creatorWallet  // CRITICAL: Track who created this
+});
+```
+
+#### **🔐 Guardian Security Architecture:**
+
+**Multi-Signature Recovery Process:**
+1. **Setup Phase**: 
+   - Add 2-3 trusted contacts (email or wallet)
+   - Each guardian receives verification code
+   - 72-hour security delay after setup
+   - Cryptographic verification required
+
+2. **Active Protection**:
+   - 2 of 3 signatures required for recovery
+   - Time delays prevent immediate attacks
+   - All actions logged and auditable
+   - Emergency cancellation available
+
+3. **Recovery Process**:
+   - Guardian initiates recovery request
+   - 24-hour mandatory waiting period
+   - Multiple guardian confirmations required
+   - Complete audit trail maintained
+
+**Redis Storage Architecture:**
+```typescript
+// Guardian data stored in Redis with encryption
+guardian_setup:${walletAddress}        // Main guardian configuration
+guardian_verification:${guardian}:${wallet}  // Verification codes
+recovery_request:${recoveryId}         // Recovery requests
+emergency_log:${timestamp}             // Emergency actions log
+```
+
+#### **📚 Educational Content Implementation:**
+
+**Importance Modal Features:**
+- **Critical Warning Section**: PÉRDIDA TOTAL scenarios without guardians
+- **How It Works**: 3-step visual process explanation
+- **Security Features**: Cryptographic and social protections
+- **Recovery Process**: 4-step recovery procedure
+- **Call-to-Action**: Urgent setup with 2-minute completion time
+
+**WalletInterface Integration:**
+- **Brief importance notice** with critical warning badge
+- **"Saber más" button** opens comprehensive educational modal
+- **Visual indicators** showing security level and status
+- **Quick setup** with 2-minute completion estimate
+
+#### **📁 Files Created/Modified:**
+
+**New Files:**
+- ✅ **frontend/src/lib/guardianSystem.ts**: Complete guardian security backend
+- ✅ **frontend/src/pages/api/guardians/setup.ts**: Guardian system initialization API
+- ✅ **frontend/src/pages/api/guardians/verify.ts**: Guardian verification API  
+- ✅ **frontend/src/pages/api/guardians/status.ts**: Guardian status checking API
+
+**Enhanced Files:**
+- ✅ **frontend/src/components/GuardiansModal.tsx**: Completely rewritten with educational content
+- ✅ **frontend/src/components/WalletInterface.tsx**: Added importance notice and enhanced button
+- ✅ **frontend/src/lib/nftMetadataStore.ts**: Fixed metadata caching with unique IDs
+- ✅ **frontend/src/pages/api/mint.ts**: Added creator wallet tracking for debugging
+
+#### **🎯 User Experience Revolution:**
+
+**BEFORE**: 
+- Same wallet created multiple gifts with identical cached images
+- Guardian system had no follow-up logic after configuration
+- No educational content about guardian importance
+- No understanding of consequences without guardians
+
+**AFTER**:
+- Each wallet creation generates unique metadata preventing cache conflicts ✅
+- Complete guardian system with verification, recovery, and security features ✅
+- Comprehensive educational content explaining critical importance ✅  
+- Step-by-step wizard guiding users through guardian setup process ✅
+
+#### **🔄 Guardian System Workflow:**
+
+1. **Setup**: User configures guardians via enhanced modal with educational content
+2. **Verification**: Each guardian receives verification code and confirms identity
+3. **Active Protection**: System monitors wallet and provides security recommendations
+4. **Recovery**: If needed, guardians can initiate multi-signature recovery process
+5. **Maintenance**: Users can update guardians, check status, and view security level
+
+#### **⚠️ Critical Security Implementation:**
+
+```typescript
+// Security Features Applied:
+- Encryption: All guardian data encrypted in Redis storage
+- Time Delays: 72-hour setup delay, 24-hour recovery delay
+- Multi-Signature: Requires 2 of 3 guardian confirmations
+- Audit Trail: Complete logging of all guardian actions
+- Emergency Override: Admin-only emergency recovery system
+- Verification: Multiple verification methods (email, wallet signatures)
+- Threshold Requirements: Configurable signature requirements
+- Expiration: Time-limited verification codes and recovery requests
+```
+
+#### **📊 Educational Impact:**
+
+**Modal Content Effectiveness:**
+- **Critical Warning**: "PÉRDIDA TOTAL" scenarios clearly explained
+- **Visual Process**: Step-by-step guardian system explanation  
+- **Security Features**: Cryptographic and social protection details
+- **Recovery Procedure**: Complete 4-step recovery process
+- **Urgency Messaging**: "No esperes más" with immediate setup CTA
+
+**WalletInterface Integration:**
+- **Prominence**: Critical badge and warning prominently displayed
+- **Accessibility**: "Saber más" button easily discoverable
+- **Completion Time**: "2 min" indicator reduces setup friction
+- **Visual Design**: Enhanced styling with gradients and hover effects
+
+#### **🧪 Ready for Testing:**
+
+- **Guardian Setup Flow**: Complete setup process with verification codes
+- **Educational Modal**: "Saber más" comprehensive education experience
+- **Metadata Persistence**: Multiple gifts from same wallet with different images
+- **Security Features**: Time delays, multi-signature requirements, audit trails
+- **Status Checking**: Real-time guardian status and security level indicators
+
 ### 🌟 CRYPTO-NOVICE ONBOARDING & WALLET INDEPENDENCE SYSTEM ✅
 
-**DEPLOYMENT SUCCESSFUL ✅ - Complete Standalone Wallet Experience for Beginners**
+**PREVIOUS SESSION - Complete Standalone Wallet Experience for Beginners**
 
 #### **🎯 Strategic Problem Solved:**
 - ✅ **Wallet Independence**: Users can now use TBA indefinitely without external wallet
