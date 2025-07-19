@@ -9,6 +9,7 @@ import { BalanceHistoryPanel } from '../../components/referrals/BalanceHistoryPa
 import { EarningsHistoryPanel } from '../../components/referrals/EarningsHistoryPanel';
 import { FriendsTrackingPanel } from '../../components/referrals/FriendsTrackingPanel';
 import { PendingRewardsPanel } from '../../components/referrals/PendingRewardsPanel';
+import { useRealTimeReferrals } from '../../hooks/useRealTimeReferrals';
 
 export default function ReferralsPage() {
   const [mounted, setMounted] = useState(false);
@@ -28,15 +29,25 @@ export default function ReferralsPage() {
   const [showEarningsHistory, setShowEarningsHistory] = useState(false);
   const [showFriendsTracking, setShowFriendsTracking] = useState(false);
   const [showPendingRewards, setShowPendingRewards] = useState(false);
+  
+  // Real-time updates using Server-Sent Events
+  const {
+    stats: realTimeStats,
+    recentActivations,
+    isConnected,
+    error: realTimeError,
+    lastUpdate
+  } = useRealTimeReferrals(account?.address);
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  const loadReferralData = useCallback(async () => {
+  const loadReferralData = useCallback(async (showLoadingState = true) => {
     if (!mounted || !account) return;
 
-    setIsLoading(true);
+    if (showLoadingState) setIsLoading(true);
+    
     try {
       const response = await fetch('/api/referrals', {
         method: 'POST',
@@ -46,12 +57,30 @@ export default function ReferralsPage() {
 
       if (response.ok) {
         const data = await response.json();
-        setReferralData(prev => ({ ...prev, ...data }));
+        const wasEnhanced = data.enhanced;
+        
+        setReferralData(prev => {
+          const updated = { ...prev, ...data };
+          
+          // Log if data changed significantly (but only if not using real-time)
+          if (!isConnected && (prev.referralCount !== updated.referralCount || 
+              prev.totalEarned !== updated.totalEarned)) {
+            console.log('📊 Referral data updated (polling):', {
+              previousReferrals: prev.referralCount,
+              newReferrals: updated.referralCount,
+              previousEarnings: prev.totalEarned,
+              newEarnings: updated.totalEarned,
+              enhanced: wasEnhanced
+            });
+          }
+          
+          return updated;
+        });
       }
     } catch (error) {
       console.error('Error loading referral data:', error);
     } finally {
-      setIsLoading(false);
+      if (showLoadingState) setIsLoading(false);
     }
   }, [mounted, account]);
 
@@ -69,6 +98,37 @@ export default function ReferralsPage() {
       generateReferralUrl();
     }
   }, [mounted, account, loadReferralData, generateReferralUrl]);
+
+  // Sync real-time stats with local state
+  useEffect(() => {
+    if (realTimeStats && isConnected) {
+      setReferralData(prev => ({
+        ...prev,
+        balance: realTimeStats.totalEarnings.toString(),
+        totalEarned: realTimeStats.totalEarnings.toString(),
+        referralCount: realTimeStats.totalReferrals,
+        pendingRewards: realTimeStats.pendingRewards.toString(),
+        conversionRate: realTimeStats.conversionRate,
+        activeReferrals: realTimeStats.activeReferrals
+      }));
+    }
+  }, [realTimeStats, isConnected]);
+
+  // Auto-refresh referral data every 30 seconds when real-time is not connected
+  useEffect(() => {
+    if (!mounted || !account || isConnected) return;
+
+    console.log('🔄 Setting up polling fallback for referral data (real-time not connected)');
+    
+    const interval = setInterval(() => {
+      // Silent refresh (no loading state to avoid UI flicker)
+      loadReferralData(false);
+    }, 30000); // 30 seconds
+
+    return () => {
+      clearInterval(interval);
+    };
+  }, [mounted, account, isConnected, loadReferralData]);
 
   const copyReferralUrl = () => {
     navigator.clipboard.writeText(referralData.referralUrl);
@@ -128,6 +188,34 @@ export default function ReferralsPage() {
           <p className="text-gray-600">
             Gana dinero invitando amigos a CryptoGift Wallets
           </p>
+          
+          {/* Real-time connection status */}
+          {mounted && account && (
+            <div className="mt-4 flex items-center justify-center gap-2">
+              <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500 animate-pulse' : 'bg-gray-400'}`}></div>
+              <span className="text-xs text-gray-500">
+                {isConnected ? (
+                  <>
+                    📡 Actualizaciones en tiempo real activas
+                    {lastUpdate && (
+                      <span className="ml-2 text-green-600">
+                        (última: {new Date(lastUpdate).toLocaleTimeString()})
+                      </span>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    ⏱️ Modo polling (actualización cada 30s)
+                    {realTimeError && (
+                      <span className="ml-2 text-red-500">
+                        - Error: {realTimeError}
+                      </span>
+                    )}
+                  </>
+                )}
+              </span>
+            </div>
+          )}
         </div>
 
         <div className="max-w-6xl mx-auto space-y-8">

@@ -1,5 +1,5 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { trackReferralClick, generateUserDisplay } from '../../../lib/referralDatabase';
+import { kvReferralDB } from '../../../lib/referralDatabaseKV';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
@@ -22,11 +22,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Use first IP if multiple (proxy chain)
     const clientIP = Array.isArray(ipAddress) ? ipAddress[0] : ipAddress.split(',')[0];
     
-    // Generate user display identifier - prefer user data, fallback to IP-based
-    const referredIdentifier = (referredAddress || referredEmail) ? 
-      generateUserDisplay(referredAddress, referredEmail) : 
-      `ip_${clientIP.split('.').slice(-2).join('.')}`;
-    
     // Determine source from user agent or provided source
     let detectedSource = source;
     if (!detectedSource && userAgent) {
@@ -37,19 +32,41 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       else detectedSource = 'Direct';
     }
 
-    await trackReferralClick(referrerAddress, referredIdentifier, detectedSource, clientIP);
-
-    console.log('✅ Referral click tracked:', {
+    // Enhanced tracking with KV database - includes wallet address when available
+    const referralId = await kvReferralDB.trackReferralClick(
       referrerAddress,
+      {
+        address: referredAddress, // Now properly saved when available
+        email: referredEmail,
+        ip: clientIP,
+        userAgent
+      },
+      detectedSource
+    );
+
+    const referredIdentifier = kvReferralDB.generateUserDisplay(
+      referredAddress, 
+      referredEmail, 
+      clientIP
+    );
+
+    console.log('✅ Referral click tracked (Enhanced KV):', {
+      referralId,
+      referrerAddress: referrerAddress.slice(0, 10) + '...',
+      referredAddress: referredAddress ? referredAddress.slice(0, 10) + '...' : undefined,
+      referredEmail: referredEmail ? referredEmail.slice(0, 4) + '***' : undefined,
       referredIdentifier,
       source: detectedSource,
+      hasWallet: !!referredAddress,
       timestamp: new Date().toISOString()
     });
 
     res.status(200).json({
       success: true,
       message: 'Referral click tracked successfully',
-      referredIdentifier
+      referralId,
+      referredIdentifier,
+      enhanced: true // Flag to indicate new system
     });
   } catch (error) {
     console.error('❌ Error tracking referral click:', error);

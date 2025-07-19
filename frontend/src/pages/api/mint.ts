@@ -7,7 +7,7 @@ import { addMintLog } from "./debug/mint-logs";
 import { uploadMetadata } from "../../lib/ipfs";
 import { ethers } from "ethers";
 import { storeNFTMetadata, createNFTMetadata } from "../../lib/nftMetadataStore";
-import { trackReferralActivation, generateUserDisplay } from "../../lib/referralDatabase";
+import { kvReferralDB, generateUserDisplay } from "../../lib/referralDatabaseKV";
 import { REFERRAL_COMMISSION_PERCENT } from "../../lib/constants";
 
 // Add flow tracking to API
@@ -536,12 +536,44 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         const platformFee = initialBalance * 0.04; // 4% platform fee
         const commission = platformFee * (REFERRAL_COMMISSION_PERCENT / 100); // 20% of platform fee
         
-        await trackReferralActivation(referrer, referredIdentifier, {
-          tokenId,
-          amount: initialBalance,
-          commission,
-          transactionHash
-        });
+        // Track referral activation with enhanced data including wallet address
+        await kvReferralDB.trackReferralActivation(
+          referrer, 
+          {
+            address: to, // Critical: Include actual wallet address for proper mapping
+            identifier: referredIdentifier
+          },
+          {
+            tokenId,
+            amount: initialBalance,
+            commission,
+            transactionHash
+          }
+        );
+        
+        // Also trigger real-time update via API endpoint for dashboard refresh
+        try {
+          const activationResponse = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/referrals/track-activation`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              referrerAddress: referrer,
+              referredAddress: to,
+              tokenId,
+              giftAmount: initialBalance,
+              transactionHash
+            })
+          });
+          
+          if (activationResponse.ok) {
+            console.log('📡 Real-time activation update sent successfully');
+          } else {
+            console.warn('⚠️ Real-time activation update failed:', activationResponse.statusText);
+          }
+        } catch (realtimeError) {
+          console.warn('⚠️ Real-time activation update error:', realtimeError);
+          // Don't throw - main activation already tracked
+        }
         
         console.log('✅ Referral activation tracked successfully:', {
           referrer: referrer?.slice(0, 10) + '...',

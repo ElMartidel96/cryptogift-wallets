@@ -45,7 +45,7 @@ export default function Home() {
     }
   }, [searchParams]);
 
-  // Function to track referral clicks
+  // Enhanced function to track referral clicks with wallet data
   const trackReferralClick = async (referrerAddress: string) => {
     try {
       console.log('🔗 Tracking referral click for:', referrerAddress);
@@ -57,6 +57,7 @@ export default function Home() {
         },
         body: JSON.stringify({
           referrerAddress,
+          referredAddress: account?.address, // Include connected wallet if available
           userAgent: navigator.userAgent,
           source: 'direct' // Can be enhanced to detect actual source
         }),

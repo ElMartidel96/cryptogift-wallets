@@ -1,5 +1,5 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { upgradeIPAccountToUser } from '../../../lib/referralDatabase';
+import { kvReferralDB } from '../../../lib/referralDatabaseKV';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
@@ -8,8 +8,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   const { userAddress, userEmail } = req.body;
 
-  if (!userAddress && !userEmail) {
-    return res.status(400).json({ error: 'User address or email is required' });
+  if (!userAddress) {
+    return res.status(400).json({ error: 'User address is required' });
   }
 
   try {
@@ -21,22 +21,48 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     
     // Use first IP if multiple (proxy chain)
     const clientIP = Array.isArray(ipAddress) ? ipAddress[0] : ipAddress.split(',')[0];
-    
-    await upgradeIPAccountToUser(clientIP, userAddress, userEmail);
 
-    console.log('✅ IP account upgrade processed:', {
-      ipAddress: clientIP,
-      userAddress: userAddress?.slice(0, 10) + '...',
-      userEmail: userEmail ? userEmail.replace(/(.{2}).*(@.*)/, '$1***$2') : undefined,
+    console.log('🔄 Processing enhanced IP account upgrade:', {
+      userAddress: userAddress.slice(0, 10) + '...',
+      clientIP: clientIP.split('.').slice(0, 2).join('.') + '.**', // Privacy-safe logging
+      userEmail: userEmail ? userEmail.slice(0, 4) + '***' : undefined
+    });
+
+    // Create or update user profile
+    const profile = await kvReferralDB.createOrUpdateUserProfile(userAddress, {
+      email: userEmail,
+      ipHistory: [clientIP],
+      sessionHistory: [`session_${Date.now()}`]
+    });
+
+    // Try to find and merge any IP-based referrals
+    // This handles the case where user had IP-based referrals and now connected wallet
+    const existingReferrals = await kvReferralDB.getUserReferrals(userAddress);
+    
+    console.log('✅ Enhanced IP account upgrade processed:', {
+      userAddress: userAddress.slice(0, 10) + '...',
+      profileCreated: !!profile,
+      existingReferrals: existingReferrals.length,
+      totalEarnings: profile.referralStats.totalEarnings,
       timestamp: new Date().toISOString()
     });
 
     res.status(200).json({
       success: true,
-      message: 'IP account upgrade processed successfully'
+      message: 'Enhanced IP account upgrade processed successfully',
+      profile: {
+        totalReferrals: profile.referralStats.totalReferrals,
+        totalEarnings: profile.referralStats.totalEarnings,
+        registrationDate: profile.registrationDate
+      },
+      enhanced: true // Flag to indicate new system
     });
+    
   } catch (error) {
-    console.error('❌ Error upgrading IP account:', error);
-    res.status(500).json({ error: 'Failed to upgrade IP account' });
+    console.error('❌ Error in enhanced IP account upgrade:', error);
+    res.status(500).json({ 
+      error: 'Failed to upgrade IP account',
+      message: error instanceof Error ? error.message : 'Unknown error'
+    });
   }
 }

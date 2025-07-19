@@ -1,7 +1,7 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import { createThirdwebClient, getContract, readContract } from "thirdweb";
 import { baseSepolia } from "thirdweb/chains";
-import { getReferralStats } from "../../lib/referralDatabase";
+import { kvReferralDB } from "../../lib/referralDatabaseKV";
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
@@ -23,9 +23,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       secretKey: process.env.TW_SECRET_KEY!,
     });
 
-    // Get real referral statistics from database
-    console.log('📊 Loading real referral stats for address:', address);
-    const stats = await getReferralStats(address);
+    // Get real referral statistics from KV database
+    console.log('📊 Loading real referral stats (KV) for address:', address);
+    const stats = await kvReferralDB.getReferralStats(address);
     
     const referralData = {
       balance: stats.totalEarnings.toString(),
