@@ -24,27 +24,24 @@
    - **TLS**: Habilitado (recomendado)
 2. Click **"Create Database"**
 
-### 4. **Obtener Credenciales**
-Una vez creada la base de datos:
-1. Ve a la pestaña **"Details"** de tu database
-2. Copia las siguientes variables:
+### 4. **Variables Automáticamente Configuradas**
+Cuando conectas Upstash a través del Marketplace de Vercel, las variables se configuran automáticamente:
 
 ```bash
-# Estas son las variables que necesitas
-UPSTASH_REDIS_REST_URL=https://YOUR-DB-NAME.upstash.io
-UPSTASH_REDIS_REST_TOKEN=YOUR-TOKEN-HERE
+# Vercel configura automáticamente estas variables:
+KV_REST_API_URL=https://your-db-name.upstash.io
+KV_REST_API_TOKEN=your_token
+KV_REST_API_READ_ONLY_TOKEN=your_readonly_token
+KV_URL=rediss://default:token@your-db.upstash.io:6379
+REDIS_URL=rediss://default:token@your-db.upstash.io:6379
 ```
 
-### 5. **Configurar en Vercel**
+### 5. **Verificar Variables en Vercel**
 1. Ve a **Vercel Dashboard** → **Proyecto cryptogift-wallets** → **Settings** → **Environment Variables**
-2. Agrega estas 2 variables:
+2. Deberías ver las variables KV_* ya configuradas automáticamente
+3. Si no están, agrégalas manualmente copiando desde el dashboard de Upstash
 
-| Name | Value |
-|------|-------|
-| `UPSTASH_REDIS_REST_URL` | `https://your-db.upstash.io` |
-| `UPSTASH_REDIS_REST_TOKEN` | `Tu token de Upstash` |
-
-3. Click **"Save"**
+**IMPORTANTE**: El sistema detecta automáticamente estas variables estándar de Vercel KV.
 
 ### 6. **Re-deployar Proyecto**
 1. Ve a **Deployments**
@@ -55,7 +52,7 @@ UPSTASH_REDIS_REST_TOKEN=YOUR-TOKEN-HERE
 
 Una vez configurado, deberías ver en los logs de Vercel:
 ```
-🟢 Using Upstash Redis for referral database
+🟢 Using Vercel KV with Upstash backend for referral database
 ```
 
 En lugar de:

@@ -8,18 +8,30 @@ import { Redis } from '@upstash/redis';
 let redis: any;
 
 try {
-  // Try Upstash Redis first (current Vercel marketplace solution)
-  if (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN) {
+  // Try to detect which Redis/KV setup is available
+  if (process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN) {
+    // Vercel KV with Upstash backend (current standard setup)
+    redis = new Redis({
+      url: process.env.KV_REST_API_URL,
+      token: process.env.KV_REST_API_TOKEN,
+    });
+    console.log('🟢 Using Vercel KV with Upstash backend for referral database');
+  } else if (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN) {
+    // Direct Upstash Redis (alternative setup)
     redis = new Redis({
       url: process.env.UPSTASH_REDIS_REST_URL,
       token: process.env.UPSTASH_REDIS_REST_TOKEN,
     });
-    console.log('🟢 Using Upstash Redis for referral database');
+    console.log('🟢 Using direct Upstash Redis for referral database');
   } else {
-    // Fallback to Vercel KV (legacy)
-    const { kv } = require('@vercel/kv');
-    redis = kv;
-    console.log('🟡 Using Vercel KV for referral database (legacy)');
+    // Fallback to legacy Vercel KV (if available)
+    try {
+      const { kv } = require('@vercel/kv');
+      redis = kv;
+      console.log('🟡 Using legacy Vercel KV for referral database');
+    } catch (kvError) {
+      throw new Error('No Redis/KV configuration found');
+    }
   }
 } catch (error) {
   console.error('❌ Failed to initialize Redis client:', error);
