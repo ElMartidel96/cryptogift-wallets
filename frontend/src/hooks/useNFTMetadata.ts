@@ -3,28 +3,30 @@
 import { useState, useEffect } from 'react';
 import { NFTMetadata, storeNFTMetadataClient, getNFTMetadataClient, resolveIPFSUrlClient } from '../lib/clientMetadataStore';
 
-export function useNFTMetadata(contractAddress: string, tokenId: string) {
+export function useNFTMetadata(contractAddress: string, tokenId: string, walletAddress?: string) {
   const [metadata, setMetadata] = useState<NFTMetadata | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     loadMetadata();
-  }, [contractAddress, tokenId]);
+  }, [contractAddress, tokenId, walletAddress]);
 
   const loadMetadata = async () => {
     try {
       setIsLoading(true);
       setError(null);
       
-      // First try client storage
-      const clientMetadata = getNFTMetadataClient(contractAddress, tokenId);
-      
-      if (clientMetadata) {
-        console.log('✅ Found client metadata:', clientMetadata);
-        setMetadata(clientMetadata);
-        setIsLoading(false);
-        return;
+      // First try wallet-scoped client storage if wallet address is available
+      if (walletAddress) {
+        const clientMetadata = getNFTMetadataClient(contractAddress, tokenId, walletAddress);
+        
+        if (clientMetadata) {
+          console.log('✅ Found wallet-scoped client metadata:', clientMetadata);
+          setMetadata(clientMetadata);
+          setIsLoading(false);
+          return;
+        }
       }
       
       // Fallback to API
@@ -47,7 +49,9 @@ export function useNFTMetadata(contractAddress: string, tokenId: string) {
             createdAt: new Date().toISOString()
           };
           
-          storeNFTMetadataClient(newMetadata);
+          // Store with wallet address if available, otherwise use dummy address for testing
+          const addressToUse = walletAddress || '0x0000000000000000000000000000000000000000';
+          storeNFTMetadataClient(newMetadata, addressToUse);
           setMetadata(newMetadata);
         } else {
           // Use placeholder metadata
