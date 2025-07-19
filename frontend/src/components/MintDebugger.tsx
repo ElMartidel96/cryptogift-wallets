@@ -56,9 +56,11 @@ export const MintDebugger: React.FC = () => {
       };
       
       console.log('💾 Storing test metadata:', nftMetadata);
-      storeNFTMetadataClient(nftMetadata);
+      // Use dummy wallet address for testing
+      const testWalletAddress = '0x0000000000000000000000000000000000000000';
+      storeNFTMetadataClient(nftMetadata, testWalletAddress);
       
-      const retrieved = getNFTMetadataClient(contractAddress, tokenId);
+      const retrieved = getNFTMetadataClient(contractAddress, tokenId, testWalletAddress);
       console.log('📥 Retrieved metadata:', retrieved);
       
       if (retrieved) {

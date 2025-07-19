@@ -44,8 +44,10 @@ export const FlowDiagnostic: React.FC<FlowDiagnosticProps> = ({ contractAddress,
       };
 
       try {
-        storeNFTMetadataClient(testMetadata);
-        const retrieved = getNFTMetadataClient(contractAddress, tokenId);
+        // Use a dummy wallet address for testing (wallet-scoped storage)
+        const testWalletAddress = '0x0000000000000000000000000000000000000000';
+        storeNFTMetadataClient(testMetadata, testWalletAddress);
+        const retrieved = getNFTMetadataClient(contractAddress, tokenId, testWalletAddress);
         
         results.tests.clientStorage = {
           status: 'success',
@@ -141,8 +143,10 @@ export const FlowDiagnostic: React.FC<FlowDiagnosticProps> = ({ contractAddress,
           owner: '0x1234567890123456789012345678901234567890'
         };
 
-        storeNFTMetadataClient(mintMetadata);
-        const mintRetrieved = getNFTMetadataClient(contractAddress, tokenId);
+        // Use the same test wallet address for consistency
+        const testWalletAddress = '0x0000000000000000000000000000000000000000';
+        storeNFTMetadataClient(mintMetadata, testWalletAddress);
+        const mintRetrieved = getNFTMetadataClient(contractAddress, tokenId, testWalletAddress);
         
         results.tests.mintProcess = {
           status: 'success',
