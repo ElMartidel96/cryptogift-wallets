@@ -91,7 +91,9 @@ export function useNFTMetadata(contractAddress: string, tokenId: string, walletA
     if (metadata) {
       const updated = { ...metadata, ...newMetadata };
       setMetadata(updated);
-      storeNFTMetadataClient(updated);
+      // Store with wallet address if available, otherwise use dummy address
+      const addressToUse = walletAddress || '0x0000000000000000000000000000000000000000';
+      storeNFTMetadataClient(updated, addressToUse);
     }
   };
 
