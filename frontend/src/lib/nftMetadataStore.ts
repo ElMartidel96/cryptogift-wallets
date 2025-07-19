@@ -3,26 +3,7 @@
 // Fixes image caching issues by wallet
 
 import { Redis } from '@upstash/redis';
-
-interface NFTMetadata {
-  contractAddress: string;
-  tokenId: string;
-  name: string;
-  description: string;
-  image: string; // IPFS URL
-  imageIpfsCid?: string;
-  metadataIpfsCid?: string;
-  attributes: Array<{
-    trait_type: string;
-    value: string | number;
-  }>;
-  createdAt: string;
-  mintTransactionHash?: string;
-  owner?: string;
-  // NEW: Prevent cache conflicts
-  uniqueMetadataId?: string; // Unique ID per NFT creation
-  creatorWallet?: string; // Track who created it for debugging
-}
+import { NFTMetadata } from './clientMetadataStore';
 
 // Initialize Redis client with same logic as referrals
 let redis: any;
@@ -78,7 +59,7 @@ export async function storeNFTMetadata(metadata: NFTMetadata): Promise<void> {
     // Add unique metadata ID to prevent cache conflicts
     const enhancedMetadata: NFTMetadata = {
       ...metadata,
-      uniqueMetadataId: `meta_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      uniqueCreationId: `meta_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       createdAt: new Date().toISOString(),
       contractAddress: metadata.contractAddress.toLowerCase(),
     };
@@ -87,7 +68,7 @@ export async function storeNFTMetadata(metadata: NFTMetadata): Promise<void> {
     
     console.log(`💾 Storing NFT metadata for ${metadata.contractAddress}:${metadata.tokenId}`);
     console.log(`🔑 Redis key: ${key}`);
-    console.log(`🆔 Unique ID: ${enhancedMetadata.uniqueMetadataId}`);
+    console.log(`🆔 Unique ID: ${enhancedMetadata.uniqueCreationId}`);
     
     // Store in Redis
     await redis.hset(key, enhancedMetadata);
@@ -121,7 +102,7 @@ export async function getNFTMetadata(contractAddress: string, tokenId: string): 
     
     if (metadata && Object.keys(metadata).length > 0) {
       console.log(`✅ Found stored metadata for ${contractAddress}:${tokenId}`);
-      console.log(`🆔 Unique ID: ${metadata.uniqueMetadataId || 'legacy'}`);
+      console.log(`🆔 Unique ID: ${metadata.uniqueCreationId || 'legacy'}`);
       return metadata as NFTMetadata;
     } else {
       console.log(`❌ No metadata found in Redis for ${contractAddress}:${tokenId}`);
@@ -150,7 +131,7 @@ export async function updateNFTMetadata(
       ...existing, 
       ...updates,
       // Keep original unique ID to maintain identity
-      uniqueMetadataId: existing.uniqueMetadataId,
+      uniqueCreationId: existing.uniqueCreationId,
       // Update modification timestamp
       lastModified: new Date().toISOString()
     };
@@ -220,7 +201,7 @@ export function createNFTMetadata(params: {
     owner: params.owner,
     creatorWallet: params.creatorWallet,
     // Auto-generate unique ID to prevent cache conflicts
-    uniqueMetadataId: `meta_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+    uniqueCreationId: `meta_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
   };
 }
 

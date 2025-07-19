@@ -20,9 +20,13 @@ export interface NFTMetadata {
   // NEW: Unique identifiers to prevent cache conflicts
   uniqueCreationId?: string;
   creatorWallet?: string;
+  // NEW: Cross-wallet access properties
+  crossWalletAccess?: boolean;
+  sourceWallet?: string;
 }
 
 const STORAGE_PREFIX = 'cryptogift_wallet_';
+const DEVICE_STORAGE_KEY = 'cryptogift_device_info';
 
 // NEW: Wallet-scoped storage functions
 function getWalletStorageKey(walletAddress: string): string {

@@ -6,7 +6,7 @@ import { createBiconomySmartAccount, sendGaslessTransaction, validateBiconomyCon
 import { addMintLog } from "./debug/mint-logs";
 import { uploadMetadata } from "../../lib/ipfs";
 import { ethers } from "ethers";
-import { storeNFTMetadata, createNFTMetadata } from "../../lib/nftMetadataStore";
+import { storeNFTMetadata, createNFTMetadata, getNFTMetadata } from "../../lib/nftMetadataStore";
 import { kvReferralDB, generateUserDisplay } from "../../lib/referralDatabaseKV";
 import { REFERRAL_COMMISSION_PERCENT } from "../../lib/constants";
 
