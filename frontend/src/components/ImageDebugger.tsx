@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
-import { getNFTMetadataClient, resolveIPFSUrlClient } from '../lib/clientMetadataStore';
+import { getNFTMetadataClient, getNFTMetadataClientCrossWallet, resolveIPFSUrlClient, resolveIPFSUrlClientVerified } from '../lib/clientMetadataStore';
 import { FlowDiagnostic } from './FlowDiagnostic';
 
 interface ImageDebuggerProps {
@@ -127,6 +127,40 @@ export const ImageDebugger: React.FC<ImageDebuggerProps> = ({
         }
       } else if (!walletAddress) {
         debug.steps.push('⚠️ No wallet address provided for scoped caching');
+        
+        // Step 2.5: Try cross-wallet search as additional fallback
+        debug.steps.push('2.5️⃣ Trying cross-wallet metadata search...');
+        const crossWalletMetadata = getNFTMetadataClientCrossWallet(nftContract, tokenId);
+        
+        if (crossWalletMetadata) {
+          debug.steps.push(`✅ Found cross-wallet metadata from ${crossWalletMetadata.sourceWallet?.slice(0, 10)}...`);
+          debug.crossWalletMetadata = crossWalletMetadata;
+          
+          const crossWalletImageUrl = resolveIPFSUrlClient(crossWalletMetadata.image);
+          debug.steps.push('🖼️ Testing cross-wallet image URL...');
+          
+          try {
+            const crossWalletResponse = await fetch(crossWalletImageUrl, { method: 'HEAD' });
+            debug.crossWalletImageTest = {
+              url: crossWalletImageUrl,
+              status: crossWalletResponse.status,
+              ok: crossWalletResponse.ok
+            };
+            
+            if (crossWalletResponse.ok) {
+              setImageUrl(crossWalletImageUrl);
+              debug.steps.push('✅ Cross-wallet image URL working');
+              debug.finalSource = 'cross-wallet';
+              setDebugInfo(debug);
+              setIsLoading(false);
+              return;
+            }
+          } catch (error) {
+            debug.steps.push('❌ Cross-wallet image URL failed');
+          }
+        } else {
+          debug.steps.push('ℹ️ No cross-wallet metadata found');
+        }
       }
       
       // Step 3: Try to regenerate metadata if available

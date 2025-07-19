@@ -60,6 +60,71 @@ async function uploadMetadataToIPFS(metadata: any) {
   }
 }
 
+// CRITICAL NEW: Verify image accessibility across multiple IPFS gateways
+async function verifyImageAccessibility(imageCid: string): Promise<{
+  accessible: boolean;
+  workingGateway?: string;
+  allGatewayResults: Array<{ gateway: string; success: boolean; error?: string }>;
+}> {
+  const gateways = [
+    `https://nftstorage.link/ipfs/${imageCid}`,
+    `https://ipfs.io/ipfs/${imageCid}`,
+    `https://gateway.pinata.cloud/ipfs/${imageCid}`,
+    `https://cloudflare-ipfs.com/ipfs/${imageCid}`
+  ];
+
+  const results: Array<{ gateway: string; success: boolean; error?: string }> = [];
+  let workingGateway: string | undefined;
+
+  console.log(`🔍 Verifying image accessibility for CID: ${imageCid}`);
+
+  for (const gateway of gateways) {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+
+      console.log(`🔍 Testing gateway: ${gateway}`);
+      
+      const response = await fetch(gateway, {
+        method: 'HEAD', // Just check if resource exists
+        signal: controller.signal
+      });
+
+      clearTimeout(timeoutId);
+
+      if (response.ok) {
+        console.log(`✅ Gateway working: ${gateway}`);
+        results.push({ gateway, success: true });
+        if (!workingGateway) workingGateway = gateway;
+      } else {
+        console.log(`❌ Gateway failed (${response.status}): ${gateway}`);
+        results.push({ gateway, success: false, error: `HTTP ${response.status}` });
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      console.log(`❌ Gateway error: ${gateway} - ${errorMessage}`);
+      results.push({ gateway, success: false, error: errorMessage });
+    }
+  }
+
+  const accessible = results.some(r => r.success);
+  
+  addMintLog('INFO', 'IMAGE_VERIFICATION_COMPLETE', {
+    imageCid,
+    accessible,
+    workingGateway,
+    totalGateways: gateways.length,
+    workingGateways: results.filter(r => r.success).length,
+    allResults: results
+  });
+
+  return {
+    accessible,
+    workingGateway,
+    allGatewayResults: results
+  };
+}
+
 // Helper function to calculate TBA address using proper ERC-6551 standard
 async function calculateTBAAddress(tokenId: string): Promise<string> {
   try {
@@ -646,9 +711,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     addMintLog('SUCCESS', 'MINT_COMPLETE', finalResult);
     addAPIStep('MINT_API_SUCCESS', finalResult, 'success');
 
-    // Store NFT metadata for later retrieval
+    // CRITICAL FIX: Store NFT metadata with image verification
     try {
-      console.log("💾 Storing NFT metadata for retrieval...");
+      console.log("💾 Storing NFT metadata with image verification...");
       console.log("🔍 Debug storage parameters:", {
         contractAddress: process.env.NEXT_PUBLIC_NFT_DROP_ADDRESS,
         tokenId: tokenId,
@@ -668,6 +733,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
       
       console.log("🔍 Processed imageIpfsCid:", imageIpfsCid);
+      
+      // CRITICAL: Verify image is accessible before storing metadata
+      const imageVerificationResult = await verifyImageAccessibility(imageIpfsCid);
+      console.log("🔍 Image verification result:", imageVerificationResult);
       
       // Get deployer wallet address for tracking
       let creatorWallet = 'unknown';
@@ -715,6 +784,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           {
             trait_type: "Creator Wallet",
             value: creatorWallet.slice(0, 10) + '...'
+          },
+          {
+            trait_type: "Image Status",
+            value: imageVerificationResult.accessible ? "Verified" : "Pending"
           }
         ],
         mintTransactionHash: transactionHash,
@@ -724,13 +797,31 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       
       console.log("🔍 Created NFT metadata object:", nftMetadata);
       
+      // CRITICAL: Ensure storage completes successfully
       await storeNFTMetadata(nftMetadata);
-      console.log("✅ NFT metadata stored successfully");
+      
+      // VERIFICATION: Double-check storage worked
+      const storedCheck = await getNFTMetadata(nftMetadata.contractAddress, nftMetadata.tokenId);
+      if (storedCheck) {
+        console.log("✅ NFT metadata stored and verified successfully");
+        console.log("🔍 Stored image:", storedCheck.image);
+      } else {
+        console.error("❌ CRITICAL: Metadata storage verification failed!");
+        addMintLog('ERROR', 'METADATA_STORAGE_VERIFICATION_FAILED', {
+          tokenId,
+          contractAddress: nftMetadata.contractAddress
+        });
+      }
       
     } catch (metadataError) {
       console.error("⚠️ Failed to store NFT metadata:", metadataError);
       console.error("📍 Full metadata error:", metadataError);
-      // Don't fail the whole mint for this
+      addMintLog('ERROR', 'METADATA_STORAGE_FAILED', {
+        tokenId,
+        error: metadataError instanceof Error ? metadataError.message : 'Unknown error',
+        stack: metadataError instanceof Error ? metadataError.stack : undefined
+      });
+      // Don't fail the whole mint for this, but log the error
     }
 
     res.status(200).json({

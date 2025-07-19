@@ -128,6 +128,37 @@ export function getAllNFTMetadataForWallet(walletAddress: string): Record<string
   }
 }
 
+// NEW: Cross-wallet metadata search for display purposes (read-only)
+export function getNFTMetadataClientCrossWallet(contractAddress: string, tokenId: string): NFTMetadata | null {
+  try {
+    console.log(`🔍 Cross-wallet search for ${contractAddress}:${tokenId}`);
+    
+    // Check if we have device info to search across registered wallets
+    const deviceInfo = getDeviceWalletInfo();
+    
+    for (const registeredWallet of deviceInfo.registeredWallets) {
+      console.log(`🔍 Searching wallet: ${registeredWallet.slice(0, 10)}...`);
+      
+      const metadata = getNFTMetadataClient(contractAddress, tokenId, registeredWallet);
+      if (metadata) {
+        console.log(`✅ Found metadata in wallet ${registeredWallet.slice(0, 10)}... for display`);
+        return {
+          ...metadata,
+          // Mark as cross-wallet to prevent modification
+          crossWalletAccess: true,
+          sourceWallet: registeredWallet
+        } as NFTMetadata;
+      }
+    }
+    
+    console.log(`ℹ️ No metadata found across ${deviceInfo.registeredWallets.length} registered wallets`);
+    return null;
+  } catch (error) {
+    console.error('❌ Error in cross-wallet metadata search:', error);
+    return null;
+  }
+}
+
 // DEPRECATED: Legacy function for backwards compatibility
 export function getAllNFTMetadataClient(): Record<string, NFTMetadata> {
   console.warn('⚠️ getAllNFTMetadataClient is deprecated. Use getAllNFTMetadataForWallet instead.');
@@ -151,10 +182,78 @@ export function clearWalletCache(walletAddress: string): boolean {
   }
 }
 
+// Enhanced IPFS URL resolution with multiple gateways and caching
 export function resolveIPFSUrlClient(ipfsUrl: string): string {
   if (ipfsUrl.startsWith('ipfs://')) {
     const cid = ipfsUrl.replace('ipfs://', '');
-    return `https://nftstorage.link/ipfs/${cid}`;
+    
+    // Check for cached working gateway
+    const gatewayKey = `ipfs_gateway_${cid}`;
+    const cachedGateway = localStorage.getItem(gatewayKey);
+    
+    if (cachedGateway) {
+      console.log(`🚀 Using cached gateway for ${cid.slice(0, 8)}...`);
+      return cachedGateway;
+    }
+    
+    // Default to primary reliable gateway
+    const primaryGateway = `https://nftstorage.link/ipfs/${cid}`;
+    return primaryGateway;
   }
   return ipfsUrl;
+}
+
+// NEW: Async IPFS URL resolution with gateway verification
+export async function resolveIPFSUrlClientVerified(ipfsUrl: string): Promise<string> {
+  if (!ipfsUrl.startsWith('ipfs://')) {
+    return ipfsUrl;
+  }
+  
+  const cid = ipfsUrl.replace('ipfs://', '');
+  const gateways = [
+    `https://nftstorage.link/ipfs/${cid}`,
+    `https://ipfs.io/ipfs/${cid}`,
+    `https://gateway.pinata.cloud/ipfs/${cid}`,
+    `https://cloudflare-ipfs.com/ipfs/${cid}`
+  ];
+  
+  // Check cached working gateway first
+  const gatewayKey = `ipfs_gateway_${cid}`;
+  const cachedGateway = localStorage.getItem(gatewayKey);
+  
+  if (cachedGateway) {
+    console.log(`🚀 Using cached verified gateway for ${cid.slice(0, 8)}...`);
+    return cachedGateway;
+  }
+  
+  console.log(`🔍 Testing ${gateways.length} IPFS gateways for ${cid.slice(0, 8)}...`);
+  
+  // Test gateways sequentially to avoid overwhelming
+  for (const gateway of gateways) {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 3000);
+      
+      const response = await fetch(gateway, {
+        method: 'HEAD',
+        signal: controller.signal
+      });
+      
+      clearTimeout(timeoutId);
+      
+      if (response.ok) {
+        console.log(`✅ Gateway verified: ${gateway}`);
+        // Cache working gateway for 1 hour
+        localStorage.setItem(gatewayKey, gateway);
+        return gateway;
+      }
+    } catch (error) {
+      console.log(`❌ Gateway failed: ${gateway}`);
+      continue;
+    }
+  }
+  
+  // If all fail, return primary as fallback
+  console.log(`⚠️ All gateways failed for ${cid.slice(0, 8)}..., using primary`);
+  return gateways[0];
 }
