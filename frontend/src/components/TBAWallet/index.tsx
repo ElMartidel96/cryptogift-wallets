@@ -21,6 +21,7 @@ export const TBAWalletContainer: React.FC<TBAWalletContainerProps> = ({
   className = ''
 }) => {
   const [activeModal, setActiveModal] = useState<'send' | 'receive' | 'swap' | null>(null);
+  const [showCryptoHelp, setShowCryptoHelp] = useState(true); // Show help by default for new users
   const [walletData, setWalletData] = useState({
     address: '',
     balance: {
@@ -89,6 +90,44 @@ export const TBAWalletContainer: React.FC<TBAWalletContainerProps> = ({
 
   return (
     <div className={`tba-wallet-container ${className}`}>
+      {/* Crypto Novice Help Bar */}
+      {showCryptoHelp && (
+        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-blue-200 p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <span className="text-2xl">🌟</span>
+              <div>
+                <h4 className="font-semibold text-blue-800">¡Esta es tu wallet completa!</h4>
+                <p className="text-sm text-blue-600">
+                  Envía, recibe y cambia criptomonedas. No necesitas otra wallet externa.
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => setShowCryptoHelp(false)}
+              className="text-blue-400 hover:text-blue-600 ml-4"
+              title="Cerrar ayuda"
+            >
+              ✕
+            </button>
+          </div>
+          <div className="mt-3 grid grid-cols-1 md:grid-cols-3 gap-2 text-xs text-blue-700">
+            <div className="flex items-center space-x-2">
+              <span>📤</span>
+              <span><strong>Enviar:</strong> Transfiere dinero a otros</span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <span>📥</span>
+              <span><strong>Recibir:</strong> Comparte tu dirección</span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <span>🔄</span>
+              <span><strong>Cambiar:</strong> Convierte entre monedas</span>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Main Wallet Interface */}
       <TBAWalletInterface
         nftContract={nftContract}

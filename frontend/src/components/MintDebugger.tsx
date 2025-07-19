@@ -4,13 +4,18 @@ import React, { useState, useEffect } from 'react';
 import { storeNFTMetadataClient, getNFTMetadataClient, getAllNFTMetadataClient, NFTMetadata } from '../lib/clientMetadataStore';
 
 export const MintDebugger: React.FC = () => {
+  // Only show in development environment
+  const isDevelopment = process.env.NODE_ENV === 'development';
+  
   const [allMetadata, setAllMetadata] = useState<Record<string, NFTMetadata>>({});
   const [testResult, setTestResult] = useState<string>('');
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
-    refreshMetadata();
-  }, []);
+    if (isDevelopment) {
+      refreshMetadata();
+    }
+  }, [isDevelopment]);
 
   const refreshMetadata = () => {
     const metadata = getAllNFTMetadataClient();
@@ -69,13 +74,18 @@ export const MintDebugger: React.FC = () => {
     }
   };
 
+  // Don't render anything in production
+  if (!isDevelopment) {
+    return null;
+  }
+
   if (!isVisible) {
     return (
       <div className="fixed bottom-4 right-4 z-50">
         <button
           onClick={() => setIsVisible(true)}
           className="bg-purple-600 text-white px-3 py-2 rounded-full shadow-lg hover:bg-purple-700"
-          title="Show Mint Debugger"
+          title="Show Mint Debugger (DEV ONLY)"
         >
           🔧
         </button>

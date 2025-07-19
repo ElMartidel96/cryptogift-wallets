@@ -28,6 +28,7 @@ export const ClaimInterface: React.FC<ClaimInterfaceProps> = ({
   const [guardians, setGuardians] = useState(['', '', '']);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showCryptoExplanation, setShowCryptoExplanation] = useState(false);
   const [claimResult, setClaimResult] = useState<any>(null);
 
   const handleClaim = async () => {
@@ -188,6 +189,70 @@ export const ClaimInterface: React.FC<ClaimInterfaceProps> = ({
             <span>Todas las transacciones tienen gas gratis patrocinado</span>
           </div>
         </div>
+      </div>
+
+      {/* Crypto Novice Section */}
+      <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-2xl p-6 border border-green-200">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="font-bold text-green-800">🌱 ¿Nuevo en el mundo cripto?</h3>
+          <button
+            onClick={() => setShowCryptoExplanation(!showCryptoExplanation)}
+            className="text-green-600 hover:text-green-800"
+          >
+            {showCryptoExplanation ? '▼' : '▶'}
+          </button>
+        </div>
+        
+        {!showCryptoExplanation ? (
+          <div className="text-sm text-green-700 space-y-2">
+            <p className="font-medium">¡No te preocupes! Este regalo funciona como tu primera wallet completa.</p>
+            <p>No necesitas MetaMask ni otra wallet externa para empezar.</p>
+            <button
+              onClick={() => setShowCryptoExplanation(true)}
+              className="text-green-600 hover:text-green-800 underline"
+            >
+              Clic aquí para aprender más →
+            </button>
+          </div>
+        ) : (
+          <div className="space-y-4 text-sm text-green-700">
+            <div className="bg-white rounded-lg p-4 border border-green-200">
+              <h4 className="font-semibold mb-2">💡 ¿Qué es esto exactamente?</h4>
+              <p>Este regalo es un <strong>NFT-Wallet</strong>: una imagen única que también funciona como una wallet de criptomonedas real.</p>
+            </div>
+            
+            <div className="bg-white rounded-lg p-4 border border-green-200">
+              <h4 className="font-semibold mb-2">🎯 ¿Necesito otra wallet?</h4>
+              <p><strong>¡NO!</strong> Puedes usar esta wallet indefinidamente. Es tu primera wallet cripto completa.</p>
+              <ul className="mt-2 space-y-1 ml-4 list-disc">
+                <li>Enviar y recibir dinero digital</li>
+                <li>Cambiar monedas (USDC, ETH, etc.)</li>
+                <li>Todas las transacciones son gratuitas</li>
+                <li>Funciona en móvil y computadora</li>
+              </ul>
+            </div>
+            
+            <div className="bg-white rounded-lg p-4 border border-green-200">
+              <h4 className="font-semibold mb-2">🔒 ¿Es seguro?</h4>
+              <p>Sí, muy seguro. Usa la misma tecnología que bancos digitales grandes:</p>
+              <ul className="mt-2 space-y-1 ml-4 list-disc">
+                <li>Blockchain verificado y auditado</li>
+                <li>Tus fondos están siempre bajo tu control</li>
+                <li>Recuperación social en caso de problemas</li>
+              </ul>
+            </div>
+            
+            <div className="bg-green-100 rounded-lg p-4 border border-green-300">
+              <h4 className="font-semibold mb-2">🚀 ¿Qué hago después de reclamar?</h4>
+              <ol className="space-y-1 ml-4 list-decimal">
+                <li>Reclama tu regalo (botón azul arriba)</li>
+                <li>Explora la interfaz de wallet integrada</li>
+                <li>Prueba enviar pequeñas cantidades a amigos</li>
+                <li>¡Bienvenido al futuro del dinero digital!</li>
+              </ol>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Error Display */}
