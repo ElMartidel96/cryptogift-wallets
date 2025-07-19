@@ -324,7 +324,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     let transactionHash: string;
     let tokenId: string;
     let gasless = false;
-    let generatedTokenId: number;
+    let generatedTokenId: string; // Enhanced numeric string for uniqueness
 
     // PERFORMANCE OPTIMIZED: Fast gasless detection
     const gaslessAvailable = isGaslessAvailable();
@@ -358,14 +358,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         
         transactionHash = gaslessResult.transactionHash;
         
-        // CRITICAL FIX: Generate truly unique tokenId to prevent collisions
+        // CRITICAL FIX: Generate truly unique tokenId using enhanced timestamp
+        // Use microsecond precision + wallet component for collision prevention
         const timestamp = Date.now();
-        const randomComponent = Math.random().toString(36).substring(2, 15);
-        const walletComponent = to.slice(-6); // Last 6 chars of wallet for uniqueness
-        tokenId = `${timestamp}_${randomComponent}_${walletComponent}`;
+        const microComponent = performance.now().toString().replace('.', ''); // Sub-millisecond precision
+        const walletHash = to.slice(-6); // Last 6 chars for wallet uniqueness
         
-        console.log(`🎯 UNIQUE TOKEN ID: ${tokenId} (gasless)`);
-        addAPIStep('UNIQUE_TOKEN_ID_GENERATED', { tokenId, method: 'gasless' }, 'success');
+        // Create numeric tokenId that's virtually collision-proof
+        tokenId = `${timestamp}${microComponent.slice(-6)}${parseInt(walletHash, 16) || 999999}`;
+        
+        console.log(`🎯 UNIQUE TOKEN ID: ${tokenId} (gasless - enhanced numeric)`);
+        addAPIStep('UNIQUE_TOKEN_ID_GENERATED', { tokenId, method: 'gasless-enhanced' }, 'success');
         
         gasless = true;
         
@@ -447,14 +450,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       // Mint NFT usando el método correcto para NFT Collection (contract clásico)
       console.log("🔍 Usando método mintTo de NFT Collection (contract clásico)...");
       
-      // CRITICAL FIX: Generate truly unique tokenId to prevent collisions
+      // CRITICAL FIX: Generate truly unique tokenId using enhanced timestamp  
+      // Use microsecond precision + wallet component for collision prevention
       const timestamp = Date.now();
-      const randomComponent = Math.random().toString(36).substring(2, 15);
-      const walletComponent = to.slice(-6); // Last 6 chars of wallet for uniqueness
-      generatedTokenId = `${timestamp}_${randomComponent}_${walletComponent}`;
+      const microComponent = performance.now().toString().replace('.', ''); // Sub-millisecond precision
+      const walletHash = to.slice(-6); // Last 6 chars for wallet uniqueness
       
-      console.log(`🎯 UNIQUE TOKEN ID: ${generatedTokenId} (gas-paid)`);
-      addAPIStep('UNIQUE_TOKEN_ID_GENERATED', { tokenId: generatedTokenId, method: 'gas-paid' }, 'success');
+      // Create numeric tokenId that's virtually collision-proof
+      generatedTokenId = `${timestamp}${microComponent.slice(-6)}${parseInt(walletHash, 16) || 999999}`;
+      
+      console.log(`🎯 UNIQUE TOKEN ID: ${generatedTokenId} (gas-paid - enhanced numeric)`);
+      addAPIStep('UNIQUE_TOKEN_ID_GENERATED', { tokenId: generatedTokenId, method: 'gas-paid-enhanced' }, 'success');
       var nftTransaction = prepareContractCall({
         contract: cryptoGiftNFTContract,
         method: "function mintTo(address to, string memory tokenURI) external",

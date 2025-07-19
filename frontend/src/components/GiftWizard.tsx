@@ -117,7 +117,7 @@ export const GiftWizard: React.FC<GiftWizardProps> = ({ isOpen, onClose, referre
     amount: 50,
     recipientEmail: '',
     message: '',
-    nftTokenId: null as number | null,
+    nftTokenId: null as string | null, // Enhanced numeric string
     shareUrl: '',
     qrCode: '',
     wasGasless: false

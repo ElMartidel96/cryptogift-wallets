@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 
 interface QRShareProps {
-  tokenId: number;
+  tokenId: string; // Enhanced numeric string for uniqueness
   shareUrl: string;
   qrCode: string;
   onClose: () => void;
