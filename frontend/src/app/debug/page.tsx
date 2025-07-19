@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
+import { CacheManager } from '../../components/admin/CacheManager';
 
 interface MintLog {
   timestamp: string;
@@ -13,6 +14,7 @@ export default function DebugPage() {
   const [logs, setLogs] = useState<MintLog[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [autoRefresh, setAutoRefresh] = useState(false);
+  const [showCacheManager, setShowCacheManager] = useState(false);
 
   const fetchLogs = async () => {
     setIsLoading(true);
@@ -112,6 +114,12 @@ export default function DebugPage() {
               >
                 Clear Logs
               </button>
+              <button
+                onClick={() => setShowCacheManager(true)}
+                className="px-4 py-2 bg-purple-500 text-white rounded hover:bg-purple-600"
+              >
+                🧹 Cache Manager
+              </button>
             </div>
           </div>
 
@@ -195,6 +203,12 @@ export default function DebugPage() {
           </div>
         </div>
       </div>
+
+      {/* Cache Manager Modal */}
+      <CacheManager 
+        isOpen={showCacheManager} 
+        onClose={() => setShowCacheManager(false)} 
+      />
     </div>
   );
 }
