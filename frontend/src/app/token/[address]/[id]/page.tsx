@@ -9,6 +9,7 @@ import { client } from '../../../client';
 import { WalletInterface } from '../../../../components/WalletInterface';
 import { ClaimInterface } from '../../../../components/ClaimInterface';
 import { RightSlideWallet } from '../../../../components/TBAWallet/RightSlideWallet';
+import { ImageDebugger } from '../../../../components/ImageDebugger';
 
 export default function TokenPage() {
   const params = useParams();
@@ -220,19 +221,20 @@ export default function TokenPage() {
               {/* NFT Image and Info */}
               <div className="md:flex">
                 <div className="md:w-1/2 p-8">
-                  <Image
-                    src={nftData.image}
-                    alt={nftData.name}
-                    width={500}
-                    height={500}
-                    className="w-full rounded-2xl shadow-lg"
-                  />
+                  {/* Use ImageDebugger for robust image loading */}
+                  <div className="w-full rounded-2xl shadow-lg overflow-hidden">
+                    <ImageDebugger
+                      nftContract={contractAddress}
+                      tokenId={tokenId}
+                      className="w-full h-auto"
+                    />
+                  </div>
                   
-                  {/* Debug: Regenerate Metadata Button */}
+                  {/* Regenerate Metadata Button - now auto-triggered by ImageDebugger */}
                   {(nftData.image.includes('placeholder') || nftData.image.includes('cg-wallet-placeholder')) && (
                     <div className="mt-4 p-3 bg-yellow-50 rounded-lg border border-yellow-200">
                       <p className="text-sm text-yellow-800 mb-2">
-                        ⚠️ Mostrando imagen placeholder. La imagen real puede haberse perdido.
+                        🔄 Cargando imagen desde IPFS... Si persiste el problema, usa el botón de regeneración.
                       </p>
                       <button
                         onClick={regenerateMetadata}

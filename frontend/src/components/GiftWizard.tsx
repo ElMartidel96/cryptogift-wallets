@@ -17,6 +17,54 @@ import { GasEstimationModal } from './GasEstimationModal';
 import { startTrace, addStep, addDecision, addError, finishTrace } from '../lib/flowTracker';
 import { storeNFTMetadataClient, getNFTMetadataClient, NFTMetadata } from '../lib/clientMetadataStore';
 
+// Image compression utility to prevent HTTP 413 errors
+async function compressImage(file: File, quality: number = 0.8): Promise<File> {
+  return new Promise((resolve, reject) => {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    const img = new Image();
+    
+    img.onload = () => {
+      // Calculate new dimensions (max 2048px)
+      const maxDimension = 2048;
+      let { width, height } = img;
+      
+      if (width > height && width > maxDimension) {
+        height = (height * maxDimension) / width;
+        width = maxDimension;
+      } else if (height > maxDimension) {
+        width = (width * maxDimension) / height;
+        height = maxDimension;
+      }
+      
+      canvas.width = width;
+      canvas.height = height;
+      
+      // Draw and compress
+      ctx?.drawImage(img, 0, 0, width, height);
+      
+      canvas.toBlob(
+        (blob) => {
+          if (blob) {
+            const compressedFile = new File([blob], file.name, {
+              type: 'image/jpeg',
+              lastModified: Date.now(),
+            });
+            resolve(compressedFile);
+          } else {
+            reject(new Error('Failed to compress image'));
+          }
+        },
+        'image/jpeg',
+        quality
+      );
+    };
+    
+    img.onerror = () => reject(new Error('Failed to load image for compression'));
+    img.src = URL.createObjectURL(file);
+  });
+}
+
 interface GiftWizardProps {
   isOpen: boolean;
   onClose: () => void;
@@ -204,14 +252,40 @@ export const GiftWizard: React.FC<GiftWizardProps> = ({ isOpen, onClose, referre
       amount: netAmount
     }, 'pending');
 
-    // Step 1: Upload image to IPFS
+    // Step 1: Compress image if needed to prevent 413 errors
+    let imageFileToUpload = wizardData.imageFile!;
+    const originalSize = imageFileToUpload.size;
+    
+    if (originalSize > 2 * 1024 * 1024) { // 2MB threshold
+      addStep('GIFT_WIZARD', 'IMAGE_COMPRESSION_STARTED', {
+        originalSize,
+        threshold: '2MB'
+      }, 'pending');
+      
+      try {
+        imageFileToUpload = await compressImage(imageFileToUpload, 0.8); // 80% quality
+        addStep('GIFT_WIZARD', 'IMAGE_COMPRESSION_SUCCESS', {
+          originalSize,
+          compressedSize: imageFileToUpload.size,
+          compressionRatio: Math.round((1 - imageFileToUpload.size / originalSize) * 100)
+        }, 'success');
+      } catch (compressionError) {
+        addStep('GIFT_WIZARD', 'IMAGE_COMPRESSION_FAILED', {
+          error: compressionError.message,
+          usingOriginal: true
+        }, 'pending'); // Continue with original
+      }
+    }
+
+    // Step 2: Upload image to IPFS
     addStep('GIFT_WIZARD', 'IPFS_UPLOAD_STARTED', {
-      hasImageFile: !!wizardData.imageFile,
-      hasFilteredUrl: !!wizardData.filteredImageUrl
+      hasImageFile: !!imageFileToUpload,
+      hasFilteredUrl: !!wizardData.filteredImageUrl,
+      finalImageSize: imageFileToUpload.size
     }, 'pending');
 
     const formData = new FormData();
-    formData.append('file', wizardData.imageFile!);
+    formData.append('file', imageFileToUpload);
     formData.append('filteredUrl', wizardData.filteredImageUrl);
     
     const uploadResponse = await fetch('/api/upload', {
@@ -401,9 +475,34 @@ export const GiftWizard: React.FC<GiftWizardProps> = ({ isOpen, onClose, referre
     }
 
     try {
-      // Step 1: Upload image to IPFS
+      // Step 1: Compress image if needed to prevent 413 errors
+      let imageFileToUpload = wizardData.imageFile!;
+      const originalSize = imageFileToUpload.size;
+      
+      if (originalSize > 2 * 1024 * 1024) { // 2MB threshold
+        addStep('GIFT_WIZARD', 'IMAGE_COMPRESSION_STARTED', {
+          originalSize,
+          threshold: '2MB'
+        }, 'pending');
+        
+        try {
+          imageFileToUpload = await compressImage(imageFileToUpload, 0.8); // 80% quality
+          addStep('GIFT_WIZARD', 'IMAGE_COMPRESSION_SUCCESS', {
+            originalSize,
+            compressedSize: imageFileToUpload.size,
+            compressionRatio: Math.round((1 - imageFileToUpload.size / originalSize) * 100)
+          }, 'success');
+        } catch (compressionError) {
+          addStep('GIFT_WIZARD', 'IMAGE_COMPRESSION_FAILED', {
+            error: compressionError.message,
+            usingOriginal: true
+          }, 'pending'); // Continue with original
+        }
+      }
+
+      // Step 2: Upload image to IPFS
       const formData = new FormData();
-      formData.append('file', wizardData.imageFile!);
+      formData.append('file', imageFileToUpload);
       formData.append('filteredUrl', wizardData.filteredImageUrl);
       
       const uploadResponse = await fetch('/api/upload', {

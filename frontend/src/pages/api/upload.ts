@@ -9,8 +9,27 @@ import { addMintLog } from "./debug/mint-logs";
 export const config = {
   api: {
     bodyParser: false,
+    responseLimit: '50mb', // Increase response limit
   },
 };
+
+// Fallback image compression using Canvas API
+async function compressImageWithCanvas(fileData: Buffer, mimeType: string): Promise<Buffer> {
+  try {
+    // Convert buffer to base64 for Canvas processing
+    const base64 = fileData.toString('base64');
+    const dataUrl = `data:${mimeType};base64,${base64}`;
+    
+    // Simple compression by reducing quality (this is a server-side fallback)
+    // In practice, this will just return the original data since Canvas API 
+    // isn't available on server-side. The real compression happens client-side.
+    console.log('⚠️ Server-side Canvas compression not available, using original');
+    return fileData;
+  } catch (error) {
+    console.log('⚠️ Canvas compression failed:', error.message);
+    return fileData;
+  }
+}
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
@@ -28,9 +47,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       throw new Error('No IPFS providers configured. Check environment variables.');
     }
 
-    // Parse the multipart form data
+    // Parse the multipart form data with increased limits
     const form = formidable({
-      maxFileSize: 10 * 1024 * 1024, // 10MB
+      maxFileSize: 50 * 1024 * 1024, // 50MB (increased from 10MB)
       keepExtensions: true,
     });
 
@@ -42,9 +61,52 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // Read the file
-    const fileData = await fs.readFile(uploadedFile.filepath);
+    let fileData = await fs.readFile(uploadedFile.filepath);
     
-    // Create File object
+    // Auto-compress large images to prevent 413 errors
+    const originalSize = fileData.length;
+    const isLargeFile = originalSize > 2 * 1024 * 1024; // 2MB threshold
+    
+    if (isLargeFile && uploadedFile.mimetype?.startsWith('image/')) {
+      try {
+        console.log(`🗜️ Compressing large image: ${originalSize} bytes`);
+        
+        // Import Sharp for image compression (fallback to original if not available)
+        let compressedData;
+        try {
+          const sharp = require('sharp');
+          compressedData = await sharp(fileData)
+            .jpeg({ quality: 80, progressive: true })
+            .resize(2048, 2048, { 
+              fit: 'inside', 
+              withoutEnlargement: true 
+            })
+            .toBuffer();
+          
+          console.log(`✅ Image compressed: ${originalSize} → ${compressedData.length} bytes`);
+          fileData = compressedData;
+        } catch (sharpError) {
+          console.log('⚠️ Sharp not available, using Canvas compression');
+          // Fallback compression method without Sharp
+          fileData = await compressImageWithCanvas(fileData, uploadedFile.mimetype);
+        }
+        
+        addMintLog('INFO', 'IMAGE_COMPRESSION', {
+          originalSize,
+          compressedSize: fileData.length,
+          compressionRatio: Math.round((1 - fileData.length / originalSize) * 100)
+        });
+      } catch (compressionError) {
+        console.log('⚠️ Compression failed, using original:', compressionError.message);
+        addMintLog('WARN', 'COMPRESSION_FAILED', {
+          error: compressionError.message,
+          originalSize,
+          usingOriginal: true
+        });
+      }
+    }
+    
+    // Create File object with potentially compressed data
     const nftFile = new File([fileData], uploadedFile.originalFilename || 'image', {
       type: uploadedFile.mimetype || 'image/jpeg',
     });

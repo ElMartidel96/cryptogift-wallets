@@ -126,8 +126,46 @@ export const ImageDebugger: React.FC<ImageDebuggerProps> = ({
             }
           }
           
-          // Step 3: Test final image URL
-          debug.steps.push('3️⃣ Testing final image URL...');
+          // Step 3: Check if this is a placeholder and auto-regenerate
+          const isPlaceholder = testImageUrl.includes('placeholder') || 
+                                testImageUrl.includes('cg-wallet-placeholder') ||
+                                nftData.image.includes('placeholder');
+          
+          if (isPlaceholder) {
+            debug.steps.push('⚠️ Placeholder detected, attempting auto-regeneration...');
+            try {
+              // Auto-trigger metadata regeneration
+              const regenerateResponse = await fetch('/api/nft/regenerate-metadata', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  contractAddress: nftContract,
+                  tokenId
+                })
+              });
+
+              if (regenerateResponse.ok) {
+                debug.steps.push('✅ Auto-regeneration successful, retrying...');
+                
+                // Retry with regenerated metadata
+                const retryResponse = await fetch(`/api/nft/${nftContract}/${tokenId}`);
+                if (retryResponse.ok) {
+                  const retryData = await retryResponse.json();
+                  if (retryData.image && !retryData.image.includes('placeholder')) {
+                    testImageUrl = retryData.image;
+                    debug.steps.push('✅ Regenerated image found');
+                  }
+                }
+              } else {
+                debug.steps.push('⚠️ Auto-regeneration failed, using placeholder');
+              }
+            } catch (regenerateError) {
+              debug.steps.push(`⚠️ Auto-regeneration error: ${regenerateError.message}`);
+            }
+          }
+
+          // Step 4: Test final image URL
+          debug.steps.push('4️⃣ Testing final image URL...');
           try {
             const imageResponse = await fetch(testImageUrl, { method: 'HEAD' });
             debug.finalImageTest = {
