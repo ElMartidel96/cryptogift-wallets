@@ -161,25 +161,54 @@ export const WalletInterface: React.FC<WalletInterfaceProps> = ({
           </svg>
           Seguridad
         </h3>
+
+        {/* Importance Notice */}
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4">
+          <div className="flex items-start gap-2">
+            <span className="text-yellow-600 text-lg">⚠️</span>
+            <div className="flex-1">
+              <p className="text-sm font-medium text-yellow-800">
+                <strong>¡Es FUNDAMENTAL configurar guardianes!</strong> Sin ellos, podrías perder acceso permanente a tus fondos.
+              </p>
+              <button
+                onClick={() => setShowGuardiansModal(true)}
+                className="text-blue-600 hover:text-blue-800 text-sm font-medium underline mt-1 inline-flex items-center gap-1"
+              >
+                <span>📚 Saber más sobre la importancia</span>
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
         
         <button
           onClick={() => setShowGuardiansModal(true)}
-          className="w-full flex items-center justify-between p-4 bg-white rounded-xl hover:bg-gray-50 transition-colors border border-gray-200"
+          className="w-full flex items-center justify-between p-4 bg-white rounded-xl hover:bg-blue-50 transition-colors border border-gray-200 hover:border-blue-300 group"
         >
           <div className="flex items-center">
-            <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center mr-3">
+            <div className="w-10 h-10 bg-gradient-to-r from-purple-100 to-blue-100 rounded-full flex items-center justify-center mr-3 group-hover:from-purple-200 group-hover:to-blue-200 transition-colors">
               <svg className="w-5 h-5 text-purple-600" fill="currentColor" viewBox="0 0 20 20">
                 <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3z" />
               </svg>
             </div>
             <div className="text-left">
-              <div className="font-medium">Guardianes de Recuperación</div>
-              <div className="text-sm text-gray-500">Configura contactos de confianza</div>
+              <div className="font-medium flex items-center gap-2">
+                🛡️ Guardianes de Recuperación
+                <span className="bg-red-100 text-red-700 px-2 py-0.5 text-xs rounded-full font-medium">
+                  CRÍTICO
+                </span>
+              </div>
+              <div className="text-sm text-gray-500">Protege tu wallet con contactos de confianza</div>
             </div>
           </div>
-          <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-          </svg>
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-blue-600 font-medium">2 min</span>
+            <svg className="w-5 h-5 text-gray-400 group-hover:text-blue-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+          </div>
         </button>
       </div>
 
@@ -250,6 +279,7 @@ export const WalletInterface: React.FC<WalletInterfaceProps> = ({
         isOpen={showGuardiansModal}
         onClose={() => setShowGuardiansModal(false)}
         tbaAddress={tbaAddress}
+        walletAddress={tbaAddress}
       />
     </div>
   );

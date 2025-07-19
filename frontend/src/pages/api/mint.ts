@@ -646,6 +646,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       
       console.log("🔍 Processed imageIpfsCid:", imageIpfsCid);
       
+      // Get deployer wallet address for tracking
+      let creatorWallet = 'unknown';
+      try {
+        const deployerAccount = privateKeyToAccount({
+          client: createThirdwebClient({
+            clientId: process.env.NEXT_PUBLIC_TW_CLIENT_ID!,
+            secretKey: process.env.TW_SECRET_KEY!,
+          }),
+          privateKey: process.env.PRIVATE_KEY_DEPLOY!,
+        });
+        creatorWallet = deployerAccount.address;
+      } catch (error) {
+        console.warn('Could not determine creator wallet:', error);
+      }
+
       const nftMetadata = createNFTMetadata({
         contractAddress: process.env.NEXT_PUBLIC_NFT_DROP_ADDRESS || '',
         tokenId: tokenId,
@@ -673,10 +688,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           {
             trait_type: "Wallet Type",
             value: "ERC-6551 Token Bound Account"
+          },
+          {
+            trait_type: "Creator Wallet",
+            value: creatorWallet.slice(0, 10) + '...'
           }
         ],
         mintTransactionHash: transactionHash,
-        owner: to
+        owner: to,
+        creatorWallet: creatorWallet // CRITICAL: Track who created this to prevent cache conflicts
       });
       
       console.log("🔍 Created NFT metadata object:", nftMetadata);
