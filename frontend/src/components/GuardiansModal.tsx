@@ -23,6 +23,13 @@ interface GuardianStatus {
   recommendations: string[];
 }
 
+interface GuardianFormData {
+  address: string;
+  nickname: string;
+  relationship: string;
+  verificationMethod: 'email' | 'wallet_signature';
+}
+
 export const GuardiansModal: React.FC<GuardiansModalProps> = ({
   isOpen,
   onClose,
@@ -30,10 +37,10 @@ export const GuardiansModal: React.FC<GuardiansModalProps> = ({
   walletAddress
 }) => {
   const activeAccount = useActiveAccount();
-  const [guardians, setGuardians] = useState([
-    { address: '', nickname: '', relationship: 'family', verificationMethod: 'email' as const },
-    { address: '', nickname: '', relationship: 'friend', verificationMethod: 'email' as const },
-    { address: '', nickname: '', relationship: 'family', verificationMethod: 'email' as const }
+  const [guardians, setGuardians] = useState<GuardianFormData[]>([
+    { address: '', nickname: '', relationship: 'family', verificationMethod: 'email' },
+    { address: '', nickname: '', relationship: 'friend', verificationMethod: 'email' },
+    { address: '', nickname: '', relationship: 'family', verificationMethod: 'email' }
   ]);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
