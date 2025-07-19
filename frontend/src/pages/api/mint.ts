@@ -357,7 +357,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         };
         
         transactionHash = gaslessResult.transactionHash;
-        tokenId = Date.now().toString();
+        
+        // CRITICAL FIX: Generate truly unique tokenId to prevent collisions
+        const timestamp = Date.now();
+        const randomComponent = Math.random().toString(36).substring(2, 15);
+        const walletComponent = to.slice(-6); // Last 6 chars of wallet for uniqueness
+        tokenId = `${timestamp}_${randomComponent}_${walletComponent}`;
+        
+        console.log(`🎯 UNIQUE TOKEN ID: ${tokenId} (gasless)`);
+        addAPIStep('UNIQUE_TOKEN_ID_GENERATED', { tokenId, method: 'gasless' }, 'success');
+        
         gasless = true;
         
         console.log("✅ GASLESS SUCCESS!", { transactionHash, tokenId });
@@ -437,7 +446,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       
       // Mint NFT usando el método correcto para NFT Collection (contract clásico)
       console.log("🔍 Usando método mintTo de NFT Collection (contract clásico)...");
-      generatedTokenId = Date.now(); // Generate token ID for gas-paid transaction
+      
+      // CRITICAL FIX: Generate truly unique tokenId to prevent collisions
+      const timestamp = Date.now();
+      const randomComponent = Math.random().toString(36).substring(2, 15);
+      const walletComponent = to.slice(-6); // Last 6 chars of wallet for uniqueness
+      generatedTokenId = `${timestamp}_${randomComponent}_${walletComponent}`;
+      
+      console.log(`🎯 UNIQUE TOKEN ID: ${generatedTokenId} (gas-paid)`);
+      addAPIStep('UNIQUE_TOKEN_ID_GENERATED', { tokenId: generatedTokenId, method: 'gas-paid' }, 'success');
       var nftTransaction = prepareContractCall({
         contract: cryptoGiftNFTContract,
         method: "function mintTo(address to, string memory tokenURI) external",

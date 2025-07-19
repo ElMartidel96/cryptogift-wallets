@@ -1,5 +1,6 @@
-// Client-side metadata storage using localStorage
-// For demo purposes - in production use a real database
+// Client-side metadata storage with WALLET-SCOPED caching
+// CRITICAL: Each wallet gets isolated cache to prevent cross-contamination
+// Device limit: Maximum 2 wallets per device for security
 
 export interface NFTMetadata {
   contractAddress: string;
@@ -16,50 +17,137 @@ export interface NFTMetadata {
   createdAt: string;
   mintTransactionHash?: string;
   owner?: string;
+  // NEW: Unique identifiers to prevent cache conflicts
+  uniqueCreationId?: string;
+  creatorWallet?: string;
 }
 
-const STORAGE_KEY = 'cryptogift_nft_metadata';
+const STORAGE_PREFIX = 'cryptogift_wallet_';
 
-export function storeNFTMetadataClient(metadata: NFTMetadata): void {
+// NEW: Wallet-scoped storage functions
+function getWalletStorageKey(walletAddress: string): string {
+  if (!walletAddress) {
+    throw new Error('Wallet address required for scoped storage');
+  }
+  return `${STORAGE_PREFIX}${walletAddress.toLowerCase()}`;
+}
+
+function checkDeviceWalletLimit(): { allowed: boolean; walletCount: number; registeredWallets: string[] } {
   try {
-    const existing = getAllNFTMetadataClient();
-    const key = `${metadata.contractAddress.toLowerCase()}_${metadata.tokenId}`;
+    const allKeys = Object.keys(localStorage);
+    const walletKeys = allKeys.filter(key => key.startsWith(STORAGE_PREFIX));
+    const registeredWallets = walletKeys.map(key => key.replace(STORAGE_PREFIX, ''));
     
-    existing[key] = metadata;
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(existing));
-    
-    console.log(`💾 Client: Stored metadata for ${metadata.contractAddress}:${metadata.tokenId}`);
+    return {
+      allowed: walletKeys.length < 2,
+      walletCount: walletKeys.length,
+      registeredWallets
+    };
   } catch (error) {
-    console.error('❌ Client: Error storing metadata:', error);
+    console.error('Error checking device wallet limit:', error);
+    return { allowed: true, walletCount: 0, registeredWallets: [] };
   }
 }
 
-export function getNFTMetadataClient(contractAddress: string, tokenId: string): NFTMetadata | null {
+export function storeNFTMetadataClient(metadata: NFTMetadata, walletAddress: string): void {
   try {
-    const existing = getAllNFTMetadataClient();
-    const key = `${contractAddress.toLowerCase()}_${tokenId}`;
-    
-    const metadata = existing[key];
-    if (metadata) {
-      console.log(`✅ Client: Found metadata for ${contractAddress}:${tokenId}`);
-      return metadata;
-    } else {
-      console.log(`⚠️ Client: No metadata found for ${contractAddress}:${tokenId}`);
-      return null;
+    if (!walletAddress) {
+      console.error('❌ Cannot store metadata without wallet address');
+      return;
     }
+
+    // Check device limits before storing
+    const deviceCheck = checkDeviceWalletLimit();
+    const walletKey = getWalletStorageKey(walletAddress);
+    const isExistingWallet = localStorage.getItem(walletKey) !== null;
+    
+    if (!deviceCheck.allowed && !isExistingWallet) {
+      console.warn(`⚠️ Device wallet limit reached (${deviceCheck.walletCount}/2). Cannot store metadata for new wallet.`);
+      return;
+    }
+
+    const existing = getAllNFTMetadataForWallet(walletAddress);
+    const key = `${metadata.contractAddress.toLowerCase()}_${metadata.tokenId}`;
+    
+    // Add unique creation identifier to prevent cache conflicts
+    const enhancedMetadata = {
+      ...metadata,
+      uniqueCreationId: `create_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      creatorWallet: walletAddress,
+      storedAt: new Date().toISOString()
+    };
+    
+    existing[key] = enhancedMetadata;
+    localStorage.setItem(walletKey, JSON.stringify(existing));
+    
+    console.log(`💾 Client: Stored wallet-scoped metadata for ${walletAddress.slice(0, 10)}...`);
+    console.log(`🔑 Unique ID: ${enhancedMetadata.uniqueCreationId}`);
+  } catch (error) {
+    console.error('❌ Client: Error storing wallet-scoped metadata:', error);
+  }
+}
+
+export function getNFTMetadataClient(contractAddress: string, tokenId: string, walletAddress?: string): NFTMetadata | null {
+  try {
+    // If wallet is provided, try wallet-scoped first
+    if (walletAddress) {
+      const walletScoped = getAllNFTMetadataForWallet(walletAddress);
+      const key = `${contractAddress.toLowerCase()}_${tokenId}`;
+      
+      const metadata = walletScoped[key];
+      if (metadata) {
+        console.log(`✅ Client: Found wallet-scoped metadata for ${contractAddress}:${tokenId}`);
+        console.log(`🔑 Unique ID: ${metadata.uniqueCreationId || 'legacy'}`);
+        return metadata;
+      }
+    }
+    
+    // Fallback to legacy global search (will be phased out)
+    console.log(`⚠️ Client: No wallet-scoped metadata found for ${contractAddress}:${tokenId}`);
+    return null;
   } catch (error) {
     console.error('❌ Client: Error getting metadata:', error);
     return null;
   }
 }
 
-export function getAllNFTMetadataClient(): Record<string, NFTMetadata> {
+// NEW: Wallet-scoped metadata retrieval
+export function getAllNFTMetadataForWallet(walletAddress: string): Record<string, NFTMetadata> {
   try {
-    const stored = localStorage.getItem(STORAGE_KEY);
+    if (!walletAddress) {
+      console.warn('⚠️ No wallet address provided for scoped metadata retrieval');
+      return {};
+    }
+    
+    const walletKey = getWalletStorageKey(walletAddress);
+    const stored = localStorage.getItem(walletKey);
     return stored ? JSON.parse(stored) : {};
   } catch (error) {
-    console.error('❌ Client: Error getting all metadata:', error);
+    console.error('❌ Client: Error getting wallet-scoped metadata:', error);
     return {};
+  }
+}
+
+// DEPRECATED: Legacy function for backwards compatibility
+export function getAllNFTMetadataClient(): Record<string, NFTMetadata> {
+  console.warn('⚠️ getAllNFTMetadataClient is deprecated. Use getAllNFTMetadataForWallet instead.');
+  return {};
+}
+
+// NEW: Device management functions
+export function getDeviceWalletInfo(): { allowed: boolean; walletCount: number; registeredWallets: string[] } {
+  return checkDeviceWalletLimit();
+}
+
+export function clearWalletCache(walletAddress: string): boolean {
+  try {
+    const walletKey = getWalletStorageKey(walletAddress);
+    localStorage.removeItem(walletKey);
+    console.log(`🗑️ Cleared cache for wallet ${walletAddress.slice(0, 10)}...`);
+    return true;
+  } catch (error) {
+    console.error('❌ Error clearing wallet cache:', error);
+    return false;
   }
 }
 

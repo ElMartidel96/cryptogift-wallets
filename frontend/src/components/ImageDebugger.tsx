@@ -8,12 +8,14 @@ import { FlowDiagnostic } from './FlowDiagnostic';
 interface ImageDebuggerProps {
   nftContract: string;
   tokenId: string;
+  walletAddress?: string; // NEW: Required for wallet-scoped caching
   className?: string;
 }
 
 export const ImageDebugger: React.FC<ImageDebuggerProps> = ({
   nftContract,
   tokenId,
+  walletAddress,
   className = ""
 }) => {
   const [debugInfo, setDebugInfo] = useState<any>({});
@@ -23,307 +25,232 @@ export const ImageDebugger: React.FC<ImageDebuggerProps> = ({
 
   useEffect(() => {
     debugImageLoading();
-  }, [nftContract, tokenId]);
+  }, [nftContract, tokenId, walletAddress]);
 
   const debugImageLoading = async () => {
     setIsLoading(true);
     const debug: any = {
       nftContract,
       tokenId,
+      walletAddress: walletAddress?.slice(0, 10) + '...' || 'none',
       timestamp: new Date().toISOString(),
       steps: []
     };
 
     try {
-      // Step 0: Check client storage first
-      debug.steps.push('0️⃣ Checking client storage...');
-      const clientMetadata = getNFTMetadataClient(nftContract, tokenId);
+      // CRITICAL: PRIORITIZE API over client cache to prevent stale data
+      debug.steps.push('🎯 STRATEGY: API-first to prevent cache contamination');
       
-      if (clientMetadata) {
-        debug.steps.push('✅ Found client metadata');
-        debug.clientMetadata = clientMetadata;
-        
-        const clientImageUrl = resolveIPFSUrlClient(clientMetadata.image);
-        debug.steps.push('1️⃣ Testing client image URL...');
-        
-        try {
-          const clientResponse = await fetch(clientImageUrl, { method: 'HEAD' });
-          debug.clientImageTest = {
-            url: clientImageUrl,
-            status: clientResponse.status,
-            ok: clientResponse.ok
-          };
-          
-          if (clientResponse.ok) {
-            setImageUrl(clientImageUrl);
-            debug.steps.push('✅ Client image URL working');
-            debug.finalSource = 'client';
-            setDebugInfo(debug);
-            setIsLoading(false);
-            return;
-          }
-        } catch (error) {
-          debug.steps.push('❌ Client image URL failed');
-        }
-      } else {
-        debug.steps.push('⚠️ No client metadata found');
-      }
-      
-      // Step 1: Test our NFT API
-      debug.steps.push('1️⃣ Testing NFT API...');
+      // Step 1: Test our NFT API FIRST (not client cache)
+      debug.steps.push('1️⃣ Testing NFT API (PRIORITY)...');
       const apiResponse = await fetch(`/api/nft/${nftContract}/${tokenId}`);
       debug.apiStatus = apiResponse.status;
       debug.apiOk = apiResponse.ok;
       
+      let apiImageWorking = false;
       if (apiResponse.ok) {
-        const nftData = await apiResponse.json();
-        debug.apiData = nftData;
-        debug.steps.push('✅ NFT API successful');
-        
-        if (nftData.image) {
-          let testImageUrl = nftData.image;
-          debug.originalImageUrl = testImageUrl;
+        try {
+          const nftData = await apiResponse.json();
+          debug.apiData = nftData;
+          debug.steps.push('✅ API returned metadata');
           
-          // Step 2: Test IPFS URL conversion
-          if (testImageUrl.startsWith('ipfs://')) {
-            debug.steps.push('2️⃣ Converting IPFS URL...');
-            const ipfsHash = testImageUrl.replace('ipfs://', '');
-            debug.ipfsHash = ipfsHash;
+          if (nftData.image) {
+            const apiImageUrl = nftData.image.startsWith('ipfs://') 
+              ? resolveIPFSUrlClient(nftData.image)
+              : nftData.image;
             
-            // Try multiple IPFS gateways
-            const gateways = [
-              `https://nftstorage.link/ipfs/${ipfsHash}`,
-              `https://ipfs.io/ipfs/${ipfsHash}`,
-              `https://gateway.pinata.cloud/ipfs/${ipfsHash}`,
-              `https://cloudflare-ipfs.com/ipfs/${ipfsHash}`
-            ];
+            debug.steps.push('🖼️ Testing API image URL...');
             
-            debug.gateways = [];
-            
-            for (const gateway of gateways) {
-              try {
-                debug.steps.push(`🔍 Testing gateway: ${gateway.split('/')[2]}`);
-                const response = await fetch(gateway, { method: 'HEAD' });
-                debug.gateways.push({
-                  url: gateway,
-                  status: response.status,
-                  ok: response.ok,
-                  headers: Object.fromEntries(response.headers.entries())
-                });
-                
-                if (response.ok) {
-                  testImageUrl = gateway;
-                  debug.steps.push(`✅ Gateway working: ${gateway.split('/')[2]}`);
-                  break;
-                }
-              } catch (error) {
-                debug.gateways.push({
-                  url: gateway,
-                  error: error.message
-                });
-                debug.steps.push(`❌ Gateway failed: ${gateway.split('/')[2]}`);
-              }
-            }
-          }
-          
-          // Step 3: Check if this is a placeholder and auto-regenerate
-          const isPlaceholder = testImageUrl.includes('placeholder') || 
-                                testImageUrl.includes('cg-wallet-placeholder') ||
-                                nftData.image.includes('placeholder');
-          
-          if (isPlaceholder) {
-            debug.steps.push('⚠️ Placeholder detected, attempting auto-regeneration...');
             try {
-              // Auto-trigger metadata regeneration
-              const regenerateResponse = await fetch('/api/nft/regenerate-metadata', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  contractAddress: nftContract,
-                  tokenId
-                })
-              });
-
-              if (regenerateResponse.ok) {
-                debug.steps.push('✅ Auto-regeneration successful, retrying...');
-                
-                // Retry with regenerated metadata
-                const retryResponse = await fetch(`/api/nft/${nftContract}/${tokenId}`);
-                if (retryResponse.ok) {
-                  const retryData = await retryResponse.json();
-                  if (retryData.image && !retryData.image.includes('placeholder')) {
-                    testImageUrl = retryData.image;
-                    debug.steps.push('✅ Regenerated image found');
-                  }
-                }
-              } else {
-                debug.steps.push('⚠️ Auto-regeneration failed, using placeholder');
+              const imageResponse = await fetch(apiImageUrl, { method: 'HEAD' });
+              debug.apiImageTest = {
+                url: apiImageUrl,
+                status: imageResponse.status,
+                ok: imageResponse.ok
+              };
+              
+              if (imageResponse.ok) {
+                setImageUrl(apiImageUrl);
+                debug.steps.push('✅ API image URL working - USING THIS');
+                debug.finalSource = 'api';
+                apiImageWorking = true;
+                setDebugInfo(debug);
+                setIsLoading(false);
+                return;
               }
-            } catch (regenerateError) {
-              debug.steps.push(`⚠️ Auto-regeneration error: ${regenerateError.message}`);
+            } catch (error) {
+              debug.steps.push('❌ API image URL failed');
             }
           }
-
-          // Step 4: Test final image URL
-          debug.steps.push('4️⃣ Testing final image URL...');
-          try {
-            const imageResponse = await fetch(testImageUrl, { method: 'HEAD' });
-            debug.finalImageTest = {
-              url: testImageUrl,
-              status: imageResponse.status,
-              ok: imageResponse.ok,
-              contentType: imageResponse.headers.get('content-type'),
-              contentLength: imageResponse.headers.get('content-length')
-            };
-            
-            if (imageResponse.ok) {
-              setImageUrl(testImageUrl);
-              debug.steps.push('✅ Final image URL working');
-            } else {
-              debug.steps.push(`❌ Final image URL failed: ${imageResponse.status}`);
-            }
-          } catch (error) {
-            debug.finalImageTest = { error: error.message };
-            debug.steps.push(`❌ Final image URL error: ${error.message}`);
-          }
-        } else {
-          debug.steps.push('❌ No image found in NFT data');
+        } catch (error) {
+          debug.steps.push('❌ API response parsing failed');
         }
       } else {
-        debug.steps.push(`❌ NFT API failed: ${apiResponse.status}`);
-        try {
-          const errorData = await apiResponse.text();
-          debug.apiError = errorData;
-        } catch (e) {
-          debug.apiError = 'Could not read error response';
-        }
+        debug.steps.push('⚠️ API failed, will try client cache as fallback');
       }
+      
+      // Step 2: Fallback to wallet-scoped client storage ONLY if API fails
+      if (!apiImageWorking && walletAddress) {
+        debug.steps.push('2️⃣ Fallback: Checking wallet-scoped client storage...');
+        const clientMetadata = getNFTMetadataClient(nftContract, tokenId, walletAddress);
+        
+        if (clientMetadata) {
+          debug.steps.push('✅ Found wallet-scoped client metadata');
+          debug.clientMetadata = clientMetadata;
+          debug.walletScope = walletAddress.slice(0, 10) + '...';
+          debug.uniqueId = clientMetadata.uniqueCreationId || 'legacy';
+          
+          const clientImageUrl = resolveIPFSUrlClient(clientMetadata.image);
+          debug.steps.push('🖼️ Testing wallet-scoped image URL...');
+          
+          try {
+            const clientResponse = await fetch(clientImageUrl, { method: 'HEAD' });
+            debug.clientImageTest = {
+              url: clientImageUrl,
+              status: clientResponse.status,
+              ok: clientResponse.ok
+            };
+            
+            if (clientResponse.ok) {
+              setImageUrl(clientImageUrl);
+              debug.steps.push('✅ Wallet-scoped image URL working');
+              debug.finalSource = 'wallet-scoped-client';
+              setDebugInfo(debug);
+              setIsLoading(false);
+              return;
+            }
+          } catch (error) {
+            debug.steps.push('❌ Wallet-scoped image URL failed');
+          }
+        } else {
+          debug.steps.push('⚠️ No wallet-scoped metadata found');
+        }
+      } else if (!walletAddress) {
+        debug.steps.push('⚠️ No wallet address provided for scoped caching');
+      }
+      
+      // Step 3: Try to regenerate metadata if available
+      debug.steps.push('3️⃣ Attempting metadata regeneration...');
+      try {
+        const regenerateResponse = await fetch(`/api/nft/regenerate-metadata`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ contractAddress: nftContract, tokenId })
+        });
+        
+        if (regenerateResponse.ok) {
+          const regeneratedData = await regenerateResponse.json();
+          debug.steps.push('✅ Metadata regeneration successful');
+          debug.regeneratedData = regeneratedData;
+          
+          if (regeneratedData.imageUrl) {
+            setImageUrl(regeneratedData.imageUrl);
+            debug.finalSource = 'regenerated';
+            setDebugInfo(debug);
+            setIsLoading(false);
+            return;
+          }
+        } else {
+          debug.steps.push('⚠️ Metadata regeneration failed');
+        }
+      } catch (error) {
+        debug.steps.push('❌ Regeneration error: ' + error.message);
+      }
+      
+      // Step 4: Fallback to placeholder
+      debug.steps.push('4️⃣ Using placeholder image');
+      setImageUrl('/images/nft-placeholder.png');
+      debug.finalSource = 'placeholder';
+      debug.needsRegeneration = true;
+      
     } catch (error) {
-      debug.error = error.message;
-      debug.steps.push(`❌ Debug failed: ${error.message}`);
+      debug.steps.push('❌ Critical error: ' + error.message);
+      setImageUrl('/images/nft-placeholder.png');
+      debug.finalSource = 'error-placeholder';
+    } finally {
+      setDebugInfo(debug);
+      setIsLoading(false);
     }
+  };
 
-    setDebugInfo(debug);
-    setIsLoading(false);
-    
-    // Log to console for debugging
-    console.log('🐛 NFT Image Debug Info:', debug);
+  const handleRegenerate = async () => {
+    setIsLoading(true);
+    await debugImageLoading();
   };
 
   return (
     <div className={`relative ${className}`}>
-      {/* Image Display */}
-      <div className="relative">
-        {imageUrl ? (
+      {isLoading ? (
+        <div className="w-full h-64 bg-gray-200 animate-pulse rounded-lg flex items-center justify-center">
+          <span className="text-gray-500">🔄 Loading image...</span>
+        </div>
+      ) : (
+        <div className="relative">
           <Image
             src={imageUrl}
-            alt={`NFT ${tokenId}`}
-            width={100}
-            height={100}
-            className="w-full h-full object-cover rounded-lg"
-            onError={(e) => {
-              console.error('🖼️ Image failed to load:', imageUrl);
+            alt="NFT"
+            width={400}
+            height={400}
+            className="rounded-lg object-cover"
+            onError={() => {
+              console.error('Image failed to load:', imageUrl);
               setImageUrl('/images/nft-placeholder.png');
             }}
-            onLoad={() => {
-              console.log('✅ Image loaded successfully:', imageUrl);
-            }}
           />
-        ) : (
-          <div className="w-full h-full bg-gray-200 rounded-lg flex items-center justify-center">
-            {isLoading ? (
-              <div className="animate-spin text-2xl">🔄</div>
-            ) : (
-              <div className="text-gray-500 text-center p-2">
-                <div className="text-2xl mb-2">❌</div>
-                <div className="text-xs">Image Failed</div>
-              </div>
-            )}
-          </div>
-        )}
-        
-        {/* Debug Toggle Button */}
-        <button
-          onClick={() => setShowDebug(!showDebug)}
-          className="absolute top-1 right-1 w-6 h-6 bg-black bg-opacity-50 text-white rounded-full text-xs flex items-center justify-center"
-          title="Toggle Debug Info"
-        >
-          🐛
-        </button>
-      </div>
-
-      {/* Debug Info Panel */}
-      {showDebug && (
-        <div className="absolute top-full left-0 right-0 mt-2 bg-black text-green-400 text-xs p-3 rounded-lg font-mono z-50 max-h-96 overflow-y-auto">
-          <div className="flex justify-between items-center mb-2">
-            <span className="font-bold">🐛 Debug Info</span>
-            <button
-              onClick={() => setShowDebug(false)}
-              className="text-red-400 hover:text-red-300"
-            >
-              ✕
-            </button>
-          </div>
           
-          <div className="space-y-2">
-            <div><span className="text-yellow-400">Contract:</span> {debugInfo.nftContract}</div>
-            <div><span className="text-yellow-400">Token ID:</span> {debugInfo.tokenId}</div>
-            <div><span className="text-yellow-400">API Status:</span> {debugInfo.apiStatus} {debugInfo.apiOk ? '✅' : '❌'}</div>
-            
-            {debugInfo.originalImageUrl && (
-              <div><span className="text-yellow-400">Original URL:</span> {debugInfo.originalImageUrl}</div>
-            )}
-            
-            {debugInfo.ipfsHash && (
-              <div><span className="text-yellow-400">IPFS Hash:</span> {debugInfo.ipfsHash}</div>
-            )}
-            
-            {debugInfo.finalImageTest && (
-              <div>
-                <span className="text-yellow-400">Final Test:</span> 
-                {debugInfo.finalImageTest.ok ? '✅' : '❌'} 
-                {debugInfo.finalImageTest.status}
-                {debugInfo.finalImageTest.contentType && ` (${debugInfo.finalImageTest.contentType})`}
-              </div>
-            )}
-            
-            <div className="border-t border-gray-600 pt-2">
-              <div className="text-yellow-400 mb-1">Steps:</div>
-              {debugInfo.steps?.map((step: string, index: number) => (
-                <div key={index} className="text-xs">{step}</div>
-              ))}
-            </div>
-            
-            {debugInfo.gateways && debugInfo.gateways.length > 0 && (
-              <div className="border-t border-gray-600 pt-2">
-                <div className="text-yellow-400 mb-1">IPFS Gateways:</div>
-                {debugInfo.gateways.map((gateway: any, index: number) => (
-                  <div key={index} className="text-xs">
-                    {gateway.url.split('/')[2]}: {gateway.ok ? '✅' : '❌'} {gateway.status || gateway.error}
-                  </div>
-                ))}
-              </div>
-            )}
-            
+          {debugInfo.needsRegeneration && (
             <button
-              onClick={debugImageLoading}
-              className="mt-2 px-2 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700"
+              onClick={handleRegenerate}
+              className="absolute top-2 right-2 bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-sm"
             >
-              🔄 Re-test
+              🔄 Recuperar Imagen Real
             </button>
-          </div>
+          )}
         </div>
       )}
       
-      {/* Flow Diagnostic Panel */}
-      {showDebug && (
-        <div className="absolute top-full left-0 right-0 mt-80 z-40">
-          <FlowDiagnostic 
-            contractAddress={nftContract} 
-            tokenId={tokenId} 
-          />
-        </div>
-      )}
+      {/* Debug Information */}
+      <div className="mt-4">
+        <button
+          onClick={() => setShowDebug(!showDebug)}
+          className="text-sm text-gray-500 hover:text-gray-700"
+        >
+          🐛 {showDebug ? 'Hide' : 'Show'} Debug Info
+        </button>
+        
+        {showDebug && (
+          <div className="mt-2 p-3 bg-gray-100 rounded text-xs">
+            <div className="mb-2">
+              <strong>Source:</strong> {debugInfo.finalSource || 'unknown'}
+              {debugInfo.walletScope && (
+                <span className="ml-2 text-blue-600">
+                  (Wallet: {debugInfo.walletScope})
+                </span>
+              )}
+              {debugInfo.uniqueId && (
+                <span className="ml-2 text-green-600">
+                  (ID: {debugInfo.uniqueId.slice(-8)})
+                </span>
+              )}
+            </div>
+            <div className="space-y-1">
+              {debugInfo.steps?.map((step: string, index: number) => (
+                <div key={index} className="text-gray-600">
+                  {step}
+                </div>
+              ))}
+            </div>
+            {debugInfo.apiData && (
+              <details className="mt-2">
+                <summary className="cursor-pointer font-medium">API Data</summary>
+                <pre className="mt-1 text-xs overflow-auto">
+                  {JSON.stringify(debugInfo.apiData, null, 2)}
+                </pre>
+              </details>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 };

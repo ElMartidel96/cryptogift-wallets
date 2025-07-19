@@ -226,6 +226,7 @@ export default function TokenPage() {
                     <ImageDebugger
                       nftContract={contractAddress}
                       tokenId={tokenId}
+                      walletAddress={account?.address}
                       className="w-full h-auto"
                     />
                   </div>

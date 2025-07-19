@@ -15,7 +15,8 @@ import { CryptoGiftError, parseApiError, logError } from '../lib/errorHandler';
 import { ErrorModal } from './ErrorModal';
 import { GasEstimationModal } from './GasEstimationModal';
 import { startTrace, addStep, addDecision, addError, finishTrace } from '../lib/flowTracker';
-import { storeNFTMetadataClient, getNFTMetadataClient, NFTMetadata } from '../lib/clientMetadataStore';
+import { storeNFTMetadataClient, getNFTMetadataClient, NFTMetadata, getDeviceWalletInfo } from '../lib/clientMetadataStore';
+import { DeviceLimitModal } from './DeviceLimitModal';
 
 // Image compression utility to prevent HTTP 413 errors
 async function compressImage(file: File, quality: number = 0.8): Promise<File> {
@@ -92,6 +93,16 @@ export const GiftWizard: React.FC<GiftWizardProps> = ({ isOpen, onClose, referre
 
   useEffect(() => {
     if (mounted && account) {
+      // CRITICAL: Check device wallet limits when user connects
+      const deviceInfo = getDeviceWalletInfo();
+      console.log('🔍 Device wallet check:', deviceInfo);
+      
+      if (!deviceInfo.allowed && !deviceInfo.registeredWallets.includes(account.address.toLowerCase())) {
+        console.warn('⚠️ Device wallet limit exceeded for new wallet:', account.address.slice(0, 10) + '...');
+        setShowDeviceLimitModal(true);
+        return;
+      }
+      
       setCurrentStep(WizardStep.UPLOAD);
     } else if (mounted) {
       setCurrentStep(WizardStep.CONNECT);
@@ -116,6 +127,7 @@ export const GiftWizard: React.FC<GiftWizardProps> = ({ isOpen, onClose, referre
   const [error, setError] = useState<CryptoGiftError | Error | null>(null);
   const [showErrorModal, setShowErrorModal] = useState(false);
   const [showGasModal, setShowGasModal] = useState(false);
+  const [showDeviceLimitModal, setShowDeviceLimitModal] = useState(false);
   const [gasEstimation, setGasEstimation] = useState({
     estimatedGas: '21000',
     gasPrice: '0.1',
@@ -392,12 +404,18 @@ export const GiftWizard: React.FC<GiftWizardProps> = ({ isOpen, onClose, referre
       };
       
       console.log('📦 Metadata to store:', nftMetadata);
-      storeNFTMetadataClient(nftMetadata);
-      console.log('✅ NFT metadata stored on client');
       
-      // Verify it was stored
-      const storedCheck = getNFTMetadataClient(nftMetadata.contractAddress, nftMetadata.tokenId);
-      console.log('🔍 Verification check:', storedCheck);
+      // CRITICAL: Store with wallet address for proper scoping
+      if (account?.address) {
+        storeNFTMetadataClient(nftMetadata, account.address);
+        console.log('✅ NFT metadata stored on client with wallet scope:', account.address.slice(0, 10) + '...');
+        
+        // Verify it was stored with wallet scope
+        const storedCheck = getNFTMetadataClient(nftMetadata.contractAddress, nftMetadata.tokenId, account.address);
+        console.log('🔍 Verification check:', storedCheck);
+      } else {
+        console.warn('⚠️ No wallet address available for scoped storage');
+      }
     } catch (metadataError) {
       console.error('⚠️ Failed to store NFT metadata on client:', metadataError);
     }
@@ -603,12 +621,20 @@ export const GiftWizard: React.FC<GiftWizardProps> = ({ isOpen, onClose, referre
         };
         
         console.log('📦 Metadata to store (gas-paid):', nftMetadata);
-        storeNFTMetadataClient(nftMetadata);
-        console.log('✅ NFT metadata stored on client (gas-paid)');
         
-        // Verify it was stored
-        const storedCheck = getNFTMetadataClient(nftMetadata.contractAddress, nftMetadata.tokenId);
-        console.log('🔍 Verification check (gas-paid):', storedCheck);
+        // CRITICAL: Store with wallet address for proper scoping
+        if (account?.address) {
+          storeNFTMetadataClient(nftMetadata, account.address);
+          console.log('✅ NFT metadata stored on client (gas-paid) with wallet scope:', account.address.slice(0, 10) + '...');
+        } else {
+          console.warn('⚠️ No wallet address available for scoped storage (gas-paid)');
+        }
+        
+        // Verify it was stored with wallet scope
+        if (account?.address) {
+          const storedCheck = getNFTMetadataClient(nftMetadata.contractAddress, nftMetadata.tokenId, account.address);
+          console.log('🔍 Verification check (gas-paid):', storedCheck);
+        }
       } catch (metadataError) {
         console.error('⚠️ Failed to store NFT metadata on client (gas-paid):', metadataError);
       }
@@ -848,6 +874,21 @@ export const GiftWizard: React.FC<GiftWizardProps> = ({ isOpen, onClose, referre
         gasPrice={gasEstimation.gasPrice}
         totalCost={gasEstimation.totalCost}
         networkName={gasEstimation.networkName}
+      />
+
+      {/* Device Limit Modal */}
+      <DeviceLimitModal
+        isOpen={showDeviceLimitModal}
+        registeredWallets={getDeviceWalletInfo().registeredWallets}
+        onClose={() => {
+          setShowDeviceLimitModal(false);
+          onClose(); // Close the entire wizard
+        }}
+        onSelectWallet={(walletAddress) => {
+          setShowDeviceLimitModal(false);
+          // TODO: Implement wallet switching logic
+          console.log('User selected existing wallet:', walletAddress);
+        }}
       />
     </div>
   );
