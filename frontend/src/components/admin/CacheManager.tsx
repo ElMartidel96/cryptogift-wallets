@@ -139,32 +139,106 @@ export const CacheManager: React.FC<CacheManagerProps> = ({ isOpen, onClose }) =
             
             {cacheInfo ? (
               <div className="space-y-3 text-sm">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-3 gap-4">
                   <div>
+                    <p><strong>Total Keys:</strong> {cacheInfo.totalKeys || 0}</p>
                     <p><strong>Wallet Caches:</strong> {cacheInfo.walletCaches?.length || 0}</p>
-                    <p><strong>IPFS Gateway Caches:</strong> {cacheInfo.ipfsGatewayCaches?.length || 0}</p>
+                    <p><strong>IPFS Gateways:</strong> {cacheInfo.ipfsGatewayCaches?.length || 0}</p>
                     <p><strong>Total Size:</strong> {(cacheInfo.totalSize / 1024).toFixed(2)} KB</p>
                   </div>
                   <div>
-                    <p><strong>Device Registered Wallets:</strong> {cacheInfo.deviceInfo?.registeredWallets?.length || 0}</p>
+                    <p><strong>Wallet State Keys:</strong> {cacheInfo.walletStateKeys?.length || 0}</p>
+                    <p><strong>Account Keys:</strong> {cacheInfo.accountKeys?.length || 0}</p>
+                    <p><strong>Referral Keys:</strong> {cacheInfo.referralKeys?.length || 0}</p>
+                    <p><strong>Other Keys:</strong> {cacheInfo.otherKeys?.length || 0}</p>
+                  </div>
+                  <div>
+                    <p><strong>SessionStorage:</strong> {cacheInfo.sessionStorageKeys?.length || 0}</p>
+                    <p><strong>Device Wallets:</strong> {cacheInfo.deviceInfo?.registeredWallets?.length || 0}</p>
                     <p><strong>Last Scan:</strong> {new Date(cacheInfo.timestamp).toLocaleTimeString()}</p>
                   </div>
                 </div>
 
-                {cacheInfo.walletCaches?.length > 0 && (
-                  <details className="mt-2">
-                    <summary className="cursor-pointer font-medium text-blue-700">
-                      Ver detalles de wallets ({cacheInfo.walletCaches.length})
-                    </summary>
-                    <div className="mt-2 space-y-1">
-                      {cacheInfo.walletCaches.map((wallet: any, index: number) => (
-                        <div key={index} className="text-xs bg-white p-2 rounded border">
-                          <span className="font-mono">{wallet.walletAddress}</span> - 
-                          {wallet.nftCount} NFTs ({(wallet.sizeBytes / 1024).toFixed(1)} KB)
+                {/* Detailed breakdown */}
+                {(cacheInfo.walletCaches?.length > 0 || 
+                  cacheInfo.walletStateKeys?.length > 0 || 
+                  cacheInfo.accountKeys?.length > 0 ||
+                  cacheInfo.otherKeys?.length > 0) && (
+                  <div className="space-y-2 mt-4">
+                    
+                    {cacheInfo.walletCaches?.length > 0 && (
+                      <details className="border rounded p-2">
+                        <summary className="cursor-pointer font-medium text-blue-700">
+                          🗂️ Wallet Caches ({cacheInfo.walletCaches.length})
+                        </summary>
+                        <div className="mt-2 space-y-1">
+                          {cacheInfo.walletCaches.map((wallet: any, index: number) => (
+                            <div key={index} className="text-xs bg-white p-2 rounded border">
+                              <span className="font-mono">{wallet.key}</span><br/>
+                              <span className="text-gray-600">
+                                {wallet.walletAddress} - {wallet.nftCount} NFTs ({(wallet.sizeBytes / 1024).toFixed(1)} KB)
+                              </span>
+                            </div>
+                          ))}
                         </div>
-                      ))}
-                    </div>
-                  </details>
+                      </details>
+                    )}
+
+                    {cacheInfo.walletStateKeys?.length > 0 && (
+                      <details className="border rounded p-2">
+                        <summary className="cursor-pointer font-medium text-orange-700">
+                          ⚠️ Wallet State Keys ({cacheInfo.walletStateKeys.length}) - CRÍTICOS
+                        </summary>
+                        <div className="mt-2 space-y-1">
+                          {cacheInfo.walletStateKeys.map((state: any, index: number) => (
+                            <div key={index} className="text-xs bg-orange-50 p-2 rounded border">
+                              <span className="font-mono font-bold">{state.key}</span><br/>
+                              <span className="text-gray-600">
+                                {(state.sizeBytes / 1024).toFixed(1)} KB - {state.preview}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </details>
+                    )}
+
+                    {cacheInfo.accountKeys?.length > 0 && (
+                      <details className="border rounded p-2">
+                        <summary className="cursor-pointer font-medium text-purple-700">
+                          👤 Account & Security Keys ({cacheInfo.accountKeys.length})
+                        </summary>
+                        <div className="mt-2 space-y-1">
+                          {cacheInfo.accountKeys.map((account: any, index: number) => (
+                            <div key={index} className="text-xs bg-purple-50 p-2 rounded border">
+                              <span className="font-mono">{account.key}</span><br/>
+                              <span className="text-gray-600">
+                                Type: {account.type} - {(account.sizeBytes / 1024).toFixed(1)} KB
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </details>
+                    )}
+
+                    {cacheInfo.otherKeys?.length > 0 && (
+                      <details className="border rounded p-2">
+                        <summary className="cursor-pointer font-medium text-gray-700">
+                          🔍 Other Relevant Keys ({cacheInfo.otherKeys.length})
+                        </summary>
+                        <div className="mt-2 space-y-1">
+                          {cacheInfo.otherKeys.map((other: any, index: number) => (
+                            <div key={index} className="text-xs bg-gray-50 p-2 rounded border">
+                              <span className="font-mono">{other.key}</span><br/>
+                              <span className="text-gray-600">
+                                {(other.sizeBytes / 1024).toFixed(1)} KB - {other.preview || 'No preview'}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </details>
+                    )}
+
+                  </div>
                 )}
               </div>
             ) : (

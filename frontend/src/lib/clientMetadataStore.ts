@@ -177,7 +177,13 @@ export function clearAllUserCache(): { cleared: boolean; details: any } {
       details: {
         walletCaches: 0,
         ipfsGatewayCaches: 0,
+        walletStateKeys: 0,
+        accountKeys: 0,
+        referralKeys: 0,
+        legacyKeys: 0,
+        serviceWorkerCaches: 0,
         totalLocalStorageKeys: 0,
+        totalSessionStorageKeys: 0,
         clearedKeys: []
       }
     };
@@ -185,6 +191,8 @@ export function clearAllUserCache(): { cleared: boolean; details: any } {
     // Get all localStorage keys
     const allKeys = Object.keys(localStorage);
     results.details.totalLocalStorageKeys = allKeys.length;
+
+    console.log('🔍 Found localStorage keys:', allKeys);
 
     // Clear wallet-scoped metadata caches
     const walletKeys = allKeys.filter(key => key.startsWith(STORAGE_PREFIX));
@@ -202,11 +210,85 @@ export function clearAllUserCache(): { cleared: boolean; details: any } {
     });
     results.details.ipfsGatewayCaches = ipfsKeys.length;
 
-    // Clear device wallet info
-    localStorage.removeItem(DEVICE_STORAGE_KEY);
-    results.details.clearedKeys.push(DEVICE_STORAGE_KEY);
+    // Clear wallet state keys (CRITICAL - estos pueden estar manteniendo estado)
+    const walletStateKeys = [
+      'activeTBAWalletId',
+      'activeTBAWalletData', 
+      'activeWalletId',
+      'installedCGWallets',
+      'cryptogift_nft_metadata', // Legacy key
+      DEVICE_STORAGE_KEY
+    ];
+    
+    walletStateKeys.forEach(key => {
+      if (localStorage.getItem(key)) {
+        localStorage.removeItem(key);
+        results.details.clearedKeys.push(key);
+        results.details.walletStateKeys++;
+      }
+    });
 
-    console.log('🧹 Cache clearing results:', results);
+    // Clear account and security data
+    const accountKeys = allKeys.filter(key => 
+      key.startsWith('account_') || key.startsWith('security_')
+    );
+    accountKeys.forEach(key => {
+      localStorage.removeItem(key);
+      results.details.clearedKeys.push(key);
+    });
+    results.details.accountKeys = accountKeys.length;
+
+    // Clear referral tracking
+    const referralKeys = allKeys.filter(key => 
+      key === 'referrer' || key.startsWith('referral-banner-')
+    );
+    referralKeys.forEach(key => {
+      localStorage.removeItem(key);
+      results.details.clearedKeys.push(key);
+    });
+    results.details.referralKeys = referralKeys.length;
+
+    // Clear any other cryptogift-related keys
+    const otherKeys = allKeys.filter(key => 
+      key.toLowerCase().includes('cryptogift') || 
+      key.toLowerCase().includes('tba') ||
+      key.toLowerCase().includes('nft') ||
+      key.includes('pwa-install')
+    );
+    otherKeys.forEach(key => {
+      if (!results.details.clearedKeys.includes(key)) {
+        localStorage.removeItem(key);
+        results.details.clearedKeys.push(key);
+        results.details.legacyKeys++;
+      }
+    });
+
+    // Clear sessionStorage completely
+    const sessionKeys = Object.keys(sessionStorage);
+    results.details.totalSessionStorageKeys = sessionKeys.length;
+    sessionStorage.clear();
+    if (sessionKeys.length > 0) {
+      results.details.clearedKeys.push('sessionStorage (all keys)');
+    }
+
+    // Clear Service Worker caches
+    if ('caches' in window) {
+      caches.keys().then(cacheNames => {
+        console.log('🗄️ Found service worker caches:', cacheNames);
+        cacheNames.forEach(cacheName => {
+          caches.delete(cacheName);
+          results.details.serviceWorkerCaches++;
+        });
+      }).catch(error => {
+        console.warn('⚠️ Could not clear service worker caches:', error);
+      });
+    }
+
+    console.log('🧹 COMPREHENSIVE cache clearing results:', results);
+    
+    // Force reload recommendation
+    console.log('🔄 RECOMMENDATION: Refresh page after clearing to reset all states');
+    
     return results;
   } catch (error) {
     console.error('❌ Error clearing cache:', error);
@@ -223,11 +305,21 @@ export function getDetailedCacheInfo(): any {
       timestamp: new Date().toISOString(),
       walletCaches: [] as any[],
       ipfsGatewayCaches: [] as any[],
+      walletStateKeys: [] as any[],
+      accountKeys: [] as any[],
+      referralKeys: [] as any[],
+      otherKeys: [] as any[],
+      sessionStorageKeys: [] as any[],
       deviceInfo: null as any,
-      totalSize: 0
+      totalSize: 0,
+      totalKeys: 0
     };
 
+    // Analyze localStorage
     const allKeys = Object.keys(localStorage);
+    info.totalKeys = allKeys.length;
+
+    console.log('🔍 DETAILED ANALYSIS - All localStorage keys:', allKeys);
 
     // Analyze wallet caches
     const walletKeys = allKeys.filter(key => key.startsWith(STORAGE_PREFIX));
@@ -239,6 +331,7 @@ export function getDetailedCacheInfo(): any {
         const walletAddress = key.replace(STORAGE_PREFIX, '');
         
         info.walletCaches.push({
+          key,
           walletAddress: walletAddress.slice(0, 10) + '...',
           nftCount,
           sizeBytes: data ? data.length : 0,
@@ -257,8 +350,95 @@ export function getDetailedCacheInfo(): any {
       const cid = key.replace('ipfs_gateway_', '');
       const gateway = localStorage.getItem(key);
       info.ipfsGatewayCaches.push({
+        key,
         cid: cid.slice(0, 12) + '...',
         gateway: gateway ? gateway.split('/')[2] : 'unknown'
+      });
+    });
+
+    // Analyze wallet state keys
+    const walletStateKeys = [
+      'activeTBAWalletId',
+      'activeTBAWalletData', 
+      'activeWalletId',
+      'installedCGWallets',
+      'cryptogift_nft_metadata',
+      DEVICE_STORAGE_KEY
+    ];
+    
+    walletStateKeys.forEach(key => {
+      const data = localStorage.getItem(key);
+      if (data) {
+        info.walletStateKeys.push({
+          key,
+          sizeBytes: data.length,
+          preview: data.substring(0, 100) + (data.length > 100 ? '...' : '')
+        });
+        info.totalSize += data.length;
+      }
+    });
+
+    // Analyze account and security data
+    const accountKeys = allKeys.filter(key => 
+      key.startsWith('account_') || key.startsWith('security_')
+    );
+    accountKeys.forEach(key => {
+      const data = localStorage.getItem(key);
+      info.accountKeys.push({
+        key,
+        sizeBytes: data ? data.length : 0,
+        type: key.startsWith('account_') ? 'account' : 'security'
+      });
+      if (data) info.totalSize += data.length;
+    });
+
+    // Analyze referral tracking
+    const referralKeys = allKeys.filter(key => 
+      key === 'referrer' || key.startsWith('referral-banner-')
+    );
+    referralKeys.forEach(key => {
+      const data = localStorage.getItem(key);
+      info.referralKeys.push({
+        key,
+        sizeBytes: data ? data.length : 0,
+        value: data
+      });
+      if (data) info.totalSize += data.length;
+    });
+
+    // Analyze other relevant keys
+    const otherKeys = allKeys.filter(key => 
+      !walletKeys.includes(key) &&
+      !ipfsKeys.includes(key) &&
+      !walletStateKeys.includes(key) &&
+      !accountKeys.includes(key) &&
+      !referralKeys.includes(key) &&
+      (key.toLowerCase().includes('cryptogift') || 
+       key.toLowerCase().includes('tba') ||
+       key.toLowerCase().includes('nft') ||
+       key.includes('pwa-install') ||
+       key.includes('thirdweb') ||
+       key.includes('wallet'))
+    );
+    
+    otherKeys.forEach(key => {
+      const data = localStorage.getItem(key);
+      info.otherKeys.push({
+        key,
+        sizeBytes: data ? data.length : 0,
+        preview: data ? data.substring(0, 50) + (data.length > 50 ? '...' : '') : null
+      });
+      if (data) info.totalSize += data.length;
+    });
+
+    // Analyze sessionStorage
+    const sessionKeys = Object.keys(sessionStorage);
+    sessionKeys.forEach(key => {
+      const data = sessionStorage.getItem(key);
+      info.sessionStorageKeys.push({
+        key,
+        sizeBytes: data ? data.length : 0,
+        value: data
       });
     });
 
@@ -270,6 +450,7 @@ export function getDetailedCacheInfo(): any {
       info.deviceInfo = { error: 'Failed to parse device info' };
     }
 
+    console.log('📊 COMPREHENSIVE cache analysis:', info);
     return info;
   } catch (error) {
     console.error('❌ Error getting cache info:', error);
