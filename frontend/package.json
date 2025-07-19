@@ -15,6 +15,7 @@
     "@hey-api/openapi-ts": "^0.73.0",
     "@multiformats/multiaddr": "^12.1.14",
     "@multiformats/multiaddr-to-uri": "^10.0.1",
+    "@upstash/redis": "^1.35.1",
     "@vercel/kv": "^3.0.0",
     "chart.js": "^4.4.0",
     "cssesc": "^3.0.0",

@@ -1,7 +1,40 @@
-// Vercel KV-based referral database for production persistence
+// Redis-based referral database for production persistence
+// Supports both Vercel KV (legacy) and Upstash Redis (current)
 // Replaces file-based system to ensure data survives server restarts
 
-import { kv } from '@vercel/kv';
+import { Redis } from '@upstash/redis';
+
+// Initialize Redis client with fallback strategy
+let redis: any;
+
+try {
+  // Try Upstash Redis first (current Vercel marketplace solution)
+  if (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN) {
+    redis = new Redis({
+      url: process.env.UPSTASH_REDIS_REST_URL,
+      token: process.env.UPSTASH_REDIS_REST_TOKEN,
+    });
+    console.log('🟢 Using Upstash Redis for referral database');
+  } else {
+    // Fallback to Vercel KV (legacy)
+    const { kv } = require('@vercel/kv');
+    redis = kv;
+    console.log('🟡 Using Vercel KV for referral database (legacy)');
+  }
+} catch (error) {
+  console.error('❌ Failed to initialize Redis client:', error);
+  // Mock client for development without Redis
+  redis = {
+    hset: async () => ({}),
+    hgetall: async () => null,
+    sadd: async () => 1,
+    smembers: async () => [],
+    set: async () => 'OK',
+    get: async () => null,
+    srem: async () => 1
+  };
+  console.log('⚠️ Using mock Redis client for development');
+}
 
 export interface ReferralRecord {
   id: string;
@@ -66,34 +99,34 @@ export class VercelKVReferralDatabase {
   // ==================== CORE CRUD OPERATIONS ====================
   
   async saveReferral(referral: ReferralRecord): Promise<void> {
-    console.log('💾 Saving referral to Vercel KV:', referral.id);
+    console.log('💾 Saving referral to Redis:', referral.id);
     
     // Save the referral record
-    await kv.hset(`referral:${referral.id}`, referral);
+    await redis.hset(`referral:${referral.id}`, referral);
     
     // Add to user's referral set
-    await kv.sadd(`user_referrals:${referral.referrerAddress.toLowerCase()}`, referral.id);
+    await redis.sadd(`user_referrals:${referral.referrerAddress.toLowerCase()}`, referral.id);
     
     // Track IP mapping if available
     if (referral.referredIP && !referral.referredAddress) {
-      await kv.set(`ip_to_referral:${referral.referredIP}`, referral.id);
+      await redis.set(`ip_to_referral:${referral.referredIP}`, referral.id);
     }
     
     // Track referred user mapping if wallet available
     if (referral.referredAddress) {
-      await kv.set(`user_to_referral:${referral.referredAddress.toLowerCase()}`, referral.id);
+      await redis.set(`user_to_referral:${referral.referredAddress.toLowerCase()}`, referral.id);
     }
     
-    console.log('✅ Referral saved to KV successfully');
+    console.log('✅ Referral saved to Redis successfully');
   }
   
   async getReferral(referralId: string): Promise<ReferralRecord | null> {
-    const referral = await kv.hgetall(`referral:${referralId}`);
+    const referral = await redis.hgetall(`referral:${referralId}`);
     return referral ? (referral as ReferralRecord) : null;
   }
   
   async getUserReferrals(userAddress: string): Promise<ReferralRecord[]> {
-    const referralIds = await kv.smembers(`user_referrals:${userAddress.toLowerCase()}`);
+    const referralIds = await redis.smembers(`user_referrals:${userAddress.toLowerCase()}`);
     
     if (!referralIds || referralIds.length === 0) {
       return [];
@@ -101,7 +134,7 @@ export class VercelKVReferralDatabase {
     
     const referrals = await Promise.all(
       referralIds.map(async (id) => {
-        const referral = await kv.hgetall(`referral:${id}`);
+        const referral = await redis.hgetall(`referral:${id}`);
         return referral as ReferralRecord;
       })
     );
@@ -112,7 +145,7 @@ export class VercelKVReferralDatabase {
   // ==================== USER PROFILE MANAGEMENT ====================
   
   async createOrUpdateUserProfile(address: string, data: Partial<UserProfile>): Promise<UserProfile> {
-    const existing = await kv.hgetall(`user_profile:${address.toLowerCase()}`);
+    const existing = await redis.hgetall(`user_profile:${address.toLowerCase()}`);
     
     const profile: UserProfile = {
       address: address.toLowerCase(),
@@ -130,12 +163,12 @@ export class VercelKVReferralDatabase {
       ...data
     };
     
-    await kv.hset(`user_profile:${address.toLowerCase()}`, profile);
+    await redis.hset(`user_profile:${address.toLowerCase()}`, profile);
     return profile;
   }
   
   async getUserProfile(address: string): Promise<UserProfile | null> {
-    const profile = await kv.hgetall(`user_profile:${address.toLowerCase()}`);
+    const profile = await redis.hgetall(`user_profile:${address.toLowerCase()}`);
     return profile ? (profile as UserProfile) : null;
   }
   
@@ -163,7 +196,7 @@ export class VercelKVReferralDatabase {
     
     // 1. Check by wallet address first (highest priority)
     if (address) {
-      const existingId = await kv.get(`user_to_referral:${address.toLowerCase()}`);
+      const existingId = await redis.get(`user_to_referral:${address.toLowerCase()}`);
       if (existingId) {
         existingReferral = await this.getReferral(existingId as string);
       }
@@ -171,7 +204,7 @@ export class VercelKVReferralDatabase {
     
     // 2. Check by IP if no wallet match
     if (!existingReferral && ip) {
-      const existingId = await kv.get(`ip_to_referral:${ip}`);
+      const existingId = await redis.get(`ip_to_referral:${ip}`);
       if (existingId) {
         existingReferral = await this.getReferral(existingId as string);
       }
@@ -189,7 +222,7 @@ export class VercelKVReferralDatabase {
         existingReferral.upgradedFromIP = true;
         
         // Update mappings
-        await kv.set(`user_to_referral:${address.toLowerCase()}`, existingReferral.id);
+        await redis.set(`user_to_referral:${address.toLowerCase()}`, existingReferral.id);
         
         console.log('🔄 Upgraded IP-based referral to wallet-based');
       }
@@ -250,7 +283,7 @@ export class VercelKVReferralDatabase {
     
     // 1. Try by wallet address first
     if (referredData.address) {
-      const referralId = await kv.get(`user_to_referral:${referredData.address.toLowerCase()}`);
+      const referralId = await redis.get(`user_to_referral:${referredData.address.toLowerCase()}`);
       if (referralId) {
         referral = await this.getReferral(referralId as string);
       }
@@ -300,7 +333,7 @@ export class VercelKVReferralDatabase {
     await this.updateUserStats(referrerAddress);
     
     // Add to pending activations for real-time updates
-    await kv.sadd('recent_activations', JSON.stringify({
+    await redis.sadd('recent_activations', JSON.stringify({
       referralId: referral.id,
       referrerAddress,
       giftData,
@@ -403,7 +436,7 @@ export class VercelKVReferralDatabase {
   // ==================== REAL-TIME FEATURES ====================
   
   async getRecentActivations(limit: number = 10): Promise<any[]> {
-    const activations = await kv.smembers('recent_activations');
+    const activations = await redis.smembers('recent_activations');
     return activations
       .map(a => JSON.parse(a))
       .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
@@ -412,13 +445,13 @@ export class VercelKVReferralDatabase {
   
   async cleanupOldActivations(): Promise<void> {
     // Clean activations older than 24 hours
-    const activations = await kv.smembers('recent_activations');
+    const activations = await redis.smembers('recent_activations');
     const cutoff = Date.now() - (24 * 60 * 60 * 1000);
     
     for (const activation of activations) {
       const data = JSON.parse(activation);
       if (new Date(data.timestamp).getTime() < cutoff) {
-        await kv.srem('recent_activations', activation);
+        await redis.srem('recent_activations', activation);
       }
     }
   }
