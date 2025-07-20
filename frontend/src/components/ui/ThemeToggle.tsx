@@ -16,8 +16,8 @@ export function ThemeToggle() {
   if (!mounted) {
     return (
       <div className="flex items-center space-x-1">
-        <Sun size={14} className="text-yellow-500" />
-        <span className="text-xs font-medium text-yellow-500">Light</span>
+        <Sun size={14} className="text-accent-gold" />
+        <span className="text-xs font-medium text-accent-gold">Light</span>
       </div>
     );
   }
@@ -35,17 +35,17 @@ export function ThemeToggle() {
           <>
             <Moon 
               size={14} 
-              className="text-slate-400 animate-moon-glow" 
+              className="text-accent-silver animate-moon-glow" 
             />
-            <span className="text-xs font-medium text-slate-400">Dark</span>
+            <span className="text-xs font-medium text-accent-silver">Dark</span>
           </>
         ) : (
           <>
             <Sun 
               size={14} 
-              className="text-yellow-500 animate-sun-rotate" 
+              className="text-accent-gold animate-sun-rotate" 
             />
-            <span className="text-xs font-medium text-yellow-500">Light</span>
+            <span className="text-xs font-medium text-accent-gold">Light</span>
           </>
         )}
       </motion.button>
@@ -70,13 +70,13 @@ export function ThemeToggle() {
               className={`w-full flex items-center space-x-2 p-2 rounded-lg text-sm
                          transition-colors duration-200 ${
                 theme === 'light' 
-                  ? 'bg-yellow-500/20 text-yellow-600' 
-                  : 'hover:bg-gray-100 dark:hover:bg-gray-800 text-foreground'
+                  ? 'bg-accent-gold/20 text-accent-gold' 
+                  : 'hover:bg-bg-secondary text-text-secondary'
               }`}
               whileHover={{ x: 2 }}
             >
-              <Sun size={14} className="text-yellow-500" />
-              <span className="text-yellow-500">Light</span>
+              <Sun size={14} className="text-accent-gold" />
+              <span className="text-accent-gold">Light</span>
             </motion.button>
 
             {/* MODO OSCURO */}
@@ -88,16 +88,16 @@ export function ThemeToggle() {
               className={`w-full flex items-center space-x-2 p-2 rounded-lg text-sm mt-1
                          transition-colors duration-200 ${
                 theme === 'dark' 
-                  ? 'bg-slate-400/20 text-slate-400' 
-                  : 'hover:bg-gray-100 dark:hover:bg-gray-800 text-foreground'
+                  ? 'bg-accent-silver/20 text-accent-silver' 
+                  : 'hover:bg-bg-secondary text-text-secondary'
               }`}
               whileHover={{ x: 2 }}
             >
               <Moon 
                 size={14} 
-                className="text-slate-400" 
+                className="text-accent-silver" 
               />
-              <span className="text-slate-400">Dark</span>
+              <span className="text-accent-silver">Dark</span>
             </motion.button>
           </motion.div>
         )}

@@ -25,14 +25,23 @@ const config: Config = {
           800: '#0f172a',
           900: '#020617'
         },
-        // SEMANTIC COLORS (auto dark variants)
-        background: 'hsl(var(--background))',
-        foreground: 'hsl(var(--foreground))',
-        accent: 'hsl(var(--accent))',
-        muted: 'hsl(var(--muted))',
-        'card-bg': 'hsl(var(--card-bg))',
-        border: 'hsl(var(--border))',
-        'input-bg': 'hsl(var(--input-bg))',
+        // NEW SEMANTIC SYSTEM - NFT GRADE
+        'bg-primary': 'rgb(var(--bg-primary))',
+        'bg-secondary': 'rgb(var(--bg-secondary))',
+        'bg-card': 'rgb(var(--bg-card))',
+        'bg-input': 'rgb(var(--bg-input))',
+        
+        'text-primary': 'rgb(var(--text-primary))',
+        'text-secondary': 'rgb(var(--text-secondary))',
+        'text-muted': 'rgb(var(--text-muted))',
+        
+        'border-primary': 'rgb(var(--border-primary))',
+        'border-secondary': 'rgb(var(--border-secondary))',
+        
+        'accent-gold': 'rgb(var(--accent-gold))',
+        'accent-gold-light': 'rgb(var(--accent-gold-light))',
+        'accent-silver': 'rgb(var(--accent-silver))',
+        'accent-silver-light': 'rgb(var(--accent-silver-light))',
       },
       animation: {
         'bounce-slow': 'bounce 2s infinite',

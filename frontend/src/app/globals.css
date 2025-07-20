@@ -14,27 +14,47 @@
 	font-style: normal;
 	font-variation-settings: 'slnt' 0;
 	
-	/* LIGHT THEME */
-	--background: 255 255 255;
-	--foreground: 15 23 42;
-	--accent: 251 146 60;
-	--muted: 100 116 139;
-	--card-bg: 255 255 255;
-	--border: 229 231 235;
-	--input-bg: 255 255 255;
+	/* LIGHT THEME - NFT-GRADE PROFESSIONAL */
+	--bg-primary: 255 255 255;          /* Blanco puro */
+	--bg-secondary: 249 250 251;        /* Gris muy claro */
+	--bg-card: 255 255 255;             /* Cards blancas */
+	--bg-input: 255 255 255;            /* Inputs blancos */
+	
+	--text-primary: 17 24 39;           /* Negro suave */
+	--text-secondary: 107 114 128;      /* Gris medio */
+	--text-muted: 156 163 175;          /* Gris claro */
+	
+	--border-primary: 229 231 235;      /* Gris claro */
+	--border-secondary: 243 244 246;    /* Gris muy claro */
+	
+	--accent-gold: 251 191 36;          /* Dorado elegante */
+	--accent-gold-light: 254 240 138;   /* Dorado claro */
+	
+	--shadow-light: 0 0 0 0.1;
+	--shadow-medium: 0 0 0 0.15;
 	--nft-mosaic-opacity: 0.05;
 	--glass-blur: 12px;
 }
 
 .dark {
-	/* DARK THEME */
-	--background: 15 23 42;
-	--foreground: 248 250 252;
-	--accent: 251 146 60;
-	--muted: 148 163 184;
-	--card-bg: 30 41 59;
-	--border: 51 65 85;
-	--input-bg: 30 41 59;
+	/* DARK THEME - NFT MARKETPLACE GRADE */
+	--bg-primary: 10 14 21;             /* #0A0E15 - NFT dark */
+	--bg-secondary: 17 20 29;           /* #11141D - Slightly lighter */
+	--bg-card: 26 29 41;                /* #1A1D29 - Card background */
+	--bg-input: 31 35 49;               /* #1F2331 - Input background */
+	
+	--text-primary: 255 255 255;        /* Blanco puro */
+	--text-secondary: 180 182 199;      /* Gris claro */
+	--text-muted: 107 114 128;          /* Gris medio */
+	
+	--border-primary: 42 45 58;         /* #2A2D3A - Subtle borders */
+	--border-secondary: 55 58 71;       /* #373A47 - Lighter borders */
+	
+	--accent-silver: 148 163 184;       /* Plateado elegante */
+	--accent-silver-light: 203 213 225; /* Plateado claro */
+	
+	--shadow-light: 0 0 0 0.3;
+	--shadow-medium: 0 0 0 0.5;
 	--nft-mosaic-opacity: 0.08;
 	--glass-blur: 16px;
 }
@@ -44,37 +64,92 @@
 	transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
 }
 
-/* GLASS MORPHISM EFFECT */
+/* GLASS MORPHISM EFFECT - UPDATED */
 .glass-panel {
 	background: rgba(255, 255, 255, 0.8);
 	backdrop-filter: blur(var(--glass-blur));
-	border: 1px solid rgba(229, 231, 235, 0.5);
+	border: 1px solid rgb(var(--border-primary) / 0.5);
 }
 
 .dark .glass-panel {
-	background: rgba(30, 41, 59, 0.9);
-	border: 1px solid rgba(51, 65, 85, 0.5);
+	background: rgba(26, 29, 41, 0.9);
+	border: 1px solid rgb(var(--border-primary) / 0.5);
 }
 
-/* ADDITIONAL DARK MODE IMPROVEMENTS */
-.dark input,
-.dark textarea,
-.dark select {
-	background-color: hsl(var(--input-bg));
-	border-color: hsl(var(--border));
-	color: hsl(var(--foreground));
-}
-
-.dark .shadow-lg {
-	box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.1);
-}
-
-.dark .shadow-xl {
-	box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.1);
-}
-
+/* COMPLETE DARK MODE COVERAGE */
 @layer base {
+	/* BODY AND ROOT */
 	body {
-		@apply bg-background text-foreground;
+		background-color: rgb(var(--bg-primary));
+		color: rgb(var(--text-primary));
+	}
+	
+	/* CARDS AND PANELS */
+	.card,
+	.panel,
+	[class*="card"],
+	[class*="panel"] {
+		background-color: rgb(var(--bg-card));
+		border-color: rgb(var(--border-primary));
+	}
+	
+	/* INPUTS AND FORMS */
+	input,
+	textarea,
+	select,
+	[type="text"],
+	[type="email"],
+	[type="password"],
+	[type="number"] {
+		background-color: rgb(var(--bg-input));
+		border-color: rgb(var(--border-primary));
+		color: rgb(var(--text-primary));
+	}
+	
+	input:focus,
+	textarea:focus,
+	select:focus {
+		border-color: rgb(var(--accent-gold));
+	}
+	
+	.dark input:focus,
+	.dark textarea:focus,
+	.dark select:focus {
+		border-color: rgb(var(--accent-silver));
+	}
+	
+	/* BUTTONS */
+	button {
+		transition: all 0.3s ease;
+	}
+	
+	/* SHADOWS ENHANCED */
+	.shadow-sm {
+		box-shadow: 0 1px 2px 0 rgba(0, 0, 0, var(--shadow-light));
+	}
+	
+	.shadow-lg {
+		box-shadow: 0 10px 15px -3px rgba(0, 0, 0, var(--shadow-medium)), 
+		           0 4px 6px -2px rgba(0, 0, 0, var(--shadow-light));
+	}
+	
+	.shadow-xl {
+		box-shadow: 0 20px 25px -5px rgba(0, 0, 0, var(--shadow-medium)), 
+		           0 10px 10px -5px rgba(0, 0, 0, var(--shadow-light));
+	}
+	
+	/* MODALS AND OVERLAYS */
+	.modal,
+	.overlay,
+	[role="dialog"] {
+		background-color: rgb(var(--bg-card));
+		border-color: rgb(var(--border-primary));
+	}
+	
+	/* NAVIGATION AND HEADERS */
+	nav,
+	header {
+		background-color: rgb(var(--bg-primary));
+		border-color: rgb(var(--border-primary));
 	}
 }

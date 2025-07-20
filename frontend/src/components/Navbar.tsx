@@ -18,7 +18,7 @@ export const Navbar: React.FC = () => {
   }, []);
 
   return (
-    <nav className="bg-background shadow-lg sticky top-0 z-40 transition-colors duration-300">
+    <nav className="bg-bg-primary shadow-lg sticky top-0 z-40 transition-colors duration-300 border-b border-border-primary">
       <div className="container mx-auto px-4">
         <div className="flex justify-between items-center py-4">
           {/* Logo */}
@@ -50,8 +50,8 @@ export const Navbar: React.FC = () => {
             </div>
             <div className="flex items-center space-x-3">
               <div>
-                <div className="font-bold text-xl text-foreground">CryptoGift</div>
-                <div className="text-xs font-medium -mt-1 text-yellow-500 dark:text-slate-400">Wallets</div>
+                <div className="font-bold text-xl text-text-primary">CryptoGift</div>
+                <div className="text-xs font-medium -mt-1 text-accent-gold dark:text-accent-silver">Wallets</div>
               </div>
               
               {/* THEME TOGGLE MINIMALISTA - INMEDIATAMENTE DESPUÉS */}
@@ -61,16 +61,16 @@ export const Navbar: React.FC = () => {
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-4">
-            <Link href="/" className="text-foreground/70 hover:text-accent transition-colors text-sm">
+            <Link href="/" className="text-text-secondary hover:text-accent-gold dark:hover:text-accent-silver transition-colors text-sm">
               Inicio
             </Link>
-            <Link href="/referrals" className="text-foreground/70 hover:text-accent transition-colors text-sm">
+            <Link href="/referrals" className="text-text-secondary hover:text-accent-gold dark:hover:text-accent-silver transition-colors text-sm">
               Referidos
             </Link>
-            <Link href="/knowledge" className="text-foreground/70 hover:text-accent transition-colors flex items-center text-sm">
+            <Link href="/knowledge" className="text-text-secondary hover:text-accent-gold dark:hover:text-accent-silver transition-colors flex items-center text-sm">
               📚 Knowledge
             </Link>
-            <Link href="/nexuswallet" className="text-foreground/70 hover:text-accent transition-colors flex items-center text-sm">
+            <Link href="/nexuswallet" className="text-text-secondary hover:text-accent-gold dark:hover:text-accent-silver transition-colors flex items-center text-sm">
               💼 NexusWallet
             </Link>
             
@@ -92,11 +92,10 @@ export const Navbar: React.FC = () => {
           </div>
 
           {/* Mobile Menu Button */}
-          <div className="md:hidden flex items-center space-x-2">
-            <ThemeToggle />
+          <div className="md:hidden">
             <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="text-foreground/70 hover:text-foreground focus:outline-none"
+              className="text-text-secondary hover:text-text-primary focus:outline-none transition-colors"
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 {isMenuOpen ? (
@@ -111,32 +110,37 @@ export const Navbar: React.FC = () => {
 
         {/* Mobile Menu */}
         {isMenuOpen && (
-          <div className="md:hidden border-t border-foreground/20 py-4">
+          <div className="md:hidden border-t border-border-primary py-4 bg-bg-primary">
             <div className="space-y-4">
+              {/* THEME TOGGLE EN MOBILE MENU */}
+              <div className="px-4 py-2">
+                <ThemeToggle />
+              </div>
+              
               <Link 
                 href="/" 
-                className="block text-foreground/70 hover:text-accent transition-colors"
+                className="block text-text-secondary hover:text-accent-gold dark:hover:text-accent-silver transition-colors px-4 py-2"
                 onClick={() => setIsMenuOpen(false)}
               >
                 Inicio
               </Link>
               <Link 
                 href="/referrals" 
-                className="block text-foreground/70 hover:text-accent transition-colors"
+                className="block text-text-secondary hover:text-accent-gold dark:hover:text-accent-silver transition-colors px-4 py-2"
                 onClick={() => setIsMenuOpen(false)}
               >
                 Referidos
               </Link>
               <Link 
                 href="/knowledge" 
-                className="block text-foreground/70 hover:text-accent transition-colors"
+                className="block text-text-secondary hover:text-accent-gold dark:hover:text-accent-silver transition-colors px-4 py-2"
                 onClick={() => setIsMenuOpen(false)}
               >
                 📚 Knowledge
               </Link>
               <Link 
                 href="/nexuswallet" 
-                className="block text-foreground/70 hover:text-accent transition-colors"
+                className="block text-text-secondary hover:text-accent-gold dark:hover:text-accent-silver transition-colors px-4 py-2"
                 onClick={() => setIsMenuOpen(false)}
               >
                 💼 NexusWallet

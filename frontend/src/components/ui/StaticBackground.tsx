@@ -15,36 +15,38 @@ export function StaticBackground() {
 
   return (
     <div className="fixed inset-0 -z-10 overflow-hidden">
-      {/* GRADIENT BASE ANIMADO */}
+      {/* GRADIENT BASE ANIMADO - NFT GRADE */}
       <motion.div
         className="absolute inset-0 bg-gradient-to-br 
-                   from-blue-50 via-indigo-50 to-purple-50
-                   dark:from-slate-950 dark:via-blue-950 dark:to-indigo-950"
+                   from-bg-primary via-bg-secondary to-bg-primary
+                   dark:from-bg-primary dark:via-bg-secondary dark:to-bg-primary"
         animate={{
           background: [
-            "linear-gradient(135deg, #f0f9ff 0%, #e0e7ff 50%, #faf5ff 100%)",
-            "linear-gradient(135deg, #fef3c7 0%, #fde68a 50%, #f0f9ff 100%)",
-            "linear-gradient(135deg, #f0f9ff 0%, #e0e7ff 50%, #faf5ff 100%)"
+            "linear-gradient(135deg, rgb(255, 255, 255) 0%, rgb(249, 250, 251) 50%, rgb(255, 255, 255) 100%)",
+            "linear-gradient(135deg, rgb(254, 252, 234) 0%, rgb(253, 230, 138) 10%, rgb(255, 255, 255) 100%)",
+            "linear-gradient(135deg, rgb(255, 255, 255) 0%, rgb(249, 250, 251) 50%, rgb(255, 255, 255) 100%)"
           ]
         }}
-        transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+        transition={{ duration: 30, repeat: Infinity, ease: "linear" }}
       />
 
-      {/* PARTÍCULAS FLOTANTES */}
-      {Array.from({ length: 50 }).map((_, i) => (
+      {/* PARTÍCULAS FLOTANTES - ADAPTATIVAS */}
+      {Array.from({ length: 30 }).map((_, i) => (
         <motion.div
           key={i}
-          className="absolute w-2 h-2 bg-blue-200 dark:bg-blue-800 rounded-full opacity-20"
+          className="absolute w-1 h-1 rounded-full opacity-20"
           style={{
             left: `${Math.random() * 100}%`,
             top: `${Math.random() * 100}%`,
+            backgroundColor: `rgba(251, 191, 36, ${0.2 + Math.random() * 0.3})`, // Gold particles
           }}
           animate={{
-            y: [0, -100, 0],
-            opacity: [0.1, 0.3, 0.1],
+            y: [0, -150, 0],
+            opacity: [0.1, 0.4, 0.1],
+            scale: [0.5, 1, 0.5],
           }}
           transition={{
-            duration: Math.random() * 10 + 5,
+            duration: Math.random() * 15 + 10,
             repeat: Infinity,
             ease: "easeInOut",
             delay: Math.random() * 5,
@@ -52,12 +54,38 @@ export function StaticBackground() {
         />
       ))}
 
-      {/* EFECTO PARALLAX CON MOUSE */}
+      {/* PARTÍCULAS PLATEADAS PARA DARK MODE */}
+      <div className="dark:block hidden">
+        {Array.from({ length: 25 }).map((_, i) => (
+          <motion.div
+            key={`silver-${i}`}
+            className="absolute w-1 h-1 rounded-full opacity-15"
+            style={{
+              left: `${Math.random() * 100}%`,
+              top: `${Math.random() * 100}%`,
+              backgroundColor: `rgba(148, 163, 184, ${0.3 + Math.random() * 0.4})`, // Silver particles
+            }}
+            animate={{
+              y: [0, -120, 0],
+              opacity: [0.1, 0.5, 0.1],
+              scale: [0.3, 1.2, 0.3],
+            }}
+            transition={{
+              duration: Math.random() * 12 + 8,
+              repeat: Infinity,
+              ease: "easeInOut",
+              delay: Math.random() * 3,
+            }}
+          />
+        ))}
+      </div>
+
+      {/* EFECTO PARALLAX CON MOUSE - ADAPTATIVO */}
       <motion.div
-        className="absolute inset-0 opacity-10"
+        className="absolute inset-0 opacity-5 dark:opacity-10"
         style={{
           background: `radial-gradient(circle at ${mousePosition.x}px ${mousePosition.y}px, 
-                      rgba(59, 130, 246, 0.3) 0%, transparent 50%)`
+                      rgb(251, 191, 36) 0%, transparent 60%)`
         }}
       />
 
