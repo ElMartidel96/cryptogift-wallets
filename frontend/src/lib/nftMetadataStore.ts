@@ -69,9 +69,13 @@ export async function storeNFTMetadata(metadata: NFTMetadata): Promise<void> {
     console.log(`💾 Storing NFT metadata for ${metadata.contractAddress}:${metadata.tokenId}`);
     console.log(`🔑 Redis key: ${key}`);
     console.log(`🆔 Unique ID: ${enhancedMetadata.uniqueCreationId}`);
+    console.log(`🖼️ Image being stored: ${enhancedMetadata.image}`);
+    console.log(`🖼️ Image CID: ${enhancedMetadata.imageIpfsCid}`);
     
     // Store in Redis
-    await redis.hset(key, enhancedMetadata);
+    console.log(`💾 Calling redis.hset with key: ${key}`);
+    const setResult = await redis.hset(key, enhancedMetadata);
+    console.log(`✅ Redis hset result:`, setResult);
     
     // Also add to wallet's NFT list if owner is specified
     if (metadata.owner) {

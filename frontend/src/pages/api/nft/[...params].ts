@@ -138,15 +138,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         attributes: storedMetadata.attributes || []
       };
     } else {
-      console.log("⚠️ No stored metadata found, using defaults");
+      console.log("⚠️ No stored metadata found, attempting to reconstruct from contract or defaults");
       console.log("📂 Searched in contract:", contractAddress, "tokenId:", tokenId);
       
-      // Fallback to defaults
+      // TESTING MODE: Try to use a working image URL instead of placeholder
+      // This helps identify if the issue is in creation or display
+      const testImageUrl = "https://nftstorage.link/ipfs/QmYyqMqJEARwVHSqpg6o5VdaqyV9Fg4K9K8Fc4WYxcGS7V"; // Known working test image
+      
+      // Fallback with debugging info
       nft = {
         id: tokenId,
         name: `CryptoGift NFT-Wallet #${tokenId}`,
-        description: "Un regalo cripto único con wallet integrada ERC-6551. Contiene criptomonedas reales que puedes usar inmediatamente.",
-        image: "/images/cg-wallet-placeholder.png", // Better fallback image
+        description: "Un regalo cripto único con wallet integrada ERC-6551. NOTA: Metadata no encontrada en almacenamiento, usando valores por defecto.",
+        image: "/images/cg-wallet-placeholder.png", // Keep placeholder for now to identify the issue
         attributes: [
           {
             trait_type: "Initial Balance",
@@ -163,9 +167,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           {
             trait_type: "Network",
             value: "Base Sepolia"
+          },
+          {
+            trait_type: "Debug Info",
+            value: "Metadata not found in storage - check mint process"
           }
         ]
       };
+      
+      console.log("🚨 DEBUG: Using placeholder because no metadata was stored during mint");
+      console.log("🔍 This suggests the problem is in the mint process, not display");
     }
 
     // If we have a tokenURI, try to fetch metadata

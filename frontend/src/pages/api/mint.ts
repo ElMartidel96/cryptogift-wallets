@@ -738,6 +738,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const imageVerificationResult = await verifyImageAccessibility(imageIpfsCid);
       console.log("🔍 Image verification result:", imageVerificationResult);
       
+      // TESTING MODE: Continue even if verification fails to identify root cause
+      if (!imageVerificationResult.accessible) {
+        console.log("⚠️ WARNING: Image verification failed, but continuing for testing purposes");
+        console.log("🔍 This will help us identify if the issue is verification or storage");
+      }
+      
       // Get deployer wallet address for tracking
       let creatorWallet = 'unknown';
       try {
@@ -787,7 +793,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           },
           {
             trait_type: "Image Status",
-            value: imageVerificationResult.accessible ? "Verified" : "Pending"
+            value: imageVerificationResult.accessible ? "Verified" : "Verification Failed - Using Anyway"
+          },
+          {
+            trait_type: "IPFS CID",
+            value: imageIpfsCid.slice(0, 12) + "..."
+          },
+          {
+            trait_type: "Debug Mode",
+            value: "Testing - Ignoring IPFS verification"
           }
         ],
         mintTransactionHash: transactionHash,
@@ -796,9 +810,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
       
       console.log("🔍 Created NFT metadata object:", nftMetadata);
+      console.log("🔖 DEBUGGING: Image URL being stored:", nftMetadata.image);
+      console.log("🔖 DEBUGGING: Image CID being stored:", nftMetadata.imageIpfsCid);
       
       // CRITICAL: Ensure storage completes successfully
+      console.log("💾 Attempting to store NFT metadata...");
       await storeNFTMetadata(nftMetadata);
+      console.log("✅ storeNFTMetadata call completed");
       
       // VERIFICATION: Double-check storage worked
       const storedCheck = await getNFTMetadata(nftMetadata.contractAddress, nftMetadata.tokenId);
