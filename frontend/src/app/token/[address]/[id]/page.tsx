@@ -133,33 +133,47 @@ export default function TokenPage() {
     
     setIsRegenerating(true);
     try {
-      console.log('🔄 Regenerating metadata for token:', { contractAddress, tokenId });
+      console.log('🔄 ENHANCED: Regenerating metadata for ANY contract:', { contractAddress, tokenId });
       
-      const response = await fetch('/api/nft/regenerate-metadata', {
+      // First check contract compatibility
+      const checkResponse = await fetch(`/api/debug/token-contract-check?contractAddress=${contractAddress}&tokenId=${tokenId}`);
+      if (checkResponse.ok) {
+        const checkResult = await checkResponse.json();
+        console.log('🔍 Contract check result:', checkResult);
+      }
+      
+      // Use the enhanced regeneration endpoint that works with any contract
+      const response = await fetch('/api/nft/regenerate-metadata-any-contract', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          contractAddress,
+          contractAddress, // Use the ACTUAL contract from URL, not environment
           tokenId
         })
       });
 
       if (response.ok) {
         const result = await response.json();
-        console.log('✅ Metadata regenerated successfully:', result);
+        console.log('✅ ENHANCED: Metadata regenerated successfully:', result);
+        
+        if (!result.contractMatch) {
+          console.log('⚠️ WARNING: Contract mismatch detected');
+          console.log('🔧 Used contract:', result.contractUsed);
+          console.log('🏗️ Environment contract:', result.environmentContract);
+        }
         
         // Reload NFT data to show the regenerated metadata
         await loadNFTData();
         
-        alert('¡Metadata regenerada exitosamente! La imagen debería mostrarse ahora.');
+        alert(`¡Metadata regenerada exitosamente desde el contrato correcto!\n\nContrato usado: ${result.contractUsed}\nImagen: ${result.imageUrl || 'Procesando...'}`);
       } else {
         const error = await response.json();
         console.error('❌ Failed to regenerate metadata:', error);
-        alert(`Error al regenerar metadata: ${error.error}`);
+        alert(`Error al regenerar metadata: ${error.error}\n\nContrato: ${error.contractUsed || contractAddress}`);
       }
     } catch (error) {
       console.error('❌ Error regenerating metadata:', error);
-      alert('Error al regenerar metadata. Verifica la consola para más detalles.');
+      alert(`Error al regenerar metadata: ${error.message}\n\nVerifica la consola para más detalles.`);
     } finally {
       setIsRegenerating(false);
     }
