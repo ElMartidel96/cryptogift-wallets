@@ -261,8 +261,10 @@ async function mintNFTReal(to: string, metadataUri: string): Promise<{
           // Transfer event signature
           const transferEventSignature = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef";
           
-          if (log.topics && log.topics[0] === transferEventSignature && log.topics.length >= 4) {
-            const tokenIdHex = log.topics[3];
+          // Cast to any to handle ThirdWeb v5 log format differences
+          const ethLog = log as any;
+          if (ethLog.topics && ethLog.topics[0] === transferEventSignature && ethLog.topics.length >= 4) {
+            const tokenIdHex = ethLog.topics[3];
             actualTokenId = BigInt(tokenIdHex).toString();
             
             console.log("✅ MINT-REAL: TokenId extracted from Transfer event:", actualTokenId);
@@ -278,7 +280,7 @@ async function mintNFTReal(to: string, metadataUri: string): Promise<{
       
     } catch (eventParseError) {
       console.log("⚠️ MINT-REAL: Transfer event parsing failed, using totalSupply fallback");
-      addMintLog('WARNING', 'TRANSFER_PARSE_FAILED', { error: eventParseError.message });
+      addMintLog('WARN', 'TRANSFER_PARSE_FAILED', { error: eventParseError.message });
       
       // Fallback to totalSupply method
       const totalSupply = await readContract({

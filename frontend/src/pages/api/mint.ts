@@ -232,7 +232,7 @@ async function mintNFTGasless(to: string, tokenURI: string, client: any) {
       console.log("🎯 GASLESS: Parsing Transfer event for exact tokenId...");
       console.log("📜 Receipt logs:", receipt.logs?.length || 0, "logs found");
       
-      let tokenIdFromEvent = null;
+      let gaslessTokenIdFromEvent = null;
       
       for (const log of receipt.logs || []) {
         // Check if this log is from our NFT contract
@@ -251,14 +251,14 @@ async function mintNFTGasless(to: string, tokenURI: string, client: any) {
             console.log("  📝 TokenId (hex):", tokenIdHex);
             console.log("  📝 TokenId (decimal):", tokenIdDecimal);
             
-            tokenIdFromEvent = tokenIdDecimal;
+            gaslessTokenIdFromEvent = tokenIdDecimal;
             break;
           }
         }
       }
       
-      if (tokenIdFromEvent) {
-        realTokenId = tokenIdFromEvent;
+      if (gaslessTokenIdFromEvent) {
+        realTokenId = gaslessTokenIdFromEvent;
         console.log("✅ GASLESS: SUCCESS - TokenId from Transfer event:", realTokenId);
       } else {
         throw new Error("No Transfer event found in gasless transaction");
@@ -600,7 +600,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         console.log("📄 Receipt logs count:", receipt.logs?.length || 0);
         
         // Parse Transfer event from logs to get the actual token ID
-        let tokenIdFromEvent = null;
+        let thirdwebTokenIdFromEvent = null;
         
         if (receipt.logs && receipt.logs.length > 0) {
           console.log("🔍 Parsing Transfer events from receipt logs...");
@@ -629,7 +629,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         
         // CRITICAL FIX: Parse Transfer event for EXACT tokenId (no more totalSupply fallback)
         console.log("🎯 PARSING TRANSFER EVENT for exact tokenId...");
-        let tokenIdFromEvent = null;
+        let directTokenIdFromEvent = null;
         
         try {
           // Parse Transfer events from transaction logs
@@ -639,30 +639,32 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             // Check if this log is from our NFT contract
             if (log.address && log.address.toLowerCase() === process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS?.toLowerCase()) {
               console.log("✅ Found log from NFT contract");
-              console.log("🔍 Log topics:", log.topics);
+              // Cast to any to handle ThirdWeb v5 log format differences
+              const ethLog = log as any;
+              console.log("🔍 Log topics:", ethLog.topics);
               
               // Transfer event signature: Transfer(address indexed from, address indexed to, uint256 indexed tokenId)
               const transferEventSignature = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef";
               
-              if (log.topics && log.topics[0] === transferEventSignature && log.topics.length >= 4) {
+              if (ethLog.topics && ethLog.topics[0] === transferEventSignature && ethLog.topics.length >= 4) {
                 // Extract tokenId from topic[3] (indexed parameter)
-                const tokenIdHex = log.topics[3];
+                const tokenIdHex = ethLog.topics[3];
                 const tokenIdDecimal = BigInt(tokenIdHex).toString();
                 
                 console.log("🎯 TRANSFER EVENT PARSED:");
                 console.log("  📝 TokenId (hex):", tokenIdHex);
                 console.log("  📝 TokenId (decimal):", tokenIdDecimal);
-                console.log("  📝 From:", log.topics[1]);
-                console.log("  📝 To:", log.topics[2]);
+                console.log("  📝 From:", ethLog.topics[1]);
+                console.log("  📝 To:", ethLog.topics[2]);
                 
-                tokenIdFromEvent = tokenIdDecimal;
+                directTokenIdFromEvent = tokenIdDecimal;
                 break;
               }
             }
           }
           
-          if (tokenIdFromEvent) {
-            actualTokenId = tokenIdFromEvent;
+          if (directTokenIdFromEvent) {
+            actualTokenId = directTokenIdFromEvent;
             console.log("✅ SUCCESS: TokenId extracted from Transfer event:", actualTokenId);
           } else {
             throw new Error("No Transfer event found with tokenId");

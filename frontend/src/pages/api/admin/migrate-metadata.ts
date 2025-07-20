@@ -27,13 +27,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       action,
       contractAddress,
       dryRun,
-      contractInfo: {},
+      contractInfo: {
+        totalSupply: undefined as string | undefined,
+        firstTokenId: undefined as number | undefined,
+        lastTokenId: undefined as string | undefined
+      },
       analysis: {
         totalStoredMetadata: 0,
         incorrectTokenIds: [],
         correctTokenIds: [],
         orphanedMetadata: [],
-        missingMetadata: []
+        missingMetadata: [],
+        error: undefined as string | undefined
       },
       migration: {
         planned: [],
