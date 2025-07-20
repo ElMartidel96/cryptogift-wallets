@@ -18,14 +18,14 @@ const getOptionalEnvVar = (key: string, fallback: string): string => {
   return process.env[key] || fallback;
 };
 
-// REQUIRED Environment Variables - NO FALLBACKS
-export const THIRDWEB_KEY = getRequiredEnvVar('NEXT_PUBLIC_TW_CLIENT_ID', 'ThirdWeb Client ID');
-export const NFT_DROP_ADDRESS = getRequiredEnvVar('NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS', 'CryptoGift NFT Contract');
-export const ERC6551_REGISTRY = getRequiredEnvVar('NEXT_PUBLIC_ERC6551_REGISTRY_ADDRESS', 'ERC-6551 Registry Contract');
-export const TBA_IMPLEMENTATION = getRequiredEnvVar('NEXT_PUBLIC_ERC6551_IMPLEMENTATION_ADDRESS', 'TBA Implementation Contract');
+// HOTFIX: Temporary fallbacks until env vars are updated in production
+export const THIRDWEB_KEY = process.env.NEXT_PUBLIC_TW_CLIENT_ID || '9183b572b02ec88dd4d8f20c3ed847d3';
+export const NFT_DROP_ADDRESS = process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS || process.env.NEXT_PUBLIC_NFT_DROP_ADDRESS || '0x8DfCAfB320cBB7bcdbF4cc83A62bccA08B30F5D3';
+export const ERC6551_REGISTRY = process.env.NEXT_PUBLIC_ERC6551_REGISTRY_ADDRESS || '0x000000006551c19487814612e58FE06813775758';
+export const TBA_IMPLEMENTATION = process.env.NEXT_PUBLIC_ERC6551_IMPLEMENTATION_ADDRESS || '0x2d25602551487c3f3354dd80d76d54383a243358';
 
-// Chain Configuration - Required
-export const CHAIN_ID = parseInt(getRequiredEnvVar('NEXT_PUBLIC_CHAIN_ID', 'Chain ID'));
+// Chain Configuration - With fallback
+export const CHAIN_ID = parseInt(process.env.NEXT_PUBLIC_CHAIN_ID || '84532');
 
 // OPTIONAL Environment Variables - With reasonable fallbacks
 export const CHAIN_NAME = getOptionalEnvVar('NEXT_PUBLIC_CHAIN_NAME', 'base-sepolia');
