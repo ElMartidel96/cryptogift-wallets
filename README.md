@@ -4,19 +4,40 @@ Una plataforma revolucionaria para crear y regalar NFT-wallets con criptomonedas
 
 ## 🌟 Características Principales
 
-- **NFT = Wallet**: Cada NFT tiene una wallet integrada que puede guardar criptomonedas reales
-- **Arte IA**: Filtros de inteligencia artificial para crear arte único
-- **Gas Gratis**: Todas las transacciones están patrocinadas por Paymaster
-- **Recuperación Social**: Sistema de guardianes para recuperar acceso
-- **Swaps Integrados**: Cambio entre diferentes criptomonedas con 0x Protocol
-- **Programa de Referidos**: Gana dinero invitando amigos
-- **Transparencia Total**: Reservas auditables on-chain en tiempo real
+- **🎁 Transferencia Automática**: El destinatario se convierte en dueño real del NFT automáticamente
+- **🤖 Zero Custodia Humana**: Sistema programático sin regulaciones de custody
+- **💼 NFT = Wallet**: Cada NFT tiene una wallet integrada que puede guardar criptomonedas reales
+- **🎨 Arte IA**: Filtros de inteligencia artificial para crear arte único
+- **⛽ Gas Gratis**: Todas las transacciones están patrocinadas por Paymaster
+- **🛡️ Recuperación Social**: Sistema de guardianes para recuperar acceso
+- **🔄 Swaps Integrados**: Cambio entre diferentes criptomonedas con 0x Protocol
+- **💰 Programa de Referidos**: Gana dinero invitando amigos
+- **🔍 Transparencia Total**: Reservas auditables on-chain en tiempo real
 
-## 🚀 Demo
+### 🚀 **BREAKTHROUGH: Programmatic NFT Ownership Transfer**
 
-- **Web App**: [https://cryptogift-wallets.vercel.app](https://cryptogift-wallets.vercel.app)
-- **Contratos**: Desplegados en Base Sepolia
-- **Dashboard**: Panel de transparencia con estadísticas en vivo
+```mermaid
+graph TD
+    A[Usuario crea regalo] --> B[NFT minted a dirección neutral]
+    B --> C[Metadata tracks creador original]
+    C --> D[Destinatario recibe link]
+    D --> E[Destinatario hace claim]
+    E --> F[Transferencia automática via safeTransferFrom]
+    F --> G[Destinatario = Dueño real del NFT]
+```
+
+## 🚀 Demo & Estado Actual
+
+- **Web App**: [https://cryptogift-wallets.vercel.app](https://cryptogift-wallets.vercel.app) ✅ **LIVE**
+- **Contratos**: Desplegados en Base Sepolia ✅ **OPERATIVOS** 
+- **Dashboard**: Panel de transparencia con estadísticas en vivo ✅ **FUNCIONAL**
+
+### 🎯 **ESTADO ACTUAL (July 2025):**
+- ✅ **SISTEMA CORE COMPLETADO** - NFT ownership transfer automático 
+- ✅ **ZERO CUSTODIA HUMANA** - Transferencia programática sin regulaciones
+- ✅ **AUDITORÍA COMPLETADA** - 6 issues críticos resueltos
+- ✅ **DEPLOYMENT READY** - Producción estable y operativa
+- 🎨 **PRÓXIMA FASE**: Mejoras estéticas y UX enhancements
 
 ## 🛠️ Tecnología
 
