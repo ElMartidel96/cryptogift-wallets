@@ -40,10 +40,11 @@ export const WalletSwitcher: React.FC<WalletSwitcherProps> = ({
         {/* Main Wallet Display */}
         <button
           onClick={() => setShowDropdown(!showDropdown)}
-          className="flex items-center space-x-3 bg-white rounded-lg border border-gray-200 px-4 py-3 hover:border-gray-300 transition-colors w-full"
+          className="flex items-center space-x-3 bg-bg-card rounded-lg border border-border-primary px-4 py-3 
+                   hover:border-accent-gold dark:hover:border-accent-silver transition-all duration-300 w-full"
         >
           {/* Wallet Icon */}
-          <div className="w-8 h-8 rounded-full flex items-center justify-center bg-gray-100">
+          <div className="w-8 h-8 rounded-full flex items-center justify-center bg-bg-secondary dark:bg-bg-primary transition-colors duration-300">
             {walletType === 'TBA' && tbaWallet ? (
               <ImageDebugger 
                 nftContract={tbaWallet.nftContract}
@@ -51,16 +52,16 @@ export const WalletSwitcher: React.FC<WalletSwitcherProps> = ({
                 className="w-6 h-6 rounded-full overflow-hidden"
               />
             ) : (
-              <span className="text-blue-600 font-bold text-sm">EOA</span>
+              <span className="text-blue-600 dark:text-accent-gold font-bold text-sm transition-colors duration-300">EOA</span>
             )}
           </div>
 
           {/* Wallet Info */}
           <div className="flex-1 text-left">
-            <div className="font-medium text-gray-800 text-sm">
+            <div className="font-medium text-text-primary text-sm transition-colors duration-300">
               {displayName}
             </div>
-            <div className="text-xs text-gray-500">
+            <div className="text-xs text-text-secondary transition-colors duration-300">
               {walletType === 'TBA' ? 'CryptoGift Wallet' : 'Regular Wallet'}
               {showBalance && (
                 <span className="ml-2">• $0.00</span>
@@ -70,7 +71,7 @@ export const WalletSwitcher: React.FC<WalletSwitcherProps> = ({
 
           {/* Dropdown Arrow */}
           <svg 
-            className={`w-4 h-4 text-gray-400 transition-transform ${showDropdown ? 'rotate-180' : ''}`}
+            className={`w-4 h-4 text-text-muted transition-all duration-300 ${showDropdown ? 'rotate-180' : ''}`}
             fill="none" 
             stroke="currentColor" 
             viewBox="0 0 24 24"
@@ -89,7 +90,7 @@ export const WalletSwitcher: React.FC<WalletSwitcherProps> = ({
             />
             
             {/* Dropdown Content */}
-            <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-lg shadow-lg border border-gray-200 z-20">
+            <div className="absolute top-full left-0 right-0 mt-2 bg-bg-card rounded-lg shadow-lg border border-border-primary z-20 transition-colors duration-300">
               <div className="p-2">
                 {/* Current EOA Wallet */}
                 <button
@@ -97,21 +98,21 @@ export const WalletSwitcher: React.FC<WalletSwitcherProps> = ({
                     // Switch to EOA wallet (disconnect TBA)
                     setShowDropdown(false);
                   }}
-                  className={`w-full flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors ${
-                    walletType === 'EOA' ? 'bg-blue-50 border border-blue-200' : ''
+                  className={`w-full flex items-center space-x-3 p-3 rounded-lg hover:bg-bg-secondary transition-colors duration-300 ${
+                    walletType === 'EOA' ? 'bg-blue-50 dark:bg-accent-gold/20 border border-blue-200 dark:border-accent-gold/30' : ''
                   }`}
                 >
-                  <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
-                    <span className="text-blue-600 font-bold text-sm">EOA</span>
+                  <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-accent-gold/20 flex items-center justify-center transition-colors duration-300">
+                    <span className="text-blue-600 dark:text-accent-gold font-bold text-sm transition-colors duration-300">EOA</span>
                   </div>
                   <div className="flex-1 text-left">
-                    <div className="font-medium text-gray-800 text-sm">
+                    <div className="font-medium text-text-primary text-sm transition-colors duration-300">
                       {account.address.slice(0, 6)}...{account.address.slice(-4)}
                     </div>
-                    <div className="text-xs text-gray-500">Regular Wallet</div>
+                    <div className="text-xs text-text-secondary transition-colors duration-300">Regular Wallet</div>
                   </div>
                   {walletType === 'EOA' && (
-                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                    <div className="w-2 h-2 bg-blue-500 dark:bg-accent-gold rounded-full transition-colors duration-300"></div>
                   )}
                 </button>
 
@@ -121,11 +122,11 @@ export const WalletSwitcher: React.FC<WalletSwitcherProps> = ({
                     onClick={() => {
                       setShowDropdown(false);
                     }}
-                    className={`w-full flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors ${
-                      walletType === 'TBA' ? 'bg-orange-50 border border-orange-200' : ''
+                    className={`w-full flex items-center space-x-3 p-3 rounded-lg hover:bg-bg-secondary transition-colors duration-300 ${
+                      walletType === 'TBA' ? 'bg-orange-50 dark:bg-accent-silver/20 border border-orange-200 dark:border-accent-silver/30' : ''
                     }`}
                   >
-                    <div className="w-8 h-8 rounded-full overflow-hidden border border-gray-200">
+                    <div className="w-8 h-8 rounded-full overflow-hidden border border-border-primary transition-colors duration-300">
                       <ImageDebugger 
                         nftContract={tbaWallet.nftContract}
                         tokenId={tbaWallet.tokenId}
@@ -133,19 +134,19 @@ export const WalletSwitcher: React.FC<WalletSwitcherProps> = ({
                       />
                     </div>
                     <div className="flex-1 text-left">
-                      <div className="font-medium text-gray-800 text-sm">
+                      <div className="font-medium text-text-primary text-sm transition-colors duration-300">
                         {tbaWallet.name}
                       </div>
-                      <div className="text-xs text-gray-500">CryptoGift Wallet</div>
+                      <div className="text-xs text-text-secondary transition-colors duration-300">CryptoGift Wallet</div>
                     </div>
                     {walletType === 'TBA' && (
-                      <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+                      <div className="w-2 h-2 bg-orange-500 dark:bg-accent-silver rounded-full transition-colors duration-300"></div>
                     )}
                   </button>
                 )}
 
                 {/* Divider */}
-                <div className="border-t border-gray-100 my-2"></div>
+                <div className="border-t border-border-primary my-2 transition-colors duration-300"></div>
 
                 {/* Actions */}
                 {hasActiveTBAWallet() && tbaWallet && (
@@ -154,33 +155,33 @@ export const WalletSwitcher: React.FC<WalletSwitcherProps> = ({
                       setShowTBAWallet(true);
                       setShowDropdown(false);
                     }}
-                    className="w-full flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors text-left"
+                    className="w-full flex items-center space-x-3 p-3 rounded-lg hover:bg-bg-secondary transition-colors duration-300 text-left"
                   >
-                    <div className="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center">
-                      <span className="text-purple-600 text-sm">💎</span>
+                    <div className="w-8 h-8 rounded-full bg-purple-100 dark:bg-accent-gold/20 flex items-center justify-center transition-colors duration-300">
+                      <span className="text-purple-600 dark:text-accent-gold text-sm transition-colors duration-300">💎</span>
                     </div>
                     <div className="flex-1">
-                      <div className="font-medium text-gray-800 text-sm">
+                      <div className="font-medium text-text-primary text-sm transition-colors duration-300">
                         Abrir CG Wallet
                       </div>
-                      <div className="text-xs text-gray-500">Interfaz completa</div>
+                      <div className="text-xs text-text-secondary transition-colors duration-300">Interfaz completa</div>
                     </div>
                   </button>
                 )}
 
                 <a
                   href="/my-wallets"
-                  className="w-full flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors text-left"
+                  className="w-full flex items-center space-x-3 p-3 rounded-lg hover:bg-bg-secondary transition-colors duration-300 text-left"
                   onClick={() => setShowDropdown(false)}
                 >
-                  <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center">
-                    <span className="text-green-600 text-sm">⚙️</span>
+                  <div className="w-8 h-8 rounded-full bg-green-100 dark:bg-accent-silver/20 flex items-center justify-center transition-colors duration-300">
+                    <span className="text-green-600 dark:text-accent-silver text-sm transition-colors duration-300">⚙️</span>
                   </div>
                   <div className="flex-1">
-                    <div className="font-medium text-gray-800 text-sm">
+                    <div className="font-medium text-text-primary text-sm transition-colors duration-300">
                       Gestionar Wallets
                     </div>
-                    <div className="text-xs text-gray-500">Ver todas mis wallets</div>
+                    <div className="text-xs text-text-secondary transition-colors duration-300">Ver todas mis wallets</div>
                   </div>
                 </a>
               </div>
