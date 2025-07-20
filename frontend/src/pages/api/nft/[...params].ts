@@ -47,7 +47,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
       console.log("✅ Token URI found on contract:", tokenURI);
       
-      // If we got a tokenURI, try to fetch the metadata directly from IPFS
+      // ENHANCED: If we got a tokenURI, try to fetch the metadata directly from IPFS
       if (tokenURI) {
         let ipfsMetadataUrl = tokenURI;
         
@@ -59,33 +59,83 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             `https://nftstorage.link/ipfs/${cid}`,
             `https://ipfs.io/ipfs/${cid}`,
             `https://gateway.pinata.cloud/ipfs/${cid}`,
-            `https://cloudflare-ipfs.com/ipfs/${cid}`
+            `https://cloudflare-ipfs.com/ipfs/${cid}`,
+            `https://dweb.link/ipfs/${cid}`
           ];
           
           for (const gateway of gateways) {
             try {
-              console.log(`🔍 Trying IPFS gateway: ${gateway}`);
+              console.log(`🔍 CACHE BYPASS: Trying IPFS gateway: ${gateway}`);
               const controller = new AbortController();
-              const timeoutId = setTimeout(() => controller.abort(), 5000);
+              const timeoutId = setTimeout(() => controller.abort(), 8000); // Increased timeout
               
               const metadataResponse = await fetch(gateway, { 
                 signal: controller.signal,
-                headers: { 'Accept': 'application/json' }
+                headers: { 
+                  'Accept': 'application/json',
+                  'Cache-Control': 'no-cache, no-store, must-revalidate', // FORCE NO CACHE
+                  'Pragma': 'no-cache',
+                  'Expires': '0'
+                }
               });
               
               clearTimeout(timeoutId);
               
               if (metadataResponse.ok) {
                 const metadata = await metadataResponse.json();
-                console.log("✅ Retrieved metadata from IPFS:", metadata);
+                console.log("✅ DIRECT IPFS: Retrieved metadata:", metadata);
+                console.log("🖼️ DIRECT IPFS: Image field:", metadata.image);
                 
-                // Return the real metadata with proper image URL
+                // Process image URL to ensure it's accessible
+                let processedImageUrl = metadata.image;
+                if (processedImageUrl && processedImageUrl.startsWith("ipfs://")) {
+                  const imageCid = processedImageUrl.replace("ipfs://", "");
+                  processedImageUrl = `https://nftstorage.link/ipfs/${imageCid}`;
+                  console.log("🔄 CONVERTED image URL:", processedImageUrl);
+                }
+                
+                // Calculate TBA address for completeness
+                const { ethers } = await import("ethers");
+                const REGISTRY_ADDRESS = "0x000000006551c19487814612e58FE06813775758";
+                const IMPLEMENTATION_ADDRESS = "0x2d25602551487c3f3354dd80d76d54383a243358";
+                const CHAIN_ID = 84532;
+                
+                const salt = ethers.solidityPackedKeccak256(
+                  ['uint256', 'address', 'uint256'],
+                  [CHAIN_ID, contractAddress, tokenId]
+                );
+                
+                const packed = ethers.solidityPacked(
+                  ['bytes1', 'address', 'bytes32', 'address', 'bytes32'],
+                  [
+                    '0xff',
+                    REGISTRY_ADDRESS,
+                    salt,
+                    IMPLEMENTATION_ADDRESS,
+                    '0x0000000000000000000000000000000000000000000000000000000000000000'
+                  ]
+                );
+                
+                const hash = ethers.keccak256(packed);
+                const tbaAddress = ethers.getAddress('0x' + hash.slice(-40));
+                
+                // Return the real metadata with processed image URL
                 return res.status(200).json({
-                  ...metadata,
-                  tokenId,
+                  success: true,
+                  id: tokenId,
+                  name: metadata.name,
+                  description: metadata.description,
+                  image: processedImageUrl,
+                  attributes: metadata.attributes || [],
+                  tokenId: parseInt(tokenId),
                   contractAddress,
                   owner,
-                  source: 'contract_ipfs',
+                  tbaAddress,
+                  tbaBalance: "0",
+                  tbaDeployed: false,
+                  network: "Base Sepolia",
+                  chainId: 84532,
+                  source: 'direct_ipfs_no_cache',
                   gateway: gateway
                 });
               }
@@ -114,10 +164,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       owner = process.env.WALLET_ADDRESS || "0xA362a26F6100Ff5f8157C0ed1c2bcC0a1919Df4a";
     }
 
-    // First, try to get stored metadata from our system
+    // DISABLED FOR TESTING: Skip stored metadata completely
     let nft;
     
-    console.log("🔍 CRITICAL DEBUG: Checking for stored metadata...");
+    console.log("🚫 CACHE DISABLED: Skipping stored metadata for testing");
     console.log("🔍 Search parameters:", { 
       contractAddress, 
       tokenId,
@@ -125,7 +175,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       tokenIdType: typeof tokenId 
     });
     
-    const storedMetadata = await getNFTMetadata(contractAddress, tokenId);
+    // FORCE: Skip Redis/Upstash lookup entirely for testing
+    const storedMetadata = null; // await getNFTMetadata(contractAddress, tokenId);
     
     console.log("🔍 CRITICAL DEBUG: Redis lookup result:", {
       found: !!storedMetadata,
