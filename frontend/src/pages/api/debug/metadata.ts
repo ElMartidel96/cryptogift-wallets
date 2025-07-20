@@ -30,15 +30,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         });
       }
     } else {
-      // List all stored metadata
-      console.log(`📋 Debug: Listing all stored metadata`);
-      const allMetadata = await listAllNFTMetadata();
+      // General metadata info (no bulk listing available)
+      console.log(`📋 Debug: Metadata endpoint info`);
       
       return res.status(200).json({
         success: true,
-        count: allMetadata.length,
-        metadata: allMetadata,
-        message: `Found ${allMetadata.length} stored NFT metadata entries`
+        message: 'Metadata debug endpoint',
+        usage: {
+          specificNFT: '/api/debug/metadata?contract=0x...&tokenId=123',
+          info: 'Provide contract and tokenId parameters to get specific NFT metadata'
+        },
+        availableEndpoints: [
+          '/api/debug/image-flow?contractAddress=CONTRACT&tokenId=TOKEN',
+          '/api/debug/mint-trace',
+          '/api/debug/storage-analysis'
+        ]
       });
     }
   } catch (error) {
