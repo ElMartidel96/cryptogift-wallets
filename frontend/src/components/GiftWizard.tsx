@@ -10,7 +10,7 @@ import { FilterSelector } from './FilterSelector';
 import { AmountSelector } from './AmountSelector';
 import { GiftSummary } from './GiftSummary';
 import { QRShare } from './QRShare';
-import { CREATION_FEE_PERCENT } from '../lib/constants';
+import { CREATION_FEE_PERCENT, generateNeutralGiftAddress } from '../lib/constants';
 import { CryptoGiftError, parseApiError, logError } from '../lib/errorHandler';
 import { ErrorModal } from './ErrorModal';
 import { GasEstimationModal } from './GasEstimationModal';

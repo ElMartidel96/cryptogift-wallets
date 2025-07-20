@@ -1,7 +1,10 @@
 import { NextApiRequest, NextApiResponse } from "next";
-import { createThirdwebClient, getContract, prepareContractCall } from "thirdweb";
+import { createThirdwebClient, getContract, prepareContractCall, sendTransaction, waitForReceipt, readContract } from "thirdweb";
 import { baseSepolia } from "thirdweb/chains";
+import { privateKeyToAccount } from "thirdweb/wallets";
 import { createBiconomySmartAccount, sendGaslessTransaction, validateBiconomyConfig } from "../../lib/biconomy";
+import { generateNeutralGiftAddress, isNeutralGiftAddress } from "../../lib/constants";
+import { ethers } from "ethers";
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
@@ -38,31 +41,88 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     let claimResult: any = {};
 
-    // SIMPLIFIED TBA APPROACH: No NFT transfer needed, just validate and return TBA info
+    // NEW APPROACH: Real NFT transfer from neutral address to claimer
     try {
-      console.log(`🎯 SIMPLIFIED TBA CLAIM: Processing claim for token ${tokenId}`);
+      console.log(`🎯 REAL NFT CLAIM: Processing ownership transfer for token ${tokenId}`);
       
-      // Calculate TBA address for verification
+      // Step 1: Verify current owner is neutral address
+      const expectedNeutralAddress = generateNeutralGiftAddress(tokenId);
+      console.log(`🤖 Expected neutral owner: ${expectedNeutralAddress}`);
+      
+      const currentOwner = await readContract({
+        contract: nftContract,
+        method: "function ownerOf(uint256) view returns (address)",
+        params: [BigInt(tokenId)]
+      });
+      
+      console.log(`👤 Current NFT owner: ${currentOwner}`);
+      console.log(`🔍 Is neutral address: ${isNeutralGiftAddress(currentOwner, tokenId)}`);
+      
+      if (!isNeutralGiftAddress(currentOwner, tokenId)) {
+        throw new Error(`NFT is not in neutral custody. Current owner: ${currentOwner}, Expected: ${expectedNeutralAddress}`);
+      }
+      
+      // Step 2: Create deployer account for transfer (we need keys to transfer from neutral)
+      // Note: This is programmatic, not human custody
+      const deployerAccount = privateKeyToAccount({
+        client,
+        privateKey: process.env.PRIVATE_KEY_DEPLOY!,
+      });
+      
+      console.log(`🔑 Using deployer account: ${deployerAccount.address}`);
+      
+      // Step 3: Prepare transfer transaction
+      console.log(`📤 Preparing transfer: ${currentOwner} → ${claimerAddress}`);
+      
+      const transferTransaction = prepareContractCall({
+        contract: nftContract,
+        method: "function safeTransferFrom(address from, address to, uint256 tokenId)",
+        params: [
+          currentOwner, // from (neutral address)
+          claimerAddress, // to (claimer)
+          BigInt(tokenId) // tokenId
+        ],
+      });
+      
+      // Step 4: Execute transfer
+      console.log(`🚀 Executing NFT transfer...`);
+      const transferResult = await sendTransaction({
+        transaction: transferTransaction,
+        account: deployerAccount,
+      });
+      
+      console.log(`📋 Transfer transaction sent: ${transferResult.transactionHash}`);
+      
+      // Step 5: Wait for confirmation
+      const receipt = await waitForReceipt({
+        client,
+        chain: baseSepolia,
+        transactionHash: transferResult.transactionHash,
+      });
+      
+      console.log(`✅ Transfer confirmed in block: ${receipt.blockNumber}`);
+      
+      // Step 6: Calculate TBA address
       const calculatedTbaAddress = await calculateTBAAddressForNFT(tokenId);
       
-      // For simplified TBA, "claiming" means the user now has access to the TBA
-      // No actual blockchain transaction needed since TBA is deterministic
       claimResult = {
         success: true,
-        gasless: true, // No gas needed for simplified approach
-        transactionHash: `SIMPLIFIED_CLAIM_${tokenId}_${Date.now()}`, // Pseudo hash for tracking
-        blockNumber: 0,
-        method: "simplified_tba_claim",
-        message: "NFT claimed successfully - you now have access to the TBA wallet",
+        gasless: false, // Real transaction with gas
+        transactionHash: transferResult.transactionHash,
+        blockNumber: Number(receipt.blockNumber),
+        method: "real_nft_transfer",
+        message: "NFT ownership transferred successfully! You now own the NFT and its TBA wallet.",
         tbaAddress: calculatedTbaAddress,
-        note: "Simplified TBA: No NFT transfer needed, deterministic wallet access granted"
+        newOwner: claimerAddress,
+        previousOwner: currentOwner,
+        note: "Real NFT transfer executed - ownership permanently transferred"
       };
 
-      console.log(`✅ Simplified TBA claim successful: tokenId=${tokenId}, TBA=${calculatedTbaAddress}`);
+      console.log(`✅ Real NFT claim successful: ${tokenId} transferred to ${claimerAddress}`);
 
     } catch (claimError) {
-      console.error('Simplified TBA claim failed:', claimError);
-      throw new Error(`Simplified claim failed: ${claimError.message}`);
+      console.error('Real NFT claim failed:', claimError);
+      throw new Error(`Real claim failed: ${claimError.message}`);
     }
 
     // Setup guardians if requested

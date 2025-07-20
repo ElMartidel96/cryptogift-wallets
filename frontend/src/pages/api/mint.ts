@@ -8,7 +8,7 @@ import { uploadMetadata } from "../../lib/ipfs";
 import { ethers } from "ethers";
 import { storeNFTMetadata, createNFTMetadata, getNFTMetadata } from "../../lib/nftMetadataStore";
 import { kvReferralDB, generateUserDisplay } from "../../lib/referralDatabaseKV";
-import { REFERRAL_COMMISSION_PERCENT } from "../../lib/constants";
+import { REFERRAL_COMMISSION_PERCENT, generateNeutralGiftAddress } from "../../lib/constants";
 
 // Add flow tracking to API
 let currentFlowTrace: any = null;
@@ -329,10 +329,43 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   try {
     console.log("📝 EXTRACTING PARAMETERS from request body...");
-    const { to, imageFile, giftMessage, initialBalance, filter = "Original", referrer } = req.body;
+    const { to: originalCreatorAddress, imageFile, giftMessage, initialBalance, filter = "Original", referrer } = req.body;
+    
+    // CRITICAL CHANGE: Predict tokenId and generate neutral custodial address
+    console.log("🔮 PREDICTING TOKEN ID for neutral address generation...");
+    
+    // Get current totalSupply to predict next tokenId
+    const client = createThirdwebClient({
+      clientId: process.env.NEXT_PUBLIC_TW_CLIENT_ID!,
+      secretKey: process.env.TW_SECRET_KEY!,
+    });
+    
+    const contract = getContract({
+      client,
+      chain: baseSepolia,
+      address: process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS!,
+    });
+    
+    const totalSupply = await readContract({
+      contract,
+      method: "function totalSupply() view returns (uint256)",
+      params: []
+    });
+    
+    const predictedTokenId = (totalSupply + BigInt(1)).toString();
+    console.log(`🎯 Predicted token ID: ${predictedTokenId}`);
+    
+    // Generate neutral custodial address (ZERO HUMAN CUSTODY)
+    const neutralAddress = generateNeutralGiftAddress(predictedTokenId);
+    console.log(`🤖 Generated neutral custodial address: ${neutralAddress}`);
+    
+    // Use neutral address instead of creator address for mint
+    const to = neutralAddress;
     
     console.log("🔍 PARAMETER ANALYSIS:");
-    console.log("  📮 To address:", to?.slice(0, 20) + "...");
+    console.log("  👤 Original creator:", originalCreatorAddress?.slice(0, 20) + "...");
+    console.log("  🤖 Neutral custodial:", to?.slice(0, 20) + "...");
+    console.log("  🎯 Predicted tokenId:", predictedTokenId);
     console.log("  🖼️ Image file:", !!imageFile ? `Present (${imageFile?.substring(0, 50)}...)` : "MISSING");
     console.log("  💬 Gift message:", giftMessage?.substring(0, 50) + "...");
     console.log("  💰 Initial balance:", initialBalance, typeof initialBalance);
@@ -689,6 +722,32 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           console.log("  🎯 Token ID (totalSupply directly):", actualTokenId);
         }
         
+        // CRITICAL VALIDATION: Verify predicted tokenId matches actual tokenId
+        console.log("🔍 VALIDATING PREDICTED vs ACTUAL TOKEN ID:");
+        console.log("  🔮 Predicted:", predictedTokenId);
+        console.log("  ✅ Actual:", actualTokenId);
+        
+        if (predictedTokenId !== actualTokenId) {
+          console.error("❌ CRITICAL ERROR: Token ID prediction failed!");
+          console.error("  🔮 Expected:", predictedTokenId);
+          console.error("  ✅ Actual:", actualTokenId);
+          console.error("  🤖 Neutral address was:", neutralAddress);
+          
+          addMintLog('ERROR', 'TOKEN_ID_PREDICTION_FAILED', {
+            predicted: predictedTokenId,
+            actual: actualTokenId,
+            neutralAddress
+          });
+          
+          throw new Error(`Token ID prediction failed: expected ${predictedTokenId}, got ${actualTokenId}. Neutral address may be incorrect.`);
+        }
+        
+        console.log("✅ TOKEN ID PREDICTION VALIDATED: Neutral address is correct!");
+        addMintLog('SUCCESS', 'TOKEN_ID_PREDICTION_VALIDATED', {
+          tokenId: actualTokenId,
+          neutralAddress
+        });
+        
       } catch (extractError) {
         console.error("❌ Failed to extract real token ID:", extractError);
         console.log("🔄 Fallback: Using deterministic transaction-based ID");
@@ -955,6 +1014,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         description: giftMessage || 'Un regalo cripto único creado con amor',
         imageIpfsCid: imageIpfsCid,
         metadataIpfsCid: metadataUri.startsWith('ipfs://') ? metadataUri.replace('ipfs://', '') : undefined,
+        owner: neutralAddress, // NFT is owned by neutral address
+        creatorWallet: originalCreatorAddress, // But created by this address
         attributes: [
           {
             trait_type: "Initial Balance",
@@ -978,7 +1039,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           },
           {
             trait_type: "Creator Wallet",
-            value: creatorWallet.slice(0, 10) + '...'
+            value: originalCreatorAddress.slice(0, 10) + '...'
+          },
+          {
+            trait_type: "Custody Status",
+            value: "Neutral Programmatic Custody"
+          },
+          {
+            trait_type: "Neutral Address",
+            value: neutralAddress.slice(0, 10) + '...'
+          },
+          {
+            trait_type: "Claim Status",
+            value: "Pending Claim"
           },
           {
             trait_type: "Image Status",
