@@ -170,6 +170,168 @@ export function getAllNFTMetadataClient(): Record<string, NFTMetadata> {
 }
 
 // NEW: Cache Management Functions for Fresh Testing
+// ENHANCED: Clear wallet connections specifically
+export function clearWalletConnections(): { cleared: boolean; details: any } {
+  try {
+    const results = {
+      cleared: true,
+      details: {
+        walletDisconnections: 0,
+        indexedDBCleared: 0,
+        serviceWorkersCleared: 0,
+        windowObjectsCleared: 0,
+        extensionStorageAttempts: 0,
+        clearedItems: []
+      }
+    };
+
+    console.log('🔌 AGGRESSIVE WALLET DISCONNECTION STARTING...');
+
+    // 1. Try to disconnect any active wallet connections
+    try {
+      if (typeof window !== 'undefined') {
+        // MetaMask disconnection
+        if ((window as any).ethereum) {
+          console.log('🔌 Found window.ethereum, attempting disconnect...');
+          try {
+            const provider = (window as any).ethereum;
+            // Try various disconnect methods
+            if (provider.disconnect) {
+              provider.disconnect();
+              console.log('✅ Called provider.disconnect()');
+            }
+            if (provider.close) {
+              provider.close();
+              console.log('✅ Called provider.close()');
+            }
+            // Clear selected address
+            if (provider.selectedAddress) {
+              provider.selectedAddress = null;
+              console.log('✅ Cleared selectedAddress');
+            }
+            results.details.walletDisconnections++;
+          } catch (e) {
+            console.log('⚠️ Ethereum disconnect failed:', e.message);
+          }
+        }
+
+        // WalletConnect disconnection
+        const wcKeys = Object.keys(window).filter(key => 
+          key.toLowerCase().includes('walletconnect')
+        );
+        wcKeys.forEach(key => {
+          try {
+            const obj = (window as any)[key];
+            if (obj && typeof obj.disconnect === 'function') {
+              obj.disconnect();
+              console.log(`✅ Disconnected ${key}`);
+              results.details.walletDisconnections++;
+            }
+          } catch (e) {
+            console.log(`⚠️ Failed to disconnect ${key}:`, e.message);
+          }
+        });
+
+        // ThirdWeb disconnection
+        const thirdwebKeys = Object.keys(window).filter(key => 
+          key.toLowerCase().includes('thirdweb')
+        );
+        thirdwebKeys.forEach(key => {
+          try {
+            const obj = (window as any)[key];
+            if (obj && typeof obj.disconnect === 'function') {
+              obj.disconnect();
+              console.log(`✅ Disconnected ${key}`);
+              results.details.walletDisconnections++;
+            }
+          } catch (e) {
+            console.log(`⚠️ Failed to disconnect ${key}:`, e.message);
+          }
+        });
+      }
+    } catch (error) {
+      console.warn('⚠️ Wallet disconnection failed:', error);
+    }
+
+    // 2. Force clear IndexedDB databases
+    if ('indexedDB' in window) {
+      try {
+        const dbsToDelete = [
+          'thirdweb-storage',
+          'thirdweb-cache', 
+          'walletconnect',
+          'web3-storage',
+          'keyval-store',
+          'wallet-db',
+          'metamask-db'
+        ];
+        
+        dbsToDelete.forEach(dbName => {
+          console.log(`🗑️ Attempting to delete IndexedDB: ${dbName}`);
+          const deleteRequest = indexedDB.deleteDatabase(dbName);
+          deleteRequest.onsuccess = () => {
+            console.log(`✅ Deleted IndexedDB: ${dbName}`);
+            results.details.indexedDBCleared++;
+            results.details.clearedItems.push(`IndexedDB: ${dbName}`);
+          };
+          deleteRequest.onerror = () => {
+            console.log(`ℹ️ IndexedDB ${dbName} not found or already deleted`);
+          };
+        });
+      } catch (error) {
+        console.warn('⚠️ IndexedDB clearing failed:', error);
+      }
+    }
+
+    // 3. Unregister service workers
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(registrations => {
+        registrations.forEach(registration => {
+          console.log(`🗑️ Unregistering service worker: ${registration.scope}`);
+          registration.unregister().then(success => {
+            if (success) {
+              console.log(`✅ Unregistered service worker: ${registration.scope}`);
+              results.details.serviceWorkersCleared++;
+              results.details.clearedItems.push(`ServiceWorker: ${registration.scope}`);
+            }
+          });
+        });
+      }).catch(error => {
+        console.warn('⚠️ Service worker unregistration failed:', error);
+      });
+    }
+
+    // 4. Clear window objects
+    const windowPropsToDelete = [
+      'ethereum', 'web3', 'walletLink', 'coinbaseWalletExtension',
+      'tronWeb', 'solana', 'phantom', 'walletConnect'
+    ];
+    
+    windowPropsToDelete.forEach(prop => {
+      if (typeof window !== 'undefined' && prop in window) {
+        try {
+          delete (window as any)[prop];
+          console.log(`✅ Cleared window.${prop}`);
+          results.details.windowObjectsCleared++;
+          results.details.clearedItems.push(`window.${prop}`);
+        } catch (e) {
+          console.log(`⚠️ Could not clear window.${prop}:`, e.message);
+        }
+      }
+    });
+
+    console.log('🔌 AGGRESSIVE WALLET DISCONNECTION COMPLETED:', results);
+    return results;
+    
+  } catch (error) {
+    console.error('❌ Aggressive wallet disconnection failed:', error);
+    return {
+      cleared: false,
+      details: { error: error instanceof Error ? error.message : 'Unknown error' }
+    };
+  }
+}
+
 export function clearAllUserCache(): { cleared: boolean; details: any } {
   try {
     const results = {
@@ -193,6 +355,12 @@ export function clearAllUserCache(): { cleared: boolean; details: any } {
     results.details.totalLocalStorageKeys = allKeys.length;
 
     console.log('🔍 Found localStorage keys:', allKeys);
+    console.log('🔍 Total keys found:', allKeys.length);
+    console.log('🔍 Keys detail:', allKeys.map(key => ({
+      key, 
+      size: localStorage.getItem(key)?.length || 0,
+      preview: localStorage.getItem(key)?.substring(0, 50) + '...'
+    })));
 
     // Clear wallet-scoped metadata caches
     const walletKeys = allKeys.filter(key => key.startsWith(STORAGE_PREFIX));
@@ -220,8 +388,13 @@ export function clearAllUserCache(): { cleared: boolean; details: any } {
       DEVICE_STORAGE_KEY
     ];
     
+    console.log('🔍 Searching for wallet state keys:', walletStateKeys);
+    
     walletStateKeys.forEach(key => {
-      if (localStorage.getItem(key)) {
+      const value = localStorage.getItem(key);
+      console.log(`🔍 Checking key '${key}':`, value ? 'FOUND' : 'NOT FOUND');
+      if (value) {
+        console.log(`🗑️ Removing key '${key}' with value:`, value.substring(0, 100) + '...');
         localStorage.removeItem(key);
         results.details.clearedKeys.push(key);
         results.details.walletStateKeys++;
@@ -248,13 +421,21 @@ export function clearAllUserCache(): { cleared: boolean; details: any } {
     });
     results.details.referralKeys = referralKeys.length;
 
-    // Clear any other cryptogift-related keys
+    // Clear any other relevant keys (expanded patterns)
     const otherKeys = allKeys.filter(key => 
       key.toLowerCase().includes('cryptogift') || 
       key.toLowerCase().includes('tba') ||
       key.toLowerCase().includes('nft') ||
-      key.includes('pwa-install')
+      key.includes('pwa-install') ||
+      key.toLowerCase().includes('thirdweb') ||
+      key.toLowerCase().includes('wallet') ||
+      key.toLowerCase().includes('connect') ||
+      key.toLowerCase().includes('metamask') ||
+      key.toLowerCase().includes('web3') ||
+      key.toLowerCase().includes('ethereum')
     );
+    
+    console.log('🔍 Other relevant keys found:', otherKeys);
     otherKeys.forEach(key => {
       if (!results.details.clearedKeys.includes(key)) {
         localStorage.removeItem(key);
@@ -357,6 +538,11 @@ export function clearAllUserCache(): { cleared: boolean; details: any } {
       }
     }
 
+    // FINAL STEP: Run aggressive wallet disconnection
+    console.log('🔌 Running aggressive wallet disconnection...');
+    const walletDisconnectResults = clearWalletConnections();
+    results.details.walletDisconnection = walletDisconnectResults;
+    
     console.log('🧹 COMPREHENSIVE cache clearing results:', results);
     
     // CRITICAL: Clear any remaining browser storage

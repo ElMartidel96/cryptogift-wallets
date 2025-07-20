@@ -117,18 +117,45 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // First, try to get stored metadata from our system
     let nft;
     
-    console.log("🔍 Checking for stored metadata...");
-    console.log("🔍 Search parameters:", { contractAddress, tokenId });
+    console.log("🔍 CRITICAL DEBUG: Checking for stored metadata...");
+    console.log("🔍 Search parameters:", { 
+      contractAddress, 
+      tokenId,
+      contractType: typeof contractAddress,
+      tokenIdType: typeof tokenId 
+    });
     
     const storedMetadata = await getNFTMetadata(contractAddress, tokenId);
     
+    console.log("🔍 CRITICAL DEBUG: Redis lookup result:", {
+      found: !!storedMetadata,
+      hasImage: !!(storedMetadata?.image),
+      hasImageCid: !!(storedMetadata?.imageIpfsCid),
+      storedImageValue: storedMetadata?.image,
+      storedImageCidValue: storedMetadata?.imageIpfsCid
+    });
+    
     if (storedMetadata) {
-      console.log("✅ Found stored metadata!");
-      console.log("📄 Stored metadata content:", storedMetadata);
+      console.log("✅ FOUND STORED METADATA!");
+      console.log("📄 Complete stored metadata:", JSON.stringify(storedMetadata, null, 2));
       
-      // Use stored metadata with IPFS resolution
+      // CRITICAL: Check what image we're actually using
+      const originalImage = storedMetadata.image;
       const resolvedImageUrl = resolveIPFSUrl(storedMetadata.image);
-      console.log("🔗 Resolved image URL:", resolvedImageUrl);
+      
+      console.log("🔗 IMAGE RESOLUTION DEBUG:", {
+        originalImageField: originalImage,
+        isIPFSFormat: originalImage?.startsWith('ipfs://'),
+        isPlaceholder: originalImage?.includes('placeholder'),
+        resolvedImageUrl: resolvedImageUrl,
+        ipfsCid: storedMetadata.imageIpfsCid
+      });
+      
+      // CRITICAL: Detect if we're accidentally serving placeholder from stored metadata
+      if (originalImage?.includes('placeholder')) {
+        console.log("🚨 CRITICAL ISSUE: Placeholder was stored in metadata!");
+        console.log("🚨 This means the problem is in the mint process, not display");
+      }
       
       nft = {
         id: tokenId,
@@ -138,19 +165,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         attributes: storedMetadata.attributes || []
       };
     } else {
-      console.log("⚠️ No stored metadata found, attempting to reconstruct from contract or defaults");
-      console.log("📂 Searched in contract:", contractAddress, "tokenId:", tokenId);
+      console.log("❌ CRITICAL: No stored metadata found!");
+      console.log("📂 Search details:", { 
+        searchContract: contractAddress, 
+        searchTokenId: tokenId,
+        contractLength: contractAddress?.length,
+        tokenIdLength: tokenId?.toString().length
+      });
+      console.log("🚨 ROOT CAUSE: Metadata was never stored during mint OR lookup is failing");
+      console.log("🔍 Next steps: Check /api/debug/image-trace or mint logs");
       
-      // TESTING MODE: Try to use a working image URL instead of placeholder
-      // This helps identify if the issue is in creation or display
-      const testImageUrl = "https://nftstorage.link/ipfs/QmYyqMqJEARwVHSqpg6o5VdaqyV9Fg4K9K8Fc4WYxcGS7V"; // Known working test image
-      
-      // Fallback with debugging info
+      // Fallback with enhanced debugging info
       nft = {
         id: tokenId,
         name: `CryptoGift NFT-Wallet #${tokenId}`,
         description: "Un regalo cripto único con wallet integrada ERC-6551. NOTA: Metadata no encontrada en almacenamiento, usando valores por defecto.",
-        image: "/images/cg-wallet-placeholder.png", // Keep placeholder for now to identify the issue
+        image: "/images/cg-wallet-placeholder.png", // This is the FALLBACK placeholder
         attributes: [
           {
             trait_type: "Initial Balance",

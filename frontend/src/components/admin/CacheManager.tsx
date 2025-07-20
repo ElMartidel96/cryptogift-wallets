@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from 'react';
-import { clearAllUserCache, getDetailedCacheInfo } from '../../lib/clientMetadataStore';
+import { clearAllUserCache, clearWalletConnections, getDetailedCacheInfo } from '../../lib/clientMetadataStore';
 
 interface CacheManagerProps {
   isOpen: boolean;
@@ -24,6 +24,26 @@ export const CacheManager: React.FC<CacheManagerProps> = ({ isOpen, onClose }) =
     try {
       const results = clearAllUserCache();
       setClearResults(results);
+      loadCacheInfo(); // Refresh info after clearing
+    } catch (error) {
+      setClearResults({ 
+        cleared: false, 
+        details: { error: error instanceof Error ? error.message : 'Unknown error' } 
+      });
+    } finally {
+      setIsClearing(false);
+    }
+  };
+
+  const handleAggressiveWalletDisconnect = () => {
+    setIsClearing(true);
+    try {
+      console.log('🔌 Starting aggressive wallet disconnect...');
+      const results = clearWalletConnections();
+      setClearResults({
+        aggressive: true,
+        ...results
+      });
       loadCacheInfo(); // Refresh info after clearing
     } catch (error) {
       setClearResults({ 
@@ -287,7 +307,7 @@ export const CacheManager: React.FC<CacheManagerProps> = ({ isOpen, onClose }) =
           <div className="space-y-4">
             <h3 className="font-semibold">🚀 Cache Clearing Actions</h3>
             
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               {/* Client Cache */}
               <div className="border rounded-lg p-4">
                 <h4 className="font-medium mb-2">💻 Client Cache</h4>
@@ -315,6 +335,21 @@ export const CacheManager: React.FC<CacheManagerProps> = ({ isOpen, onClose }) =
                   className="w-full px-4 py-2 bg-orange-500 text-white rounded hover:bg-orange-600 disabled:opacity-50"
                 >
                   {isClearing ? '⏳' : '🗄️'} Clear Server
+                </button>
+              </div>
+
+              {/* Aggressive Wallet Disconnect */}
+              <div className="border rounded-lg p-4 border-orange-200 bg-orange-50">
+                <h4 className="font-medium mb-2 text-orange-700">🔌 Disconnect Wallets</h4>
+                <p className="text-sm text-orange-600 mb-3">
+                  FUERZA desconexión: IndexedDB, ServiceWorkers, window objects
+                </p>
+                <button
+                  onClick={handleAggressiveWalletDisconnect}
+                  disabled={isClearing}
+                  className="w-full px-4 py-2 bg-orange-500 text-white rounded hover:bg-orange-600 disabled:opacity-50"
+                >
+                  {isClearing ? '⏳' : '🔌'} Force Disconnect
                 </button>
               </div>
 
@@ -377,6 +412,22 @@ export const CacheManager: React.FC<CacheManagerProps> = ({ isOpen, onClose }) =
                       </pre>
                     </details>
                   </div>
+                ) : clearResults.aggressive ? (
+                  <div>
+                    <p className="font-medium text-orange-600">🔌 Aggressive Wallet Disconnect Complete</p>
+                    <div className="mt-2 text-xs">
+                      <p><strong>Disconnections:</strong> {clearResults.details?.walletDisconnections || 0}</p>
+                      <p><strong>IndexedDB Cleared:</strong> {clearResults.details?.indexedDBCleared || 0}</p>
+                      <p><strong>ServiceWorkers:</strong> {clearResults.details?.serviceWorkersCleared || 0}</p>
+                      <p><strong>Window Objects:</strong> {clearResults.details?.windowObjectsCleared || 0}</p>
+                    </div>
+                    <details className="mt-2">
+                      <summary className="cursor-pointer">Full Results</summary>
+                      <pre className="mt-1 text-xs bg-white p-2 rounded overflow-auto">
+                        {JSON.stringify(clearResults, null, 2)}
+                      </pre>
+                    </details>
+                  </div>
                 ) : (
                   <pre className="text-xs bg-white p-2 rounded overflow-auto">
                     {JSON.stringify(clearResults, null, 2)}
@@ -390,11 +441,11 @@ export const CacheManager: React.FC<CacheManagerProps> = ({ isOpen, onClose }) =
           <div className="bg-yellow-50 rounded-xl p-4">
             <h3 className="font-semibold text-yellow-800 mb-2">⚡ Testing Instructions</h3>
             <div className="text-sm text-yellow-700 space-y-1">
-              <p>1. <strong>Clear ALL Cache</strong> para empezar desde cero</p>
-              <p>2. <strong>Refresh browser</strong> (F5) para confirmar limpieza</p>
-              <p>3. <strong>Create new NFT</strong> para probar imagen sin cache</p>
-              <p>4. <strong>Different wallets</strong> para verificar aislamiento</p>
-              <p>5. <strong>Check logs</strong> en /debug para monitorear proceso</p>
+              <p>1. <strong>Try "Force Disconnect"</strong> si wallet sigue conectada</p>
+              <p>2. <strong>Clear ALL Cache</strong> para limpieza completa</p>
+              <p>3. <strong>Refresh browser</strong> (F5) para confirmar limpieza</p>
+              <p>4. <strong>Si persiste:</strong> DevTools > Application > Clear Storage</p>
+              <p>5. <strong>Check /api/debug/storage-analysis</strong> para debugging</p>
             </div>
           </div>
 

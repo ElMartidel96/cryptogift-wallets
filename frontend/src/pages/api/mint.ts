@@ -713,11 +713,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // CRITICAL FIX: Store NFT metadata with image verification
     try {
-      console.log("💾 Storing NFT metadata with image verification...");
-      console.log("🔍 Debug storage parameters:", {
+      console.log("💾 CRITICAL DEBUG: Starting NFT metadata storage...");
+      console.log("🔍 CRITICAL DEBUG: Storage parameters:", {
         contractAddress: process.env.NEXT_PUBLIC_NFT_DROP_ADDRESS,
         tokenId: tokenId,
-        imageFile: imageFile,
+        imageFileParameter: imageFile,
+        imageFileType: typeof imageFile,
+        imageFileLength: imageFile?.length,
         metadataUri: metadataUri,
         giftMessage: giftMessage,
         initialBalance: initialBalance,
@@ -732,7 +734,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         imageIpfsCid = imageFile.replace('ipfs://', '');
       }
       
-      console.log("🔍 Processed imageIpfsCid:", imageIpfsCid);
+      console.log("🔍 CRITICAL DEBUG: Image CID Processing:", {
+        originalImageFile: imageFile,
+        processedImageIpfsCid: imageIpfsCid,
+        hasValidCID: !!(imageIpfsCid && imageIpfsCid.length > 10),
+        isPlaceholderCID: imageIpfsCid?.includes('placeholder'),
+        cidLength: imageIpfsCid?.length
+      });
       
       // CRITICAL: Verify image is accessible before storing metadata
       const imageVerificationResult = await verifyImageAccessibility(imageIpfsCid);
@@ -809,9 +817,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         creatorWallet: creatorWallet // CRITICAL: Track who created this to prevent cache conflicts
       });
       
-      console.log("🔍 Created NFT metadata object:", nftMetadata);
-      console.log("🔖 DEBUGGING: Image URL being stored:", nftMetadata.image);
-      console.log("🔖 DEBUGGING: Image CID being stored:", nftMetadata.imageIpfsCid);
+      console.log("🔍 CRITICAL DEBUG: Created NFT metadata object:");
+      console.log(JSON.stringify(nftMetadata, null, 2));
+      console.log("🔖 CRITICAL DEBUG: Final image values being stored:", {
+        imageField: nftMetadata.image,
+        imageIpfsCid: nftMetadata.imageIpfsCid,
+        imageFieldFormat: nftMetadata.image?.startsWith('ipfs://') ? 'CORRECT' : 'INCORRECT',
+        imageIsPlaceholder: nftMetadata.image?.includes('placeholder') ? 'YES - PROBLEM!' : 'NO - GOOD',
+        cidIsValid: !!(nftMetadata.imageIpfsCid && nftMetadata.imageIpfsCid.length > 10) ? 'YES' : 'NO - PROBLEM!'
+      });
       
       // CRITICAL: Ensure storage completes successfully
       console.log("💾 Attempting to store NFT metadata...");
