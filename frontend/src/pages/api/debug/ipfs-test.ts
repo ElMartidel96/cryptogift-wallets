@@ -1,5 +1,4 @@
 import { NextApiRequest, NextApiResponse } from "next";
-import { validateIPFSConfig } from "../../../lib/ipfs";
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'GET') {
@@ -8,7 +7,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   try {
     // Check IPFS configuration
-    const config = validateIPFSConfig();
+    const config = {
+      hasNFTStorage: !!process.env.NFT_STORAGE_API_KEY,
+      hasPinata: !!process.env.PINATA_JWT,
+      hasThirdWeb: !!process.env.NEXT_PUBLIC_TW_CLIENT_ID && !!process.env.TW_SECRET_KEY
+    };
     
     // Check environment variables
     const envCheck = {
