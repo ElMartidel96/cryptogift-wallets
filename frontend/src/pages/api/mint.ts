@@ -1,5 +1,5 @@
 import { NextApiRequest, NextApiResponse } from "next";
-import { createThirdwebClient, getContract, prepareContractCall, sendTransaction, readContract } from "thirdweb";
+import { createThirdwebClient, getContract, prepareContractCall, sendTransaction, readContract, getRpcClient } from "thirdweb";
 import { baseSepolia } from "thirdweb/chains";
 import { privateKeyToAccount } from "thirdweb/wallets";
 import { createBiconomySmartAccount, sendGaslessTransaction, validateBiconomyConfig, isGaslessAvailable } from "../../lib/biconomy";
@@ -267,23 +267,56 @@ async function mintNFTGasless(to: string, tokenURI: string, client: any) {
       blockNumber: receipt.blockNumber 
     });
     
-    // CRITICAL FIX: Extract REAL token ID from contract instead of generating manual ID
-    console.log("🔍 GASLESS: Extracting REAL token ID from contract...");
+    // CRITICAL FIX: Extract REAL token ID from receipt Transfer events (gasless)
+    console.log("🔍 GASLESS: Extracting REAL token ID from transaction receipt...");
     let realTokenId;
     
     try {
-      // Get the real token ID by reading totalSupply from the contract
-      const totalSupply = await readContract({
-        contract: nftContract,
-        method: "function totalSupply() view returns (uint256)",
-        params: []
-      });
+      // Parse Transfer event from receipt logs to get the actual token ID
+      let tokenIdFromEvent = null;
       
-      realTokenId = totalSupply.toString();
-      console.log("🎯 GASLESS: Real TOKEN ID from contract:", realTokenId);
+      if (receipt.logs && receipt.logs.length > 0) {
+        console.log("🔍 GASLESS: Parsing Transfer events from receipt logs...");
+        
+        // ERC721 Transfer event signature: Transfer(address indexed from, address indexed to, uint256 indexed tokenId)
+        const transferEventSignature = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef";
+        
+        for (const log of receipt.logs) {
+          if (log.topics && log.topics[0] === transferEventSignature) {
+            console.log("✅ GASLESS: Found Transfer event:", log);
+            
+            // Token ID is the 3rd topic (index 2) in Transfer event
+            if (log.topics[3]) {
+              const tokenIdHex = log.topics[3];
+              tokenIdFromEvent = BigInt(tokenIdHex).toString();
+              console.log("🎯 GASLESS: TOKEN ID from Transfer event:", tokenIdFromEvent);
+              break;
+            }
+          }
+        }
+      }
+      
+      if (tokenIdFromEvent) {
+        realTokenId = tokenIdFromEvent;
+        console.log("✅ GASLESS: REAL TOKEN ID extracted from receipt:", realTokenId);
+      } else {
+        console.log("⚠️ GASLESS: No Transfer event found, falling back to totalSupply...");
+        
+        // Fallback: Wait a bit for block confirmation then check totalSupply
+        await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second for gasless
+        
+        const totalSupply = await readContract({
+          contract: nftContract,
+          method: "function totalSupply() view returns (uint256)",
+          params: []
+        });
+        
+        realTokenId = totalSupply.toString();
+        console.log("🎯 GASLESS: TOKEN ID from totalSupply (after confirmation):", realTokenId);
+      }
       
     } catch (supplyError) {
-      console.log("⚠️ GASLESS: totalSupply method not available, using transaction-based fallback");
+      console.log("⚠️ GASLESS: Token ID extraction failed, using transaction-based fallback");
       
       // Fallback: Use transaction hash for deterministic but unique ID
       const hashNum = parseInt(receipt.transactionHash.slice(-8), 16);
@@ -560,19 +593,51 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       let actualTokenId;
       
       try {
-        // Get transaction receipt to extract token ID from Transfer event
-        const receipt = await nftResult.transactionHash;
-        console.log("📜 Transaction receipt:", receipt);
+        // CRITICAL FIX: Get ACTUAL transaction receipt and parse Transfer events
+        console.log("🔍 Waiting for transaction to be mined...");
         
-        // Try to extract token ID from transaction receipt
-        // Method 1: Try to get transaction receipt and parse events
-        console.log("🔍 Attempting to get transaction receipt...");
+        // Wait for transaction to be confirmed and get receipt
+        const rpcClient = getRpcClient({ client, chain: baseSepolia });
+        const receipt = await rpcClient.getTransactionReceipt({
+          hash: nftResult.transactionHash as `0x${string}`
+        });
         
-        // IMPROVED: Use a more systematic approach to get the token ID
-        // Since this is a standard ERC721 mint, the token ID should be sequential
-        // Let's try to read the total supply to estimate the token ID
-        try {
-          console.log("🔍 Trying to read total supply from contract...");
+        console.log("📜 REAL Transaction receipt:", receipt);
+        console.log("📄 Receipt logs count:", receipt.logs?.length || 0);
+        
+        // Parse Transfer event from logs to get the actual token ID
+        let tokenIdFromEvent = null;
+        
+        if (receipt.logs && receipt.logs.length > 0) {
+          console.log("🔍 Parsing Transfer events from receipt logs...");
+          
+          // ERC721 Transfer event signature: Transfer(address indexed from, address indexed to, uint256 indexed tokenId)
+          const transferEventSignature = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef";
+          
+          for (const log of receipt.logs) {
+            if (log.topics && log.topics[0] === transferEventSignature) {
+              console.log("✅ Found Transfer event:", log);
+              
+              // Token ID is the 3rd topic (index 2) in Transfer event
+              if (log.topics[3]) {
+                const tokenIdHex = log.topics[3];
+                tokenIdFromEvent = BigInt(tokenIdHex).toString();
+                console.log("🎯 TOKEN ID from Transfer event:", tokenIdFromEvent);
+                break;
+              }
+            }
+          }
+        }
+        
+        if (tokenIdFromEvent) {
+          actualTokenId = tokenIdFromEvent;
+          console.log("✅ REAL TOKEN ID extracted from receipt:", actualTokenId);
+        } else {
+          console.log("⚠️ No Transfer event found, falling back to totalSupply...");
+          
+          // Fallback: Wait a bit for block confirmation then check totalSupply
+          await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2 seconds
+          
           const totalSupply = await readContract({
             contract: cryptoGiftNFTContract,
             method: "function totalSupply() view returns (uint256)",
@@ -580,15 +645,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           });
           
           actualTokenId = totalSupply.toString();
-          console.log("🎯 TOKEN ID from totalSupply:", actualTokenId);
-          
-        } catch (supplyError) {
-          console.log("⚠️ totalSupply method not available, using hash-based ID");
-          
-          // Fallback: Use transaction hash for deterministic but unique ID
-          const hashNum = parseInt(nftResult.transactionHash.slice(-8), 16);
-          actualTokenId = (hashNum % 1000000).toString();
-          console.log("🎯 TOKEN ID from hash:", actualTokenId);
+          console.log("🎯 TOKEN ID from totalSupply (after confirmation):", actualTokenId);
         }
         
       } catch (extractError) {
@@ -802,11 +859,28 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const imageVerificationResult = await verifyImageAccessibility(imageIpfsCid);
       console.log("🔍 Image verification result:", imageVerificationResult);
       
-      // TESTING MODE: Continue even if verification fails to identify root cause
+      // CRITICAL FIX: FAIL mint if image verification fails
       if (!imageVerificationResult.accessible) {
-        console.log("⚠️ WARNING: Image verification failed, but continuing for testing purposes");
-        console.log("🔍 This will help us identify if the issue is verification or storage");
+        console.error("❌ CRITICAL: Image verification failed - image not accessible from IPFS");
+        console.error("🚨 FAILING mint to prevent placeholder storage");
+        console.error("🔍 Gateway results:", imageVerificationResult.allGatewayResults);
+        
+        addMintLog('ERROR', 'IMAGE_VERIFICATION_FAILED', {
+          imageCid: imageIpfsCid,
+          gatewayResults: imageVerificationResult.allGatewayResults
+        });
+        
+        return res.status(400).json({
+          error: 'Image verification failed',
+          message: 'The uploaded image is not accessible from IPFS. Please try uploading again.',
+          details: {
+            imageCid: imageIpfsCid,
+            gatewayResults: imageVerificationResult.allGatewayResults
+          }
+        });
       }
+      
+      console.log("✅ Image verification passed - proceeding with mint");
       
       // Get deployer wallet address for tracking
       let creatorWallet = 'unknown';

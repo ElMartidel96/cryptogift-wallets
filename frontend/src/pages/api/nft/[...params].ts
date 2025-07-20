@@ -96,9 +96,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 
                 // Calculate TBA address for completeness
                 const { ethers } = await import("ethers");
-                const REGISTRY_ADDRESS = "0x000000006551c19487814612e58FE06813775758";
-                const IMPLEMENTATION_ADDRESS = "0x2d25602551487c3f3354dd80d76d54383a243358";
-                const CHAIN_ID = 84532;
+                const REGISTRY_ADDRESS = process.env.NEXT_PUBLIC_ERC6551_REGISTRY_ADDRESS || "0x000000006551c19487814612e58FE06813775758";
+                const IMPLEMENTATION_ADDRESS = process.env.NEXT_PUBLIC_ERC6551_IMPLEMENTATION_ADDRESS || "0x2d25602551487c3f3354dd80d76d54383a243358";
+                const CHAIN_ID = parseInt(process.env.NEXT_PUBLIC_CHAIN_ID || "84532");
                 
                 const salt = ethers.solidityPackedKeccak256(
                   ['uint256', 'address', 'uint256'],
@@ -299,9 +299,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     
     // Calculate REAL TBA address using ERC-6551 standard
     const { ethers } = await import("ethers");
-    const REGISTRY_ADDRESS = "0x000000006551c19487814612e58FE06813775758";
-    const IMPLEMENTATION_ADDRESS = "0x2d25602551487c3f3354dd80d76d54383a243358";
-    const CHAIN_ID = 84532; // Base Sepolia
+    const REGISTRY_ADDRESS = process.env.NEXT_PUBLIC_ERC6551_REGISTRY_ADDRESS || "0x000000006551c19487814612e58FE06813775758";
+    const IMPLEMENTATION_ADDRESS = process.env.NEXT_PUBLIC_ERC6551_IMPLEMENTATION_ADDRESS || "0x2d25602551487c3f3354dd80d76d54383a243358";
+    const CHAIN_ID = parseInt(process.env.NEXT_PUBLIC_CHAIN_ID || "84532"); // Base Sepolia
     
     const salt = ethers.solidityPackedKeccak256(
       ['uint256', 'address', 'uint256'],
