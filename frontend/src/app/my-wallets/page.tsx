@@ -44,28 +44,34 @@ export default function MyWalletsPage() {
     
     setIsLoading(true);
     try {
-      // TODO: Replace with actual API call to get user's NFT wallets
-      // For now, we'll create a mock wallet from localStorage or API
-      const mockWallets: UserWallet[] = [
-        {
-          id: '1',
-          name: 'CryptoGift Wallet #1752523269965',
-          address: account.address,
-          tbaAddress: '0xF5af...68Bf',
-          nftContract: '0x54314166B36E3Cc66cFb36265D99697f4F733231',
-          tokenId: '1752523269965',
-          image: '/images/nft-placeholder.png',
-          balance: {
-            eth: '0.0000',
-            usdc: '0.00',
-            total: '$0.00'
-          },
-          isActive: true
-        }
-      ];
+      console.log('🔍 Loading NFT-Wallets for user:', account.address);
       
-      setWallets(mockWallets);
-      setActiveWallet(mockWallets[0]?.id || null);
+      // FIXED: Use real API to get user's NFT wallets
+      const response = await fetch(`/api/user/nft-wallets?userAddress=${account.address}`);
+      
+      if (!response.ok) {
+        throw new Error(`API Error: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      console.log('✅ NFT-Wallets loaded:', data);
+      
+      if (data.success && data.wallets) {
+        setWallets(data.wallets);
+        
+        // Set first wallet as active if none is set
+        const activeWalletExists = data.wallets.some((w: UserWallet) => w.isActive);
+        if (!activeWalletExists && data.wallets.length > 0) {
+          setActiveWallet(data.wallets[0].id);
+        } else {
+          const activeWallet = data.wallets.find((w: UserWallet) => w.isActive);
+          setActiveWallet(activeWallet?.id || null);
+        }
+      } else {
+        console.log('⚠️ No NFT-Wallets found for user');
+        setWallets([]);
+        setActiveWallet(null);
+      }
     } catch (error) {
       console.error('Error loading user wallets:', error);
     } finally {
