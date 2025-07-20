@@ -65,7 +65,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         ifVerificationFails: 'Temporarily disable strict IPFS verification',
         ifStorageFails: 'Check Redis connection and keys',
         ifPlaceholderUsed: 'Check imageFile parameter in mint API call'
-      }
+      },
+      recentLogs: [] as any[]
     };
 
     // Check recent mint logs if available
