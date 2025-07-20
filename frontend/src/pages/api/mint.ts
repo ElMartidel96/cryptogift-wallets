@@ -166,53 +166,9 @@ async function calculateTBAAddress(tokenId: string): Promise<string> {
   }
 }
 
-// Helper function to extract token ID from transaction logs (REAL)
-function extractTokenIdFromLogs(logs: any[]): string {
-  try {
-    console.log("🔍 Extrayendo token ID de los logs de la transacción...");
-    
-    // Buscar el evento Transfer que indica el mint
-    // Transfer(address indexed from, address indexed to, uint256 indexed tokenId)
-    const transferTopic = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef";
-    
-    for (const log of logs || []) {
-      if (log.topics && log.topics[0] === transferTopic) {
-        // El token ID está en el tercer topic (topics[3])
-        if (log.topics.length >= 4) {
-          const tokenIdHex = log.topics[3];
-          const tokenId = parseInt(tokenIdHex, 16).toString();
-          console.log("✅ Token ID extraído de logs:", tokenId);
-          return tokenId;
-        }
-      }
-    }
-    
-    // Fallback: usar timestamp si no encontramos en logs
-    const fallbackTokenId = Date.now().toString();
-    console.log("⚠️ No se encontró token ID en logs, usando fallback:", fallbackTokenId);
-    return fallbackTokenId;
-  } catch (error) {
-    console.error("❌ Error extrayendo token ID:", error);
-    const fallbackTokenId = Date.now().toString();
-    console.log("⚠️ Error al extraer token ID, usando fallback:", fallbackTokenId);
-    return fallbackTokenId;
-  }
-}
-
-// Helper function to get token ID from receipt (DEPRECATED)
-async function getTokenIdFromReceipt(receipt: any): Promise<string> {
-  try {
-    // This is simplified - in production, parse the Transfer event logs
-    const timestamp = Date.now();
-    const tokenId = (timestamp % 1000000).toString();
-    
-    console.log(`Token ID extracted from receipt: ${tokenId}`);
-    return tokenId;
-  } catch (error) {
-    console.error("Error extracting token ID:", error);
-    return "1";
-  }
-}
+// Removed deprecated helper functions:
+// - extractTokenIdFromLogs (replaced with direct contract totalSupply reading)  
+// - getTokenIdFromReceipt (replaced with waitForReceipt + totalSupply)
 
 // Function to mint NFT gaslessly
 async function mintNFTGasless(to: string, tokenURI: string, client: any) {
@@ -415,7 +371,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     let transactionHash: string;
     let tokenId: string;
     let gasless = false;
-    let generatedTokenId: string; // Enhanced numeric string for uniqueness
+    // tokenId will be extracted from contract after minting
 
     // PERFORMANCE OPTIMIZED: Fast gasless detection
     const gaslessAvailable = isGaslessAvailable();
@@ -516,8 +472,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       
       // Verificar configuración con NUEVO CONTRATO CRYPTOGIFT NFT
       const CRYPTOGIFT_NFT_CONTRACT = process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS; // 0xdF514FDC06D7f2cc51Db20aBF6d6F56582F796BE
-      const ERC6551_REGISTRY = process.env.NEXT_PUBLIC_ERC6551_REGISTRY; // 0x3cb823e40359b9698b942547d9d2241d531f2708
-      const TBA_IMPLEMENTATION = process.env.NEXT_PUBLIC_TBA_IMPLEMENTATION; // 0x60883bd1549cd618691ee38d838d131d304f2664
+      const ERC6551_REGISTRY = process.env.NEXT_PUBLIC_ERC6551_REGISTRY_ADDRESS; // 0x3cb823e40359b9698b942547d9d2241d531f2708
+      const TBA_IMPLEMENTATION = process.env.NEXT_PUBLIC_ERC6551_IMPLEMENTATION_ADDRESS; // 0x60883bd1549cd618691ee38d838d131d304f2664
       
       console.log("🏗️ Configuración ERC-6551 con NUEVO CONTRATO:");
       console.log("📝 CryptoGift NFT Contract (TÚ OWNER):", CRYPTOGIFT_NFT_CONTRACT);
@@ -589,7 +545,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
               console.log("🔍 Checking log:", log);
               
               // Check if this log is from our NFT contract
-              if (log.address && log.address.toLowerCase() === process.env.NEXT_PUBLIC_NFT_DROP_ADDRESS?.toLowerCase()) {
+              if (log.address && log.address.toLowerCase() === process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS?.toLowerCase()) {
                 console.log("✅ Found log from NFT contract:", log);
                 
                 // Try to extract tokenId from log data or use alternative approach
@@ -680,7 +636,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Final success
     // Generate share URL and QR code for the NFT
     const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://cryptogift-wallets.vercel.app';
-    const shareUrl = `${baseUrl}/token/${process.env.NEXT_PUBLIC_NFT_DROP_ADDRESS}/${tokenId}`;
+    const shareUrl = `${baseUrl}/token/${process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS}/${tokenId}`;
     const qrCode = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(shareUrl)}`;
 
     // Track referral activation if referrer is provided
@@ -796,7 +752,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     try {
       console.log("💾 CRITICAL DEBUG: Starting NFT metadata storage...");
       console.log("🔍 CRITICAL DEBUG: Storage parameters:", {
-        contractAddress: process.env.NEXT_PUBLIC_NFT_DROP_ADDRESS,
+        contractAddress: process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS,
         tokenId: tokenId,
         imageFileParameter: imageFile,
         imageFileType: typeof imageFile,
@@ -866,7 +822,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
 
       const nftMetadata = createNFTMetadata({
-        contractAddress: process.env.NEXT_PUBLIC_NFT_DROP_ADDRESS || '',
+        contractAddress: process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS || '',
         tokenId: tokenId,
         name: `CryptoGift NFT-Wallet #${tokenId}`,
         description: giftMessage || 'Un regalo cripto único creado con amor',
