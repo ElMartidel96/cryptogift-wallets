@@ -1,5 +1,5 @@
 import { NextApiRequest, NextApiResponse } from "next";
-import { createThirdwebClient, getContract, prepareContractCall, sendTransaction, readContract, getRpcClient } from "thirdweb";
+import { createThirdwebClient, getContract, prepareContractCall, sendTransaction, readContract, waitForReceipt } from "thirdweb";
 import { baseSepolia } from "thirdweb/chains";
 import { privateKeyToAccount } from "thirdweb/wallets";
 import { createBiconomySmartAccount, sendGaslessTransaction, validateBiconomyConfig, isGaslessAvailable } from "../../lib/biconomy";
@@ -597,9 +597,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         console.log("🔍 Waiting for transaction to be mined...");
         
         // Wait for transaction to be confirmed and get receipt
-        const rpcClient = getRpcClient({ client, chain: baseSepolia });
-        const receipt = await rpcClient.getTransactionReceipt({
-          hash: nftResult.transactionHash as `0x${string}`
+        const receipt = await waitForReceipt({
+          client,
+          chain: baseSepolia,
+          transactionHash: nftResult.transactionHash
         });
         
         console.log("📜 REAL Transaction receipt:", receipt);
