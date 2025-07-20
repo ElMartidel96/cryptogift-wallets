@@ -36,8 +36,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       environmentVariables: envCheck,
       testFileInfo,
       recommendations: [
-        config.nftStorage ? '✅ NFT.Storage configured' : '❌ Get free NFT.Storage API key from https://nft.storage/',
-        config.thirdweb ? '✅ ThirdWeb configured' : '❌ Check NEXT_PUBLIC_TW_CLIENT_ID',
+        config.hasNFTStorage ? '✅ NFT.Storage configured' : '❌ Get free NFT.Storage API key from https://nft.storage/',
+        config.hasThirdWeb ? '✅ ThirdWeb configured' : '❌ Check NEXT_PUBLIC_TW_CLIENT_ID',
         'Use this endpoint to verify IPFS configuration before minting'
       ]
     });
