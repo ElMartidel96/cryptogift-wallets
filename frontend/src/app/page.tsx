@@ -132,36 +132,36 @@ export default function Home() {
       <StatsSection />
 
       {/* How it Works Section */}
-      <section className="py-20 bg-white">
+      <section className="py-20 bg-bg-secondary dark:bg-bg-primary transition-colors duration-500">
         <div className="container mx-auto px-4">
-          <h2 className="text-3xl md:text-4xl font-bold text-center mb-16 text-gray-800">
+          <h2 className="text-3xl md:text-4xl font-bold text-center mb-16 text-text-primary transition-colors duration-300">
             ¿Cómo funciona?
           </h2>
           <div className="grid md:grid-cols-3 gap-8 max-w-4xl mx-auto">
             <div className="text-center">
-              <div className="w-16 h-16 bg-blue-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                <span className="text-white font-bold text-xl">1</span>
+              <div className="w-16 h-16 bg-blue-500 dark:bg-accent-gold rounded-full flex items-center justify-center mx-auto mb-4 transition-colors duration-300">
+                <span className="text-white dark:text-bg-primary font-bold text-xl">1</span>
               </div>
-              <h3 className="text-xl font-semibold mb-2">Sube tu Arte</h3>
-              <p className="text-gray-600">
+              <h3 className="text-xl font-semibold mb-2 text-text-primary transition-colors duration-300">Sube tu Arte</h3>
+              <p className="text-text-secondary transition-colors duration-300">
                 Carga una foto personal y aplica filtros IA para crear un NFT único
               </p>
             </div>
             <div className="text-center">
-              <div className="w-16 h-16 bg-purple-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                <span className="text-white font-bold text-xl">2</span>
+              <div className="w-16 h-16 bg-purple-500 dark:bg-accent-silver rounded-full flex items-center justify-center mx-auto mb-4 transition-colors duration-300">
+                <span className="text-white dark:text-bg-primary font-bold text-xl">2</span>
               </div>
-              <h3 className="text-xl font-semibold mb-2">Deposita Cripto</h3>
-              <p className="text-gray-600">
+              <h3 className="text-xl font-semibold mb-2 text-text-primary transition-colors duration-300">Deposita Cripto</h3>
+              <p className="text-text-secondary transition-colors duration-300">
                 Añade USDC que se guardará automáticamente en la wallet del NFT
               </p>
             </div>
             <div className="text-center">
-              <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                <span className="text-white font-bold text-xl">3</span>
+              <div className="w-16 h-16 bg-green-500 dark:bg-accent-gold rounded-full flex items-center justify-center mx-auto mb-4 transition-colors duration-300">
+                <span className="text-white dark:text-bg-primary font-bold text-xl">3</span>
               </div>
-              <h3 className="text-xl font-semibold mb-2">Comparte el Regalo</h3>
-              <p className="text-gray-600">
+              <h3 className="text-xl font-semibold mb-2 text-text-primary transition-colors duration-300">Comparte el Regalo</h3>
+              <p className="text-text-secondary transition-colors duration-300">
                 Envía el link o QR a tu amigo para que reclame su NFT-wallet
               </p>
             </div>
@@ -170,18 +170,21 @@ export default function Home() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 bg-gradient-to-r from-blue-600 to-purple-600">
+      <section className="py-20 bg-gradient-to-r from-blue-600 to-purple-600 
+                         dark:from-bg-primary dark:to-bg-secondary transition-all duration-500">
         <div className="container mx-auto px-4 text-center">
-          <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
+          <h2 className="text-3xl md:text-4xl font-bold text-white dark:text-text-primary mb-6 transition-colors duration-300">
             Regala el futuro hoy
           </h2>
-          <p className="text-xl text-blue-100 mb-8 max-w-2xl mx-auto">
+          <p className="text-xl text-blue-100 dark:text-text-secondary mb-8 max-w-2xl mx-auto transition-colors duration-300">
             Cada regalo es una invitación al ecosistema cripto. Empieza ahora y gana comisiones por cada amigo que invites.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <button
               onClick={handleCreateGift}
-              className="bg-white text-blue-600 px-8 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors"
+              className="bg-white dark:bg-bg-card text-blue-600 dark:text-accent-gold px-8 py-3 rounded-lg 
+                       font-semibold hover:bg-gray-100 dark:hover:bg-bg-secondary border dark:border-border-primary
+                       transition-all duration-300"
             >
               Crear mi Primer Regalo
             </button>
