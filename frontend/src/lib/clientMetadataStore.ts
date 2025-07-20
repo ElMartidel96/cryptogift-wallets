@@ -599,8 +599,7 @@ export function getDetailedCacheInfo(): any {
         navigator.storage.estimate().then(estimate => {
           info.browserStorage = {
             quota: estimate.quota,
-            usage: estimate.usage,
-            usageDetails: estimate.usageDetails
+            usage: estimate.usage
           };
           console.log('💾 Storage quota analysis:', info.browserStorage);
         }).catch(error => {
