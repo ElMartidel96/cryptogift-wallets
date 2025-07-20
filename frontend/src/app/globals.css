@@ -13,10 +13,45 @@
 	font-optical-sizing: auto;
 	font-style: normal;
 	font-variation-settings: 'slnt' 0;
+	
+	/* LIGHT THEME */
+	--background: 255 255 255;
+	--foreground: 15 23 42;
+	--accent: 251 146 60;
+	--muted: 248 250 252;
+	--nft-mosaic-opacity: 0.05;
+	--glass-blur: 12px;
+}
+
+.dark {
+	/* DARK THEME */
+	--background: 2 6 23;
+	--foreground: 248 250 252;
+	--accent: 251 146 60;
+	--muted: 30 41 59;
+	--nft-mosaic-opacity: 0.08;
+	--glass-blur: 16px;
+}
+
+/* SMOOTH TRANSITIONS FOR ALL THEME CHANGES */
+* {
+	transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+/* GLASS MORPHISM EFFECT */
+.glass-panel {
+	background: rgba(255, 255, 255, 0.1);
+	backdrop-filter: blur(var(--glass-blur));
+	border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.dark .glass-panel {
+	background: rgba(15, 23, 42, 0.3);
+	border: 1px solid rgba(51, 65, 85, 0.3);
 }
 
 @layer base {
 	body {
-		@apply bg-zinc-950 text-neutral-200;
+		@apply bg-background text-foreground;
 	}
 }

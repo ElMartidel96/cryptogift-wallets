@@ -6,21 +6,60 @@ const config: Config = {
     "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/app/**/*.{js,ts,jsx,tsx,mdx}",
   ],
+  darkMode: "class", // ← CRÍTICO para next-themes
   theme: {
     extend: {
       colors: {
-        background: "var(--background)",
-        foreground: "var(--foreground)",
+        // LIGHT THEME PALETTE
+        primary: {
+          50: '#fef7ee',
+          100: '#fdeacc', 
+          500: '#fb923c', // Golden accent
+          600: '#ea580c',
+          900: '#9a3412'
+        },
+        // DARK THEME PALETTE  
+        dark: {
+          50: '#f8fafc',
+          100: '#1e293b',
+          800: '#0f172a',
+          900: '#020617'
+        },
+        // SEMANTIC COLORS (auto dark variants)
+        background: 'hsl(var(--background))',
+        foreground: 'hsl(var(--foreground))',
+        accent: 'hsl(var(--accent))',
+        muted: 'hsl(var(--muted))',
       },
       animation: {
         'bounce-slow': 'bounce 2s infinite',
         'pulse-slow': 'pulse 3s infinite',
         'fade-in': 'fade-in 0.5s ease-out',
+        'theme-transition': 'theme-fade 0.3s ease-in-out',
+        'sun-rotate': 'rotate 20s linear infinite',
+        'moon-glow': 'glow 2s ease-in-out infinite alternate',
+        'panel-slide': 'slide-down 0.2s ease-out'
       },
       keyframes: {
         'fade-in': {
           '0%': { opacity: '0', transform: 'translateY(10px)' },
           '100%': { opacity: '1', transform: 'translateY(0)' },
+        },
+        'theme-fade': {
+          '0%': { opacity: '0' },
+          '100%': { opacity: '1' }
+        },
+        'rotate': {
+          '0%': { transform: 'rotate(0deg)' },
+          '100%': { transform: 'rotate(360deg)' }
+        },
+        'glow': {
+          '0%': { filter: 'drop-shadow(0 0 5px rgba(148, 163, 184, 0.5))' },
+          '100%': { filter: 'drop-shadow(0 0 15px rgba(148, 163, 184, 0.8))' }
+        },
+        'slide-down': {
+          '0%': { opacity: '0', transform: 'translateY(-10px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' }
         }
       },
       fontFamily: {
@@ -32,6 +71,9 @@ const config: Config = {
       },
     },
   },
-  plugins: [],
+  plugins: [
+    require('@tailwindcss/typography'),
+    require('tailwindcss-animate')
+  ],
 };
 export default config;
