@@ -2,68 +2,87 @@ import { baseSepolia } from "thirdweb/chains";
 
 export const ACTIVE_CHAIN = baseSepolia;
 
-// UNIFIED: Use only NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS for all NFT contract references
-export const NFT_DROP     = process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS!;
-export const TOKEN_DROP   = process.env.TOKEN_DROP!;
-export const EDITION_DROP = process.env.EDITION_DROP!;
-export const TBA_IMPL     = process.env.TBA_IMPL!;
-export const FACTORY_6551 = process.env.FACTORY_6551!;
-export const THIRDWEB_KEY = process.env.NEXT_PUBLIC_TW_CLIENT_ID!;
+// CRITICAL: Environment validation function - FAIL FAST if required vars missing
+const getRequiredEnvVar = (key: string, description: string): string => {
+  const value = process.env[key];
+  if (!value) {
+    throw new Error(
+      `❌ CRITICAL: Missing required environment variable '${key}' (${description}). ` +
+      `Please set this in your .env.local file. See .env.example for reference.`
+    );
+  }
+  return value;
+};
 
-// New constants for CryptoGift Wallets
-export const CHAIN_ID = parseInt(process.env.NEXT_PUBLIC_CHAIN_ID || "84532");
-export const CHAIN_NAME = process.env.NEXT_PUBLIC_CHAIN_NAME || "base-sepolia";
+const getOptionalEnvVar = (key: string, fallback: string): string => {
+  return process.env[key] || fallback;
+};
 
-// Contract Addresses (Base Sepolia Testnet)
-// CRITICAL FIX: Use unified contract address variable
-export const NFT_DROP_ADDRESS = process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS || "0x8DfCAfB320cBB7bcdbF4cc83A62bccA08B30F5D3";
-export const REF_TREASURY_ADDRESS = process.env.NEXT_PUBLIC_REF_TREASURY_ADDRESS || "0x75341Ce1E98c24F33b0AB0e5ABE3AaaC5b0A8f01"; // ReferralTreasury deployed address
-export const USDC_ADDRESS = process.env.NEXT_PUBLIC_USDC_ADDRESS || "0x036CbD53842c5426634e7929541eC2318f3dCF7e"; // Base Sepolia USDC
-export const ERC6551_REGISTRY = process.env.NEXT_PUBLIC_ERC6551_REGISTRY_ADDRESS || "0x000000006551c19487814612e58FE06813775758"; // Standard ERC6551 Registry
-export const TBA_IMPLEMENTATION = process.env.NEXT_PUBLIC_ERC6551_IMPLEMENTATION_ADDRESS || "0x2D25602551487C3f3354dD80D76D54383A243358"; // TBA Implementation
+// REQUIRED Environment Variables - NO FALLBACKS
+export const THIRDWEB_KEY = getRequiredEnvVar('NEXT_PUBLIC_TW_CLIENT_ID', 'ThirdWeb Client ID');
+export const NFT_DROP_ADDRESS = getRequiredEnvVar('NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS', 'CryptoGift NFT Contract');
+export const ERC6551_REGISTRY = getRequiredEnvVar('NEXT_PUBLIC_ERC6551_REGISTRY_ADDRESS', 'ERC-6551 Registry Contract');
+export const TBA_IMPLEMENTATION = getRequiredEnvVar('NEXT_PUBLIC_ERC6551_IMPLEMENTATION_ADDRESS', 'TBA Implementation Contract');
 
-// API Endpoints
-export const ZEROX_ENDPOINT = process.env.NEXT_PUBLIC_ZEROX_ENDPOINT || "https://base.api.0x.org/swap/v2";
-export const PERMIT2_ADDRESS = process.env.NEXT_PUBLIC_PERMIT2_ADDRESS || "0x000000000022D473030F116dDEE9F6B43aC78BA3";
-export const PAYMASTER_URL = process.env.NEXT_PUBLIC_PAYMASTER_URL || "https://paymaster.thirdweb.com/v1";
+// Chain Configuration - Required
+export const CHAIN_ID = parseInt(getRequiredEnvVar('NEXT_PUBLIC_CHAIN_ID', 'Chain ID'));
 
-// Configuration
-export const CREATION_FEE_PERCENT = parseInt(process.env.NEXT_PUBLIC_CREATION_FEE_PERCENT || "4");
-export const REFERRAL_COMMISSION_PERCENT = parseInt(process.env.NEXT_PUBLIC_REFERRAL_COMMISSION_PERCENT || "20");
-export const IPFS_GATEWAY = process.env.NEXT_PUBLIC_IPFS_GATEWAY || "https://gateway.pinata.cloud/ipfs/";
+// OPTIONAL Environment Variables - With reasonable fallbacks
+export const CHAIN_NAME = getOptionalEnvVar('NEXT_PUBLIC_CHAIN_NAME', 'base-sepolia');
+export const REF_TREASURY_ADDRESS = getOptionalEnvVar('NEXT_PUBLIC_REF_TREASURY_ADDRESS', '0x75341Ce1E98c24F33b0AB0e5ABE3AaaC5b0A8f01');
+export const USDC_ADDRESS = getOptionalEnvVar('NEXT_PUBLIC_USDC_ADDRESS', '0x036CbD53842c5426634e7929541eC2318f3dCF7e');
 
-// Biconomy Configuration
+// API Endpoints - Optional with fallbacks
+export const ZEROX_ENDPOINT = getOptionalEnvVar('NEXT_PUBLIC_ZEROX_ENDPOINT', 'https://base.api.0x.org/swap/v2');
+export const PERMIT2_ADDRESS = getOptionalEnvVar('NEXT_PUBLIC_PERMIT2_ADDRESS', '0x000000000022D473030F116dDEE9F6B43aC78BA3');
+export const PAYMASTER_URL = getOptionalEnvVar('NEXT_PUBLIC_PAYMASTER_URL', 'https://paymaster.thirdweb.com/v1');
+
+// Configuration Values
+export const CREATION_FEE_PERCENT = parseInt(getOptionalEnvVar('NEXT_PUBLIC_CREATION_FEE_PERCENT', '4'));
+export const REFERRAL_COMMISSION_PERCENT = parseInt(getOptionalEnvVar('NEXT_PUBLIC_REFERRAL_COMMISSION_PERCENT', '20'));
+export const IPFS_GATEWAY = getOptionalEnvVar('NEXT_PUBLIC_IPFS_GATEWAY', 'https://gateway.pinata.cloud/ipfs/');
+
+// Optional APIs
 export const BICONOMY_PAYMASTER_API_KEY = process.env.NEXT_PUBLIC_BICONOMY_PAYMASTER_API_KEY;
 export const BICONOMY_BUNDLER_URL = process.env.NEXT_PUBLIC_BICONOMY_BUNDLER_URL;
 
-// Validation
-export const validateEnvironment = () => {
-  const required = [
-    'NEXT_PUBLIC_TW_CLIENT_ID',
-    'NEXT_PUBLIC_CHAIN_ID',
-  ];
-  
-  const missing = required.filter(key => !process.env[key]);
-  
-  if (missing.length > 0) {
-    console.warn(`Missing environment variables: ${missing.join(', ')}. Using fallback values.`);
-  }
+// Legacy Exports (DEPRECATED - use NFT_DROP_ADDRESS)
+export const NFT_DROP = NFT_DROP_ADDRESS;
+export const TOKEN_DROP = process.env.TOKEN_DROP!;
+export const EDITION_DROP = process.env.EDITION_DROP!;
+export const TBA_IMPL = process.env.TBA_IMPL!;
+export const FACTORY_6551 = process.env.FACTORY_6551!;
 
-  // Log current configuration
-  console.log('🔧 Environment Configuration:', {
-    chainId: CHAIN_ID,
-    nftDrop: NFT_DROP_ADDRESS,
-    treasury: REF_TREASURY_ADDRESS,
-    usdc: USDC_ADDRESS,
-    clientId: THIRDWEB_KEY ? 'Configured' : 'Missing',
-    biconomy: BICONOMY_PAYMASTER_API_KEY ? 'Configured' : 'Missing'
-  });
+// Validation function for startup checks
+export const validateEnvironment = () => {
+  try {
+    // Test all required variables
+    console.log('🔧 Validating environment configuration...');
+    
+    console.log('✅ Required Environment Variables:');
+    console.log(`  ThirdWeb Client ID: ${THIRDWEB_KEY ? 'Configured' : 'Missing'}`);
+    console.log(`  NFT Contract: ${NFT_DROP_ADDRESS}`);
+    console.log(`  ERC-6551 Registry: ${ERC6551_REGISTRY}`);
+    console.log(`  TBA Implementation: ${TBA_IMPLEMENTATION}`);
+    console.log(`  Chain ID: ${CHAIN_ID}`);
+    
+    console.log('🔧 Optional Features:');
+    console.log(`  Biconomy Paymaster: ${BICONOMY_PAYMASTER_API_KEY ? 'Configured' : 'Not configured'}`);
+    console.log(`  Referral Treasury: ${REF_TREASURY_ADDRESS}`);
+    
+    console.log('✅ Environment validation passed!');
+    
+    return true;
+  } catch (error) {
+    console.error('❌ Environment validation failed:', error.message);
+    throw error;
+  }
 };
 
-// Common token addresses on Base
+// Common token addresses on Base Sepolia
 export const COMMON_TOKENS = {
   USDC: "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
-  WETH: "0x4200000000000000000000000000000000000006",
+  WETH: "0x4200000000000000000000000000000000000006", 
   DAI: "0x50c5725949A6F0c72E6C4a641F24049A917DB0Cb",
 } as const;
 

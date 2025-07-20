@@ -90,8 +90,8 @@ async function checkThirdWebContracts() {
     console.log("");
     console.log("# Direcciones sugeridas para .env.local:");
     console.log("NEXT_PUBLIC_PLAYER_NFT_ADDRESS=0x02101dfB77FDE026414827Fdc604ddAF224F0921");
-    console.log("NEXT_PUBLIC_ERC6551_REGISTRY=0x3cB823E40359B9698b942547D9d2241d531f2708");
-    console.log("NEXT_PUBLIC_TBA_IMPLEMENTATION=0x60883bD1549CD618691EE38D838d131d304f2664");
+    console.log("NEXT_PUBLIC_ERC6551_REGISTRY_ADDRESS=0x3cB823E40359B9698b942547D9d2241d531f2708");
+    console.log("NEXT_PUBLIC_ERC6551_IMPLEMENTATION_ADDRESS=0x60883bD1549CD618691EE38D838d131d304f2664");
     console.log("");
     console.log("⚠️  IMPORTANTE: Verifica estas direcciones en tu dashboard de ThirdWeb");
     console.log("🌐 Dashboard: https://thirdweb.com/dashboard");

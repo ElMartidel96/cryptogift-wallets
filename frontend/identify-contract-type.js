@@ -75,7 +75,7 @@ async function identifyContractType() {
     console.log("\\n🔍 PROBANDO MÉTODOS DE ERC6551 REGISTRY:");
     console.log("=========================================");
     
-    const registryAddress = process.env.NEXT_PUBLIC_ERC6551_REGISTRY;
+    const registryAddress = process.env.NEXT_PUBLIC_ERC6551_REGISTRY_ADDRESS;
     const registryContract = getContract({
       client,
       chain: baseSepolia,

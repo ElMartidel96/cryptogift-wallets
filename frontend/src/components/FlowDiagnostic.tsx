@@ -128,7 +128,7 @@ export const FlowDiagnostic: React.FC<FlowDiagnosticProps> = ({ contractAddress,
       try {
         // This would be the same metadata the mint process creates
         const mintMetadata: NFTMetadata = {
-          contractAddress: process.env.NEXT_PUBLIC_NFT_DROP_ADDRESS || '',
+          contractAddress: process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS || '',
           tokenId: tokenId,
           name: `CryptoGift NFT-Wallet #${tokenId}`,
           description: 'Un regalo cripto único creado con amor',

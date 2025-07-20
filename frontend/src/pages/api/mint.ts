@@ -276,10 +276,11 @@ async function mintNFTGasless(to: string, tokenURI: string, client: any) {
           params: []
         });
         
-        realTokenId = (totalSupply - BigInt(1)).toString();
-        console.log("🔄 GASLESS: FALLBACK TOKEN ID (corrected):");
+        // CRITICAL FIX: CryptoGiftNFT starts at tokenID=1, so totalSupply IS the latest tokenID  
+        realTokenId = totalSupply.toString();
+        console.log("🔄 GASLESS: FALLBACK TOKEN ID (FIXED for contract starting at 1):");
         console.log("  📊 Total supply:", totalSupply.toString());
-        console.log("  🎯 Token ID (supply-1):", realTokenId);
+        console.log("  🎯 Token ID (totalSupply directly):", realTokenId);
         
       } catch (supplyError) {
         console.log("⚠️ GASLESS: Token ID extraction failed, using transaction-based fallback");
@@ -681,10 +682,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             params: []
           });
           
-          actualTokenId = (totalSupply - BigInt(1)).toString();
-          console.log("🔄 FALLBACK TOKEN ID (corrected):");
+          // CRITICAL FIX: CryptoGiftNFT starts at tokenID=1, so totalSupply IS the latest tokenID
+          actualTokenId = totalSupply.toString();
+          console.log("🔄 FALLBACK TOKEN ID (FIXED for contract starting at 1):");
           console.log("  📊 Total supply:", totalSupply.toString());
-          console.log("  🎯 Token ID (supply-1):", actualTokenId);
+          console.log("  🎯 Token ID (totalSupply directly):", actualTokenId);
         }
         
       } catch (extractError) {

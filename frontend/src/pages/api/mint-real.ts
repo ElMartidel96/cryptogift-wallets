@@ -171,8 +171,8 @@ function createMetadata(request: MintRequest): any {
     tokenbound: {
       standard: "ERC-6551",
       version: "1.0",
-      registry: "0x000000006551c19487814612e58FE06813775758",
-      implementation: "0x2d25602551487c3f3354dd80d76d54383a243358"
+      registry: process.env.NEXT_PUBLIC_ERC6551_REGISTRY_ADDRESS,
+      implementation: process.env.NEXT_PUBLIC_ERC6551_IMPLEMENTATION_ADDRESS
     }
   };
 }
@@ -289,9 +289,10 @@ async function mintNFTReal(to: string, metadataUri: string): Promise<{
         params: []
       });
       
-      actualTokenId = (totalSupply - BigInt(1)).toString();
-      console.log("🔄 MINT-REAL: Fallback tokenId from totalSupply:", actualTokenId);
-      addMintLog('SUCCESS', 'TOKEN_ID_EXTRACTED', { tokenId: actualTokenId, method: 'totalsupply_fallback' });
+      // CRITICAL FIX: CryptoGiftNFT starts at tokenID=1, so totalSupply IS the latest tokenID
+      actualTokenId = totalSupply.toString();
+      console.log("🔄 MINT-REAL: Fallback tokenId from totalSupply (FIXED):", actualTokenId);
+      addMintLog('SUCCESS', 'TOKEN_ID_EXTRACTED', { tokenId: actualTokenId, method: 'totalsupply_fixed_fallback' });
     }
 
     const tokenId = actualTokenId;
@@ -400,7 +401,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
 
     // Step 4: Generate sharing URLs
     const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://cryptogift-wallets.vercel.app';
-    const shareUrl = `${baseUrl}/token/${process.env.NEXT_PUBLIC_NFT_DROP_ADDRESS}/${mintResult.tokenId}`;
+    const shareUrl = `${baseUrl}/token/${process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS}/${mintResult.tokenId}`;
     const qrCode = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(shareUrl)}`;
 
     const executionTime = Date.now() - startTime;
