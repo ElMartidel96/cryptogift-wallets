@@ -72,9 +72,24 @@ export async function storeNFTMetadata(metadata: NFTMetadata): Promise<void> {
     console.log(`🖼️ Image being stored: ${enhancedMetadata.image}`);
     console.log(`🖼️ Image CID: ${enhancedMetadata.imageIpfsCid}`);
     
-    // Store in Redis
+    // CRITICAL FIX: Filter out null/undefined values before storing in Redis
+    const cleanMetadata: Record<string, any> = {};
+    Object.entries(enhancedMetadata).forEach(([k, v]) => {
+      if (v !== null && v !== undefined) {
+        // Convert arrays and objects to JSON strings for Redis storage
+        if (typeof v === 'object' && v !== null) {
+          cleanMetadata[k] = JSON.stringify(v);
+        } else {
+          cleanMetadata[k] = String(v); // Redis expects string values
+        }
+      }
+    });
+    
     console.log(`💾 Calling redis.hset with key: ${key}`);
-    const setResult = await redis.hset(key, enhancedMetadata);
+    console.log(`🧹 Cleaned metadata keys:`, Object.keys(cleanMetadata));
+    console.log(`🔍 Filtered out null/undefined values`);
+    
+    const setResult = await redis.hset(key, cleanMetadata);
     console.log(`✅ Redis hset result:`, setResult);
     
     // Also add to wallet's NFT list if owner is specified
@@ -112,7 +127,21 @@ export async function getNFTMetadata(contractAddress: string, tokenId: string): 
     if (metadata && Object.keys(metadata).length > 0) {
       console.log(`✅ Found stored metadata for ${contractAddress}:${tokenId}`);
       console.log(`🆔 Unique ID: ${metadata.uniqueCreationId || 'legacy'}`);
-      return metadata as NFTMetadata;
+      
+      // CRITICAL FIX: Parse JSON strings back to objects for arrays/objects
+      const parsedMetadata: NFTMetadata = { ...metadata };
+      
+      // Parse attributes array if it exists
+      if (parsedMetadata.attributes && typeof parsedMetadata.attributes === 'string') {
+        try {
+          parsedMetadata.attributes = JSON.parse(parsedMetadata.attributes);
+        } catch (e) {
+          console.warn('⚠️ Failed to parse attributes:', e);
+          parsedMetadata.attributes = [];
+        }
+      }
+      
+      return parsedMetadata as NFTMetadata;
     } else {
       console.log(`❌ No metadata found in Redis for ${contractAddress}:${tokenId}`);
       return null;
