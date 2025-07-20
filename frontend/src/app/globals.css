@@ -19,16 +19,22 @@
 	--foreground: 15 23 42;
 	--accent: 251 146 60;
 	--muted: 100 116 139;
+	--card-bg: 255 255 255;
+	--border: 229 231 235;
+	--input-bg: 255 255 255;
 	--nft-mosaic-opacity: 0.05;
 	--glass-blur: 12px;
 }
 
 .dark {
 	/* DARK THEME */
-	--background: 2 6 23;
+	--background: 15 23 42;
 	--foreground: 248 250 252;
 	--accent: 251 146 60;
-	--muted: 30 41 59;
+	--muted: 148 163 184;
+	--card-bg: 30 41 59;
+	--border: 51 65 85;
+	--input-bg: 30 41 59;
 	--nft-mosaic-opacity: 0.08;
 	--glass-blur: 16px;
 }
@@ -40,14 +46,31 @@
 
 /* GLASS MORPHISM EFFECT */
 .glass-panel {
-	background: rgba(255, 255, 255, 0.1);
+	background: rgba(255, 255, 255, 0.8);
 	backdrop-filter: blur(var(--glass-blur));
-	border: 1px solid rgba(255, 255, 255, 0.2);
+	border: 1px solid rgba(229, 231, 235, 0.5);
 }
 
 .dark .glass-panel {
-	background: rgba(15, 23, 42, 0.3);
-	border: 1px solid rgba(51, 65, 85, 0.3);
+	background: rgba(30, 41, 59, 0.9);
+	border: 1px solid rgba(51, 65, 85, 0.5);
+}
+
+/* ADDITIONAL DARK MODE IMPROVEMENTS */
+.dark input,
+.dark textarea,
+.dark select {
+	background-color: hsl(var(--input-bg));
+	border-color: hsl(var(--border));
+	color: hsl(var(--foreground));
+}
+
+.dark .shadow-lg {
+	box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.1);
+}
+
+.dark .shadow-xl {
+	box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.1);
 }
 
 @layer base {

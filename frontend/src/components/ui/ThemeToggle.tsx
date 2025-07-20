@@ -15,41 +15,37 @@ export function ThemeToggle() {
 
   if (!mounted) {
     return (
-      <div className="flex items-center space-x-2 px-3 py-1 rounded-full bg-gray-200 text-gray-600">
-        <Sun size={16} />
-        <span className="text-sm font-medium">Light</span>
+      <div className="flex items-center space-x-1">
+        <Sun size={14} className="text-yellow-500" />
+        <span className="text-xs font-medium text-yellow-500">Light</span>
       </div>
     );
   }
 
   return (
     <div className="relative">
-      {/* TOGGLE PRINCIPAL - MINIMALISTA SEGÚN TEMA */}
+      {/* TOGGLE PRINCIPAL - SOLO SILUETAS SIN CONTORNOS */}
       <motion.button
         onClick={() => setIsOpen(!isOpen)}
-        className={`flex items-center space-x-2 px-3 py-1 rounded-full transition-all duration-300 ${
-          theme === 'dark' 
-            ? 'bg-gradient-to-r from-slate-400 to-slate-500 text-white shadow-lg hover:shadow-xl' 
-            : 'bg-gradient-to-r from-yellow-400 to-orange-500 text-white shadow-lg hover:shadow-xl'
-        }`}
+        className="flex items-center space-x-1 transition-all duration-300 hover:opacity-80"
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
       >
         {theme === 'dark' ? (
           <>
             <Moon 
-              size={16} 
-              className="animate-moon-glow" 
+              size={14} 
+              className="text-slate-400 animate-moon-glow" 
             />
-            <span className="text-sm font-medium">Dark</span>
+            <span className="text-xs font-medium text-slate-400">Dark</span>
           </>
         ) : (
           <>
             <Sun 
-              size={16} 
-              className="animate-sun-rotate" 
+              size={14} 
+              className="text-yellow-500 animate-sun-rotate" 
             />
-            <span className="text-sm font-medium">Light</span>
+            <span className="text-xs font-medium text-yellow-500">Light</span>
           </>
         )}
       </motion.button>
@@ -74,13 +70,13 @@ export function ThemeToggle() {
               className={`w-full flex items-center space-x-2 p-2 rounded-lg text-sm
                          transition-colors duration-200 ${
                 theme === 'light' 
-                  ? 'bg-gradient-to-r from-yellow-400 to-orange-500 text-white' 
-                  : 'hover:bg-gray-100 dark:hover:bg-gray-800'
+                  ? 'bg-yellow-500/20 text-yellow-600' 
+                  : 'hover:bg-gray-100 dark:hover:bg-gray-800 text-foreground'
               }`}
               whileHover={{ x: 2 }}
             >
-              <Sun size={16} className="text-yellow-500" />
-              <span>Light</span>
+              <Sun size={14} className="text-yellow-500" />
+              <span className="text-yellow-500">Light</span>
             </motion.button>
 
             {/* MODO OSCURO */}
@@ -92,16 +88,16 @@ export function ThemeToggle() {
               className={`w-full flex items-center space-x-2 p-2 rounded-lg text-sm mt-1
                          transition-colors duration-200 ${
                 theme === 'dark' 
-                  ? 'bg-gradient-to-r from-slate-400 to-slate-500 text-white' 
-                  : 'hover:bg-gray-100 dark:hover:bg-gray-800'
+                  ? 'bg-slate-400/20 text-slate-400' 
+                  : 'hover:bg-gray-100 dark:hover:bg-gray-800 text-foreground'
               }`}
               whileHover={{ x: 2 }}
             >
               <Moon 
-                size={16} 
+                size={14} 
                 className="text-slate-400" 
               />
-              <span>Dark</span>
+              <span className="text-slate-400">Dark</span>
             </motion.button>
           </motion.div>
         )}

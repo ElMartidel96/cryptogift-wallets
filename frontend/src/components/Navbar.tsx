@@ -48,41 +48,45 @@ export const Navbar: React.FC = () => {
                 <span className="text-white font-bold text-xl">🎁</span>
               </div>
             </div>
-            <div>
-              <div className="font-bold text-xl text-foreground">CryptoGift</div>
-              <div className="text-xs text-muted -mt-1">Wallets</div>
+            <div className="flex items-center space-x-3">
+              <div>
+                <div className="font-bold text-xl text-foreground">CryptoGift</div>
+                <div className="text-xs font-medium -mt-1 text-yellow-500 dark:text-slate-400">Wallets</div>
+              </div>
+              
+              {/* THEME TOGGLE MINIMALISTA - INMEDIATAMENTE DESPUÉS */}
+              <ThemeToggle />
             </div>
           </Link>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-8">
-            <Link href="/" className="text-foreground/70 hover:text-accent transition-colors">
+          <div className="hidden md:flex items-center space-x-4">
+            <Link href="/" className="text-foreground/70 hover:text-accent transition-colors text-sm">
               Inicio
             </Link>
-            <Link href="/referrals" className="text-foreground/70 hover:text-accent transition-colors">
+            <Link href="/referrals" className="text-foreground/70 hover:text-accent transition-colors text-sm">
               Referidos
             </Link>
-            <Link href="/knowledge" className="text-foreground/70 hover:text-accent transition-colors flex items-center">
+            <Link href="/knowledge" className="text-foreground/70 hover:text-accent transition-colors flex items-center text-sm">
               📚 Knowledge
             </Link>
-            <Link href="/nexuswallet" className="text-foreground/70 hover:text-accent transition-colors flex items-center">
+            <Link href="/nexuswallet" className="text-foreground/70 hover:text-accent transition-colors flex items-center text-sm">
               💼 NexusWallet
             </Link>
             
-            {/* THEME TOGGLE MINIMALISTA */}
-            <ThemeToggle />
-            
             {mounted && (
               account ? (
-                <WalletSwitcher className="min-w-[200px]" />
+                <WalletSwitcher className="min-w-[160px] scale-90" />
               ) : (
-                <ConnectButton
-                  client={client}
-                  appMetadata={{
-                    name: "CryptoGift Wallets",
-                    url: "https://cryptogift-wallets.vercel.app",
-                  }}
-                />
+                <div className="scale-90">
+                  <ConnectButton
+                    client={client}
+                    appMetadata={{
+                      name: "CryptoGift Wallets",
+                      url: "https://cryptogift-wallets.vercel.app",
+                    }}
+                  />
+                </div>
               )
             )}
           </div>

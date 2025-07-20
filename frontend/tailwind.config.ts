@@ -30,6 +30,9 @@ const config: Config = {
         foreground: 'hsl(var(--foreground))',
         accent: 'hsl(var(--accent))',
         muted: 'hsl(var(--muted))',
+        'card-bg': 'hsl(var(--card-bg))',
+        border: 'hsl(var(--border))',
+        'input-bg': 'hsl(var(--input-bg))',
       },
       animation: {
         'bounce-slow': 'bounce 2s infinite',
