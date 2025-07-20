@@ -203,10 +203,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
     }
 
-    // Just return the image CID for now
+    // Return both metadata and image CIDs for consistency
     res.status(200).json({
       success: true,
-      ipfsCid: cid,
+      ipfsCid: cid,        // This is actually the image CID for non-filtered images
+      imageIpfsCid: cid,   // CRITICAL FIX: Always provide imageIpfsCid so GiftWizard can use it
       ipfsUrl: `ipfs://${cid}`,
       httpUrl: `https://gateway.pinata.cloud/ipfs/${cid}`,
     });
