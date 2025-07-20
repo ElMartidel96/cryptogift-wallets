@@ -119,14 +119,17 @@ export default function NexusWalletPage() {
 
   if (!account) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 
+                     dark:from-bg-primary dark:via-bg-secondary dark:to-bg-primary 
+                     flex items-center justify-center transition-all duration-500">
         <div className="text-center">
           <div className="text-6xl mb-6">💼</div>
-          <h1 className="text-3xl font-bold text-gray-800 mb-4">Conecta tu Wallet</h1>
-          <p className="text-gray-600 mb-8">
+          <h1 className="text-3xl font-bold text-text-primary mb-4 transition-colors duration-300">Conecta tu Wallet</h1>
+          <p className="text-text-secondary mb-8 transition-colors duration-300">
             Necesitas conectar tu wallet para acceder a NexusWallet Hub
           </p>
-          <button className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-8 py-3 rounded-xl font-medium">
+          <button className="bg-gradient-to-r from-purple-500 to-pink-500 dark:from-accent-gold dark:to-accent-silver 
+                           text-white dark:text-bg-primary px-8 py-3 rounded-xl font-medium transition-all duration-300">
             🔗 Conectar Wallet
           </button>
         </div>
@@ -135,25 +138,28 @@ export default function NexusWalletPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50">
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 
+                   dark:from-bg-primary dark:via-bg-secondary dark:to-bg-primary transition-all duration-500">
       <div className="max-w-7xl mx-auto p-6">
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-800 mb-2">
+          <h1 className="text-4xl font-bold text-text-primary mb-2 transition-colors duration-300">
             💼 NexusWallet Hub
           </h1>
-          <p className="text-xl text-gray-600">
-            Tu centro financiero descentralizado con <span className="text-purple-600 font-bold">exchange fee-free</span>
+          <p className="text-xl text-text-secondary transition-colors duration-300">
+            Tu centro financiero descentralizado con <span className="text-purple-600 dark:text-accent-gold font-bold transition-colors duration-300">exchange fee-free</span>
           </p>
         </div>
 
         {/* Portfolio Overview */}
-        <div className="bg-gradient-to-r from-purple-600 to-pink-600 rounded-2xl p-8 text-white mb-8">
+        <div className="bg-gradient-to-r from-purple-600 to-pink-600 
+                       dark:from-accent-gold dark:to-accent-silver rounded-2xl p-8 
+                       text-white dark:text-bg-primary mb-8 transition-all duration-500">
           <div className="grid md:grid-cols-3 gap-8">
             <div>
               <div className="text-sm opacity-80">Valor Total del Portfolio</div>
               <div className="text-4xl font-bold">${totalValue.toLocaleString()}</div>
-              <div className={`text-sm mt-2 ${totalChange >= 0 ? 'text-green-300' : 'text-red-300'}`}>
+              <div className={`text-sm mt-2 ${totalChange >= 0 ? 'text-green-300 dark:text-green-400' : 'text-red-300 dark:text-red-400'} transition-colors duration-300`}>
                 {totalChange >= 0 ? '↗️' : '↘️'} ${Math.abs(totalChange).toFixed(2)} (24h)
               </div>
             </div>
@@ -161,13 +167,13 @@ export default function NexusWalletPage() {
             <div>
               <div className="text-sm opacity-80">Ingresos por Referidos (Este Mes)</div>
               <div className="text-3xl font-bold">$456.75</div>
-              <div className="text-sm text-green-300 mt-2">↗️ +23% vs mes anterior</div>
+              <div className="text-sm text-green-300 dark:text-green-400 mt-2 transition-colors duration-300">↗️ +23% vs mes anterior</div>
             </div>
             
             <div>
               <div className="text-sm opacity-80">CryptoGift Tokens (CGW)</div>
               <div className="text-3xl font-bold">2,500 CGW</div>
-              <div className="text-sm text-purple-200 mt-2">🎁 Earned through platform usage</div>
+              <div className="text-sm text-purple-200 dark:text-bg-secondary mt-2 transition-colors duration-300">🎁 Earned through platform usage</div>
             </div>
           </div>
         </div>
@@ -186,8 +192,8 @@ export default function NexusWalletPage() {
               onClick={() => setActiveTab(tab.id)}
               className={`px-6 py-3 rounded-xl font-medium transition-all ${
                 activeTab === tab.id
-                  ? 'bg-purple-500 text-white shadow-lg'
-                  : 'bg-white text-gray-600 hover:bg-gray-50'
+                  ? 'bg-purple-500 dark:bg-accent-gold text-white dark:text-bg-primary shadow-lg'
+                  : 'bg-bg-card text-text-secondary hover:bg-bg-secondary'
               }`}
             >
               <div>{tab.name}</div>
@@ -201,22 +207,23 @@ export default function NexusWalletPage() {
           <div className="grid lg:grid-cols-3 gap-8">
             {/* Assets */}
             <div className="lg:col-span-2">
-              <div className="bg-white rounded-2xl p-6 shadow-sm">
-                <h3 className="text-xl font-bold text-gray-800 mb-6">💎 Tus Assets</h3>
+              <div className="bg-bg-card rounded-2xl p-6 shadow-sm transition-colors duration-300">
+                <h3 className="text-xl font-bold text-text-primary mb-6 transition-colors duration-300">💎 Tus Assets</h3>
                 <div className="space-y-4">
                   {assets.map(asset => (
-                    <div key={asset.symbol} className="flex items-center justify-between p-4 border border-gray-100 rounded-xl hover:bg-gray-50">
+                    <div key={asset.symbol} className="flex items-center justify-between p-4 border border-border-primary 
+                                                       rounded-xl hover:bg-bg-secondary transition-colors duration-300">
                       <div className="flex items-center">
                         <div className="text-2xl mr-4">{asset.icon}</div>
                         <div>
-                          <div className="font-bold text-gray-800">{asset.symbol}</div>
-                          <div className="text-sm text-gray-500">{asset.name}</div>
+                          <div className="font-bold text-text-primary transition-colors duration-300">{asset.symbol}</div>
+                          <div className="text-sm text-text-secondary transition-colors duration-300">{asset.name}</div>
                         </div>
                       </div>
                       <div className="text-right">
-                        <div className="font-bold text-gray-800">{asset.balance.toLocaleString()}</div>
-                        <div className="text-sm text-gray-500">${asset.value.toLocaleString()}</div>
-                        <div className={`text-xs ${asset.change24h >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                        <div className="font-bold text-text-primary transition-colors duration-300">{asset.balance.toLocaleString()}</div>
+                        <div className="text-sm text-text-secondary transition-colors duration-300">${asset.value.toLocaleString()}</div>
+                        <div className={`text-xs ${asset.change24h >= 0 ? 'text-green-600 dark:text-accent-gold' : 'text-red-600 dark:text-red-400'} transition-colors duration-300`}>
                           {asset.change24h >= 0 ? '+' : ''}{asset.change24h}%
                         </div>
                       </div>
@@ -228,12 +235,14 @@ export default function NexusWalletPage() {
 
             {/* Quick Actions */}
             <div>
-              <div className="bg-white rounded-2xl p-6 shadow-sm">
-                <h3 className="text-xl font-bold text-gray-800 mb-6">⚡ Acciones Rápidas</h3>
+              <div className="bg-bg-card rounded-2xl p-6 shadow-sm transition-colors duration-300">
+                <h3 className="text-xl font-bold text-text-primary mb-6 transition-colors duration-300">⚡ Acciones Rápidas</h3>
                 <div className="space-y-4">
                   <button 
                     onClick={() => setActiveTab('swap')}
-                    className="w-full p-4 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-xl hover:opacity-90 transition-opacity"
+                    className="w-full p-4 bg-gradient-to-r from-blue-500 to-cyan-500 
+                             dark:from-accent-gold dark:to-accent-silver text-white dark:text-bg-primary 
+                             rounded-xl hover:opacity-90 transition-all duration-300"
                   >
                     <div className="font-bold">🔄 Fee-Free Swap</div>
                     <div className="text-sm opacity-90">Intercambio sin comisiones</div>
@@ -241,7 +250,9 @@ export default function NexusWalletPage() {
                   
                   <button 
                     onClick={() => setActiveTab('earn')}
-                    className="w-full p-4 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-xl hover:opacity-90 transition-opacity"
+                    className="w-full p-4 bg-gradient-to-r from-green-500 to-emerald-500 
+                             dark:from-accent-silver dark:to-accent-gold text-white dark:text-bg-primary 
+                             rounded-xl hover:opacity-90 transition-all duration-300"
                   >
                     <div className="font-bold">💰 Stake & Earn</div>
                     <div className="text-sm opacity-90">Genera ingresos pasivos</div>
@@ -249,7 +260,9 @@ export default function NexusWalletPage() {
                   
                   <button 
                     onClick={() => setActiveTab('send')}
-                    className="w-full p-4 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-xl hover:opacity-90 transition-opacity"
+                    className="w-full p-4 bg-gradient-to-r from-purple-500 to-pink-500 
+                             dark:from-accent-gold dark:to-accent-silver text-white dark:text-bg-primary 
+                             rounded-xl hover:opacity-90 transition-all duration-300"
                   >
                     <div className="font-bold">📤 Send Instantly</div>
                     <div className="text-sm opacity-90">Transferencias gasless</div>
@@ -258,20 +271,20 @@ export default function NexusWalletPage() {
               </div>
 
               {/* Security Features */}
-              <div className="bg-white rounded-2xl p-6 shadow-sm mt-6">
-                <h3 className="text-lg font-bold text-gray-800 mb-4">🔐 Seguridad</h3>
+              <div className="bg-bg-card rounded-2xl p-6 shadow-sm mt-6 transition-colors duration-300">
+                <h3 className="text-lg font-bold text-text-primary mb-4 transition-colors duration-300">🔐 Seguridad</h3>
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">Autenticación 2FA</span>
-                    <span className="text-green-600">✅ Activa</span>
+                    <span className="text-sm text-text-secondary transition-colors duration-300">Autenticación 2FA</span>
+                    <span className="text-green-600 dark:text-accent-gold transition-colors duration-300">✅ Activa</span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">Guardians Setup</span>
-                    <span className="text-green-600">✅ 3/3</span>
+                    <span className="text-sm text-text-secondary transition-colors duration-300">Guardians Setup</span>
+                    <span className="text-green-600 dark:text-accent-gold transition-colors duration-300">✅ 3/3</span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">Smart Contract Audit</span>
-                    <span className="text-green-600">✅ OpenZeppelin</span>
+                    <span className="text-sm text-text-secondary transition-colors duration-300">Smart Contract Audit</span>
+                    <span className="text-green-600 dark:text-accent-gold transition-colors duration-300">✅ OpenZeppelin</span>
                   </div>
                 </div>
               </div>
@@ -436,7 +449,9 @@ export default function NexusWalletPage() {
         )}
 
         {/* Platform Stats */}
-        <div className="mt-12 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl p-8 text-white">
+        <div className="mt-12 bg-gradient-to-r from-indigo-600 to-purple-600 
+                       dark:from-accent-gold dark:to-accent-silver rounded-2xl p-8 
+                       text-white dark:text-bg-primary transition-all duration-500">
           <h3 className="text-2xl font-bold mb-6">🌐 Estadísticas de la Plataforma</h3>
           <div className="grid md:grid-cols-4 gap-6">
             <div className="text-center">

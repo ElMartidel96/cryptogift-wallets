@@ -148,17 +148,18 @@ export default function KnowledgePage() {
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 
+                   dark:from-bg-primary dark:via-bg-secondary dark:to-bg-primary transition-all duration-500">
       <div className="max-w-7xl mx-auto p-6">
         {/* Header */}
         <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-gray-800 mb-4">
+          <h1 className="text-4xl font-bold text-text-primary mb-4 transition-colors duration-300">
             📚 CryptoGift Knowledge Academy
           </h1>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+          <p className="text-xl text-text-secondary max-w-3xl mx-auto transition-colors duration-300">
             Aprende cripto de forma simple y didáctica. Desde conceptos básicos hasta estrategias avanzadas.
             <br />
-            <span className="text-purple-600 font-medium">Todo lo que necesitas para dominar el mundo cripto</span>
+            <span className="text-purple-600 dark:text-accent-gold font-medium transition-colors duration-300">Todo lo que necesitas para dominar el mundo cripto</span>
           </p>
         </div>
 
@@ -170,12 +171,15 @@ export default function KnowledgePage() {
               placeholder="🔍 Buscar temas, tutoriales, conceptos..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full px-6 py-4 rounded-2xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 text-lg"
+              className="w-full px-6 py-4 rounded-2xl border border-border-primary bg-bg-card text-text-primary
+                       focus:outline-none focus:ring-2 focus:ring-purple-500 dark:focus:ring-accent-gold 
+                       text-lg transition-all duration-300"
             />
             {searchQuery && (
               <button
                 onClick={() => setSearchQuery('')}
-                className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                className="absolute right-4 top-1/2 transform -translate-y-1/2 text-text-muted 
+                         hover:text-text-secondary transition-colors duration-300"
               >
                 ✕
               </button>
@@ -191,8 +195,8 @@ export default function KnowledgePage() {
               onClick={() => setSelectedCategory(category.id)}
               className={`px-6 py-3 rounded-xl font-medium transition-all ${
                 selectedCategory === category.id
-                  ? category.color + ' shadow-lg scale-105'
-                  : 'bg-white text-gray-600 hover:bg-gray-50'
+                  ? category.color + ' dark:bg-accent-gold/20 dark:text-accent-gold shadow-lg scale-105'
+                  : 'bg-bg-card text-text-secondary hover:bg-bg-secondary'
               }`}
             >
               {category.icon} {category.name}
@@ -202,21 +206,21 @@ export default function KnowledgePage() {
 
         {/* Quick Stats */}
         <div className="grid md:grid-cols-4 gap-6 mb-12">
-          <div className="bg-white p-6 rounded-2xl shadow-sm text-center">
-            <div className="text-3xl font-bold text-blue-600">50+</div>
-            <div className="text-sm text-gray-600">Lecciones Disponibles</div>
+          <div className="bg-bg-card p-6 rounded-2xl shadow-sm text-center transition-colors duration-300">
+            <div className="text-3xl font-bold text-blue-600 dark:text-accent-gold transition-colors duration-300">50+</div>
+            <div className="text-sm text-text-secondary transition-colors duration-300">Lecciones Disponibles</div>
           </div>
-          <div className="bg-white p-6 rounded-2xl shadow-sm text-center">
-            <div className="text-3xl font-bold text-green-600">15h</div>
-            <div className="text-sm text-gray-600">Contenido Total</div>
+          <div className="bg-bg-card p-6 rounded-2xl shadow-sm text-center transition-colors duration-300">
+            <div className="text-3xl font-bold text-green-600 dark:text-accent-silver transition-colors duration-300">15h</div>
+            <div className="text-sm text-text-secondary transition-colors duration-300">Contenido Total</div>
           </div>
-          <div className="bg-white p-6 rounded-2xl shadow-sm text-center">
-            <div className="text-3xl font-bold text-purple-600">98%</div>
-            <div className="text-sm text-gray-600">Satisfacción</div>
+          <div className="bg-bg-card p-6 rounded-2xl shadow-sm text-center transition-colors duration-300">
+            <div className="text-3xl font-bold text-purple-600 dark:text-accent-gold transition-colors duration-300">98%</div>
+            <div className="text-sm text-text-secondary transition-colors duration-300">Satisfacción</div>
           </div>
-          <div className="bg-white p-6 rounded-2xl shadow-sm text-center">
-            <div className="text-3xl font-bold text-orange-600">24/7</div>
-            <div className="text-sm text-gray-600">Asistente AI</div>
+          <div className="bg-bg-card p-6 rounded-2xl shadow-sm text-center transition-colors duration-300">
+            <div className="text-3xl font-bold text-orange-600 dark:text-accent-silver transition-colors duration-300">24/7</div>
+            <div className="text-sm text-text-secondary transition-colors duration-300">Asistente AI</div>
           </div>
         </div>
 
@@ -225,7 +229,7 @@ export default function KnowledgePage() {
           {filteredModules.map(module => (
             <div
               key={module.id}
-              className={`bg-white rounded-2xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden ${
+              className={`bg-bg-card rounded-2xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden ${
                 module.isLocked ? 'opacity-75' : 'cursor-pointer hover:scale-105'
               }`}
             >
@@ -237,34 +241,37 @@ export default function KnowledgePage() {
                       {module.level}
                     </span>
                     {module.isLocked && (
-                      <span className="px-2 py-1 bg-gray-100 text-gray-600 rounded-full text-xs font-medium">
+                      <span className="px-2 py-1 bg-bg-secondary dark:bg-bg-primary text-text-secondary 
+                                     rounded-full text-xs font-medium transition-colors duration-300">
                         🔒 Bloqueado
                       </span>
                     )}
                   </div>
                 </div>
 
-                <h3 className="text-xl font-bold text-gray-800 mb-2">
+                <h3 className="text-xl font-bold text-text-primary mb-2 transition-colors duration-300">
                   {module.title}
                 </h3>
                 
-                <p className="text-gray-600 mb-4 text-sm">
+                <p className="text-text-secondary mb-4 text-sm transition-colors duration-300">
                   {module.description}
                 </p>
 
-                <div className="flex items-center justify-between text-sm text-gray-500 mb-4">
+                <div className="flex items-center justify-between text-sm text-text-muted mb-4 transition-colors duration-300">
                   <span>⏱️ {module.duration}</span>
                   <span>📖 {module.topics.length} temas</span>
                 </div>
 
                 <div className="flex flex-wrap gap-1 mb-4">
                   {module.topics.slice(0, 3).map(topic => (
-                    <span key={topic} className="px-2 py-1 bg-gray-100 text-gray-600 rounded text-xs">
+                    <span key={topic} className="px-2 py-1 bg-bg-secondary dark:bg-bg-primary text-text-secondary 
+                                               rounded text-xs transition-colors duration-300">
                       {topic}
                     </span>
                   ))}
                   {module.topics.length > 3 && (
-                    <span className="px-2 py-1 bg-gray-100 text-gray-600 rounded text-xs">
+                    <span className="px-2 py-1 bg-bg-secondary dark:bg-bg-primary text-text-secondary 
+                                   rounded text-xs transition-colors duration-300">
                       +{module.topics.length - 3} más
                     </span>
                   )}
@@ -272,17 +279,20 @@ export default function KnowledgePage() {
 
                 {module.isLocked ? (
                   <div className="text-center py-3">
-                    <p className="text-sm text-gray-500 mb-2">
+                    <p className="text-sm text-text-muted mb-2 transition-colors duration-300">
                       Completa &quot;{module.prerequisite}&quot; para desbloquear
                     </p>
-                    <button className="px-4 py-2 bg-gray-200 text-gray-500 rounded-lg cursor-not-allowed">
+                    <button className="px-4 py-2 bg-bg-secondary dark:bg-bg-primary text-text-muted 
+                                     rounded-lg cursor-not-allowed transition-colors duration-300">
                       🔒 Bloqueado
                     </button>
                   </div>
                 ) : (
                   <Link
                     href={`/knowledge/${module.id}`}
-                    className="block w-full text-center py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg font-medium hover:opacity-90 transition-opacity"
+                    className="block w-full text-center py-3 bg-gradient-to-r from-purple-500 to-pink-500 
+                             dark:from-accent-gold dark:to-accent-silver text-white dark:text-bg-primary 
+                             rounded-lg font-medium hover:opacity-90 transition-all duration-300"
                   >
                     🚀 Comenzar Lección
                   </Link>
@@ -293,14 +303,16 @@ export default function KnowledgePage() {
         </div>
 
         {/* AI Assistant Banner */}
-        <div className="mt-12 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-2xl p-8 text-white">
+        <div className="mt-12 bg-gradient-to-r from-indigo-500 to-purple-600 
+                       dark:from-accent-gold dark:to-accent-silver rounded-2xl p-8 
+                       text-white dark:text-bg-primary transition-all duration-500">
           <div className="flex items-center justify-between">
             <div className="flex-1">
               <h3 className="text-2xl font-bold mb-2">🤖 Asistente AI Cripto</h3>
-              <p className="text-indigo-100 mb-4">
+              <p className="text-indigo-100 dark:text-bg-secondary mb-4 transition-colors duration-300">
                 ¿Tienes dudas específicas? Nuestro asistente AI está aquí 24/7 para ayudarte con cualquier pregunta sobre cripto.
               </p>
-              <ul className="text-sm text-indigo-100 space-y-1">
+              <ul className="text-sm text-indigo-100 dark:text-bg-secondary space-y-1 transition-colors duration-300">
                 <li>✨ Respuestas personalizadas a tus preguntas</li>
                 <li>🎯 Recomendaciones de aprendizaje</li>
                 <li>🔗 Enlaces a lecciones relevantes</li>
@@ -308,7 +320,9 @@ export default function KnowledgePage() {
               </ul>
             </div>
             <div className="ml-8">
-              <button className="bg-white text-indigo-600 px-8 py-4 rounded-xl font-bold hover:bg-indigo-50 transition-colors">
+              <button className="bg-white dark:bg-bg-primary text-indigo-600 dark:text-accent-gold px-8 py-4 
+                               rounded-xl font-bold hover:bg-indigo-50 dark:hover:bg-bg-secondary 
+                               transition-all duration-300">
                 💬 Chatear Ahora
               </button>
             </div>
@@ -316,26 +330,26 @@ export default function KnowledgePage() {
         </div>
 
         {/* Progress Tracking */}
-        <div className="mt-8 bg-white rounded-2xl p-6">
-          <h3 className="text-xl font-bold text-gray-800 mb-4">📈 Tu Progreso de Aprendizaje</h3>
+        <div className="mt-8 bg-bg-card rounded-2xl p-6 transition-colors duration-300">
+          <h3 className="text-xl font-bold text-text-primary mb-4 transition-colors duration-300">📈 Tu Progreso de Aprendizaje</h3>
           <div className="grid md:grid-cols-3 gap-6">
             <div className="text-center">
-              <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                <span className="text-2xl font-bold text-green-600">75%</span>
+              <div className="w-20 h-20 bg-green-100 dark:bg-accent-gold/20 rounded-full flex items-center justify-center mx-auto mb-3 transition-colors duration-300">
+                <span className="text-2xl font-bold text-green-600 dark:text-accent-gold transition-colors duration-300">75%</span>
               </div>
-              <div className="text-sm text-gray-600">Básico Completado</div>
+              <div className="text-sm text-text-secondary transition-colors duration-300">Básico Completado</div>
             </div>
             <div className="text-center">
-              <div className="w-20 h-20 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                <span className="text-2xl font-bold text-yellow-600">45%</span>
+              <div className="w-20 h-20 bg-yellow-100 dark:bg-accent-silver/20 rounded-full flex items-center justify-center mx-auto mb-3 transition-colors duration-300">
+                <span className="text-2xl font-bold text-yellow-600 dark:text-accent-silver transition-colors duration-300">45%</span>
               </div>
-              <div className="text-sm text-gray-600">Intermedio en Progreso</div>
+              <div className="text-sm text-text-secondary transition-colors duration-300">Intermedio en Progreso</div>
             </div>
             <div className="text-center">
-              <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                <span className="text-2xl font-bold text-gray-600">0%</span>
+              <div className="w-20 h-20 bg-bg-secondary dark:bg-bg-primary rounded-full flex items-center justify-center mx-auto mb-3 transition-colors duration-300">
+                <span className="text-2xl font-bold text-text-muted transition-colors duration-300">0%</span>
               </div>
-              <div className="text-sm text-gray-600">Avanzado Pendiente</div>
+              <div className="text-sm text-text-secondary transition-colors duration-300">Avanzado Pendiente</div>
             </div>
           </div>
         </div>
