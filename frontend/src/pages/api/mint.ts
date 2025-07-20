@@ -187,7 +187,7 @@ async function mintNFTGasless(to: string, tokenURI: string, client: any) {
     
     // Get NFT contract with custom RPC
     console.log("🔍 GASLESS MINT Step 3c: Getting NFT contract", { 
-      contractAddress: process.env.NEXT_PUBLIC_NFT_DROP_ADDRESS 
+      contractAddress: process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS 
     });
     
     const customChain = {
@@ -198,7 +198,7 @@ async function mintNFTGasless(to: string, tokenURI: string, client: any) {
     const nftContract = getContract({
       client,
       chain: customChain,
-      address: process.env.NEXT_PUBLIC_NFT_DROP_ADDRESS!,
+      address: process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS!,
     });
     console.log("✅ GASLESS MINT Step 3c SUCCESS: NFT contract obtained");
 
@@ -453,7 +453,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       };
 
       console.log("🔍 CONTRACT DEBUG: Using Factory as NFT contract");
-      console.log("📝 Contract address:", process.env.NEXT_PUBLIC_NFT_DROP_ADDRESS);
+      console.log("📝 Contract address:", process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS);
       console.log("📝 Recipient:", to);
       console.log("📝 Metadata URI:", metadataUri);
       console.log("📝 Initial Balance:", initialBalance, "USDC");
@@ -464,7 +464,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const nftDropContract = getContract({
         client,
         chain: customChain,
-        address: process.env.NEXT_PUBLIC_NFT_DROP_ADDRESS!, // This is now the Factory
+        address: process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS!, // CORRECT: Use CryptoGift NFT contract
       });
       
       // ESTRATEGIA CORRECTA ERC-6551: Crear Token Bound Account directamente
@@ -613,12 +613,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       console.log("❌ CONTRACT ERROR DETAILS:");
       console.log("📝 Error message:", contractError.message);
       console.log("📝 Error name:", contractError.name);
-      console.log("📝 Contract address:", process.env.NEXT_PUBLIC_NFT_DROP_ADDRESS);
+      console.log("📝 Contract address:", process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS);
       console.log("📝 Chain ID:", 84532);
       addMintLog('ERROR', 'CONTRACT_EXECUTION_ERROR', {
         error: contractError.message,
         stack: contractError.stack,
-        contract: process.env.NEXT_PUBLIC_NFT_DROP_ADDRESS,
+        contract: process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS,
         chainId: 84532
       });
       
