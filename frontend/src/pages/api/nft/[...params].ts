@@ -167,7 +167,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // DISABLED FOR TESTING: Skip stored metadata completely
     let nft;
     
-    console.log("🚫 CACHE DISABLED: Skipping stored metadata for testing");
+    console.log("🔍 CACHE REACTIVATED: Checking for stored metadata...");
     console.log("🔍 Search parameters:", { 
       contractAddress, 
       tokenId,
@@ -175,8 +175,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       tokenIdType: typeof tokenId 
     });
     
-    // FORCE: Skip Redis/Upstash lookup entirely for testing
-    const storedMetadata = null; // await getNFTMetadata(contractAddress, tokenId);
+    // REACTIVATED: Normal metadata lookup from storage
+    const storedMetadata = await getNFTMetadata(contractAddress, tokenId);
     
     console.log("🔍 CRITICAL DEBUG: Redis lookup result:", {
       found: !!storedMetadata,

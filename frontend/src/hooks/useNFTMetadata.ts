@@ -17,39 +17,57 @@ export function useNFTMetadata(contractAddress: string, tokenId: string, walletA
       setIsLoading(true);
       setError(null);
       
-      // CACHE DISABLED FOR TESTING: Skip client storage completely
-      console.log('🚫 CLIENT CACHE DISABLED: Forcing API call for testing');
+      // REACTIVATED: Normal client cache behavior
+      console.log('✅ CLIENT CACHE REACTIVATED: Using normal flow');
       
-      // ALWAYS use API directly - no client cache
-      console.log('🔍 DIRECT API: Loading from server...');
-      const response = await fetch(`/api/nft/${contractAddress}/${tokenId}?cache=bypass&t=${Date.now()}`, {
-        headers: {
-          'Cache-Control': 'no-cache, no-store, must-revalidate',
-          'Pragma': 'no-cache',
-          'Expires': '0'
+      // First try wallet-scoped client storage if wallet address is available
+      if (walletAddress) {
+        const clientMetadata = getNFTMetadataClient(contractAddress, tokenId, walletAddress);
+        
+        if (clientMetadata) {
+          console.log('✅ Found wallet-scoped client metadata:', clientMetadata);
+          setMetadata(clientMetadata);
+          setIsLoading(false);
+          return;
         }
-      });
+      }
+      
+      // Fallback to API
+      console.log('🔍 No client metadata, trying API...');
+      const response = await fetch(`/api/nft/${contractAddress}/${tokenId}`);
       
       if (response.ok) {
         const apiData = await response.json();
         console.log('✅ API response:', apiData);
         
-        // DISABLED CLIENT STORAGE FOR TESTING
-        console.log('🚫 CLIENT STORAGE DISABLED: Not storing locally for testing');
-        
-        // Always use API data directly without storing
-        const newMetadata: NFTMetadata = {
-          contractAddress,
-          tokenId,
-          name: apiData.name || `CryptoGift NFT #${tokenId}`,
-          description: apiData.description || '',
-          image: apiData.image,
-          attributes: apiData.attributes || [],
-          createdAt: new Date().toISOString()
-        };
-        
-        console.log('📝 DIRECT API: Set metadata from API:', newMetadata);
-        setMetadata(newMetadata);
+        // If API has real image data, store it in client
+        if (apiData.image && !apiData.image.includes('placeholder')) {
+          const newMetadata: NFTMetadata = {
+            contractAddress,
+            tokenId,
+            name: apiData.name || `CryptoGift NFT #${tokenId}`,
+            description: apiData.description || '',
+            image: apiData.image,
+            attributes: apiData.attributes || [],
+            createdAt: new Date().toISOString()
+          };
+          
+          // Store with wallet address if available, otherwise use dummy address for testing
+          const addressToUse = walletAddress || '0x0000000000000000000000000000000000000000';
+          storeNFTMetadataClient(newMetadata, addressToUse);
+          setMetadata(newMetadata);
+        } else {
+          // Use placeholder metadata
+          setMetadata({
+            contractAddress,
+            tokenId,
+            name: apiData.name || `CryptoGift NFT #${tokenId}`,
+            description: apiData.description || '',
+            image: apiData.image || '/images/cg-wallet-placeholder.png',
+            attributes: apiData.attributes || [],
+            createdAt: new Date().toISOString()
+          });
+        }
       } else {
         throw new Error(`API failed: ${response.status}`);
       }
