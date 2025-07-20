@@ -1,18 +1,28 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useActiveAccount } from 'thirdweb/react';
+import dynamic from 'next/dynamic';
 
-export default function MigrationPage() {
+function MigrationPageContent() {
   const account = useActiveAccount();
   const [contractAddress, setContractAddress] = useState('0x54314166B36E3Cc66cFb36265D99697f4F733231');
   const [analysisResult, setAnalysisResult] = useState<any>(null);
   const [migrationResult, setMigrationResult] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Simple admin check (you should implement proper admin auth)
   const isAdmin = account?.address?.toLowerCase() === '0xa362a26f6100ff5f8157c0ed1c2bcc0a1919df4a';
+
+  if (!mounted) {
+    return <div>Loading...</div>;
+  }
 
   const runAnalysis = async () => {
     setIsLoading(true);
@@ -257,3 +267,11 @@ export default function MigrationPage() {
     </div>
   );
 }
+
+// Export with dynamic import to prevent SSR issues
+const MigrationPage = dynamic(() => Promise.resolve(MigrationPageContent), {
+  ssr: false,
+  loading: () => <div>Loading...</div>
+});
+
+export default MigrationPage;
