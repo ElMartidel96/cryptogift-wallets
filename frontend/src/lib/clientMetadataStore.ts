@@ -284,10 +284,138 @@ export function clearAllUserCache(): { cleared: boolean; details: any } {
       });
     }
 
+    // CRITICAL: Clear IndexedDB databases (ThirdWeb v5 storage)
+    if ('indexedDB' in window) {
+      try {
+        // Get all IndexedDB databases
+        if ('databases' in indexedDB) {
+          indexedDB.databases().then(databases => {
+            console.log('🗃️ Found IndexedDB databases:', databases);
+            databases.forEach(db => {
+              if (db.name) {
+                console.log(`🗑️ Deleting IndexedDB: ${db.name}`);
+                const deleteRequest = indexedDB.deleteDatabase(db.name);
+                deleteRequest.onsuccess = () => {
+                  console.log(`✅ Deleted IndexedDB: ${db.name}`);
+                  results.details.clearedKeys.push(`IndexedDB: ${db.name}`);
+                };
+                deleteRequest.onerror = (error) => {
+                  console.warn(`❌ Failed to delete IndexedDB ${db.name}:`, error);
+                };
+              }
+            });
+          }).catch(error => {
+            console.warn('⚠️ Could not list IndexedDB databases:', error);
+          });
+        } else {
+          // Fallback: Delete known ThirdWeb databases
+          const knownDBs = ['thirdweb-storage', 'thirdweb-cache', 'keyval-store', 'walletconnect', 'web3-storage'];
+          knownDBs.forEach(dbName => {
+            console.log(`🗑️ Attempting to delete known DB: ${dbName}`);
+            const deleteRequest = indexedDB.deleteDatabase(dbName);
+            deleteRequest.onsuccess = () => {
+              console.log(`✅ Deleted known IndexedDB: ${dbName}`);
+              results.details.clearedKeys.push(`IndexedDB: ${dbName}`);
+            };
+            deleteRequest.onerror = () => {
+              console.log(`ℹ️ IndexedDB ${dbName} not found or already deleted`);
+            };
+          });
+        }
+      } catch (error) {
+        console.warn('⚠️ Error clearing IndexedDB:', error);
+      }
+    }
+
+    // Clear WebSQL (legacy, but some apps might use it)
+    try {
+      if ('openDatabase' in window) {
+        console.log('🗄️ Attempting to clear WebSQL databases');
+        // Note: WebSQL is deprecated but some legacy code might use it
+      }
+    } catch (error) {
+      console.log('ℹ️ WebSQL not available or already cleared');
+    }
+
+    // Clear Local Storage quota and persistent storage
+    if ('navigator' in window && 'storage' in navigator) {
+      try {
+        navigator.storage.estimate().then(estimate => {
+          console.log('💾 Storage quota before clearing:', estimate);
+        });
+        
+        // Clear persistent storage if granted
+        if ('persist' in navigator.storage) {
+          navigator.storage.persist().then(persistent => {
+            if (persistent) {
+              console.log('⚠️ App has persistent storage permission');
+            }
+          });
+        }
+      } catch (error) {
+        console.warn('⚠️ Could not check storage quota:', error);
+      }
+    }
+
     console.log('🧹 COMPREHENSIVE cache clearing results:', results);
     
+    // CRITICAL: Clear any remaining browser storage
+    try {
+      // Clear any remaining window properties that might hold state
+      const windowKeysToDelete = ['ethereum', 'web3', 'walletLink', 'coinbaseWalletExtension'];
+      windowKeysToDelete.forEach(key => {
+        if (key in window) {
+          try {
+            delete (window as any)[key];
+            console.log(`🧹 Cleared window.${key}`);
+          } catch (e) {
+            console.log(`⚠️ Could not clear window.${key}`);
+          }
+        }
+      });
+      
+      // Try to force disconnect any ThirdWeb connections
+      try {
+        // Look for ThirdWeb disconnect functions in window
+        const thirdwebKeys = Object.keys(window).filter(key => 
+          key.toLowerCase().includes('thirdweb') || 
+          key.toLowerCase().includes('wallet') ||
+          key.toLowerCase().includes('connect')
+        );
+        console.log('🔍 Found potential ThirdWeb keys:', thirdwebKeys);
+        
+        thirdwebKeys.forEach(key => {
+          try {
+            const obj = (window as any)[key];
+            if (obj && typeof obj === 'object') {
+              // Try to call disconnect if it exists
+              if (typeof obj.disconnect === 'function') {
+                console.log(`🔌 Attempting to disconnect ${key}`);
+                obj.disconnect();
+              }
+              // Try to clear if it has a clear method
+              if (typeof obj.clear === 'function') {
+                console.log(`🧹 Attempting to clear ${key}`);
+                obj.clear();
+              }
+            }
+          } catch (e) {
+            console.log(`⚠️ Could not disconnect ${key}:`, e.message);
+          }
+        });
+      } catch (error) {
+        console.warn('⚠️ Error attempting ThirdWeb disconnect:', error);
+      }
+      
+    } catch (error) {
+      console.warn('⚠️ Error clearing window properties:', error);
+    }
+    
     // Force reload recommendation
-    console.log('🔄 RECOMMENDATION: Refresh page after clearing to reset all states');
+    console.log('🔄 CRITICAL: Refresh page AND clear browser data after clearing to reset ALL states');
+    console.log('🔄 OR: Close browser tab and reopen to fully disconnect wallets');
+    console.log('⚠️ NOTE: If wallet still connected after refresh, clear all browser data for this site');
+    console.log('🔧 Advanced: Open DevTools > Application > Clear Storage > Clear site data');
     
     return results;
   } catch (error) {
@@ -310,6 +438,8 @@ export function getDetailedCacheInfo(): any {
       referralKeys: [] as any[],
       otherKeys: [] as any[],
       sessionStorageKeys: [] as any[],
+      indexedDBDatabases: [] as any[],
+      browserStorage: {} as any,
       deviceInfo: null as any,
       totalSize: 0,
       totalKeys: 0
@@ -442,12 +572,62 @@ export function getDetailedCacheInfo(): any {
       });
     });
 
+    // Analyze IndexedDB databases
+    if ('indexedDB' in window) {
+      try {
+        if ('databases' in indexedDB) {
+          indexedDB.databases().then(databases => {
+            databases.forEach(db => {
+              info.indexedDBDatabases.push({
+                name: db.name,
+                version: db.version
+              });
+            });
+            console.log('📈 Found IndexedDB databases:', info.indexedDBDatabases);
+          }).catch(error => {
+            console.warn('⚠️ Could not analyze IndexedDB:', error);
+          });
+        }
+      } catch (error) {
+        console.warn('⚠️ IndexedDB analysis failed:', error);
+      }
+    }
+
+    // Analyze browser storage quotas
+    if ('navigator' in window && 'storage' in navigator) {
+      try {
+        navigator.storage.estimate().then(estimate => {
+          info.browserStorage = {
+            quota: estimate.quota,
+            usage: estimate.usage,
+            usageDetails: estimate.usageDetails
+          };
+          console.log('💾 Storage quota analysis:', info.browserStorage);
+        }).catch(error => {
+          console.warn('⚠️ Could not analyze storage quota:', error);
+        });
+      } catch (error) {
+        console.warn('⚠️ Storage API not available:', error);
+      }
+    }
+
     // Get device info
     try {
       const deviceData = localStorage.getItem(DEVICE_STORAGE_KEY);
       info.deviceInfo = deviceData ? JSON.parse(deviceData) : null;
     } catch (e) {
       info.deviceInfo = { error: 'Failed to parse device info' };
+    }
+
+    // Check for wallet-related window objects that might be keeping state
+    const walletWindowProps = ['ethereum', 'web3', 'walletLink', 'coinbaseWalletExtension'];
+    const foundWalletProps = walletWindowProps.filter(prop => prop in window);
+    if (foundWalletProps.length > 0) {
+      info.deviceInfo = {
+        ...info.deviceInfo,
+        windowWalletProps: foundWalletProps
+      };
+      console.log('🔍 Found wallet window properties:', foundWalletProps);
     }
 
     console.log('📊 COMPREHENSIVE cache analysis:', info);

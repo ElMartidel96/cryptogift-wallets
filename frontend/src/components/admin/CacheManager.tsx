@@ -154,6 +154,7 @@ export const CacheManager: React.FC<CacheManagerProps> = ({ isOpen, onClose }) =
                   </div>
                   <div>
                     <p><strong>SessionStorage:</strong> {cacheInfo.sessionStorageKeys?.length || 0}</p>
+                    <p><strong>IndexedDB:</strong> {cacheInfo.indexedDBDatabases?.length || 0}</p>
                     <p><strong>Device Wallets:</strong> {cacheInfo.deviceInfo?.registeredWallets?.length || 0}</p>
                     <p><strong>Last Scan:</strong> {new Date(cacheInfo.timestamp).toLocaleTimeString()}</p>
                   </div>
@@ -238,6 +239,42 @@ export const CacheManager: React.FC<CacheManagerProps> = ({ isOpen, onClose }) =
                       </details>
                     )}
 
+                    {cacheInfo.indexedDBDatabases?.length > 0 && (
+                      <details className="border rounded p-2">
+                        <summary className="cursor-pointer font-medium text-red-700">
+                          🗃️ IndexedDB Databases ({cacheInfo.indexedDBDatabases.length}) - PERSISTENTE
+                        </summary>
+                        <div className="mt-2 space-y-1">
+                          {cacheInfo.indexedDBDatabases.map((db: any, index: number) => (
+                            <div key={index} className="text-xs bg-red-50 p-2 rounded border">
+                              <span className="font-mono font-bold">{db.name}</span><br/>
+                              <span className="text-gray-600">
+                                Version: {db.version} - 🚨 ThirdWeb/Wallet Storage
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </details>
+                    )}
+
+                    {cacheInfo.deviceInfo?.windowWalletProps?.length > 0 && (
+                      <details className="border rounded p-2">
+                        <summary className="cursor-pointer font-medium text-yellow-700">
+                          🌐 Window Wallet Objects ({cacheInfo.deviceInfo.windowWalletProps.length})
+                        </summary>
+                        <div className="mt-2 space-y-1">
+                          {cacheInfo.deviceInfo.windowWalletProps.map((prop: string, index: number) => (
+                            <div key={index} className="text-xs bg-yellow-50 p-2 rounded border">
+                              <span className="font-mono">window.{prop}</span><br/>
+                              <span className="text-gray-600">
+                                Wallet provider object - keeps connection active
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </details>
+                    )}
+
                   </div>
                 )}
               </div>
@@ -255,7 +292,7 @@ export const CacheManager: React.FC<CacheManagerProps> = ({ isOpen, onClose }) =
               <div className="border rounded-lg p-4">
                 <h4 className="font-medium mb-2">💻 Client Cache</h4>
                 <p className="text-sm text-gray-600 mb-3">
-                  Limpia localStorage: wallet caches, IPFS gateways, device info
+                  Limpia localStorage, sessionStorage, IndexedDB, wallet connections
                 </p>
                 <button
                   onClick={handleClearClientCache}
@@ -285,7 +322,7 @@ export const CacheManager: React.FC<CacheManagerProps> = ({ isOpen, onClose }) =
               <div className="border rounded-lg p-4 border-red-200 bg-red-50">
                 <h4 className="font-medium mb-2 text-red-700">⚠️ ALL Cache</h4>
                 <p className="text-sm text-red-600 mb-3">
-                  ELIMINA TODO: Client + Server cache completo
+                  ELIMINA TODO: Client + Server + IndexedDB + Wallet connections
                 </p>
                 {showConfirmation ? (
                   <div className="space-y-2">
