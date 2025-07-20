@@ -268,25 +268,27 @@ async function mintNFTGasless(to: string, tokenURI: string, client: any) {
       console.log("⚠️ GASLESS: Transfer event parsing failed:", eventParseError.message);
       console.log("🔄 GASLESS: FALLBACK to corrected totalSupply method...");
       
-      // Fallback to totalSupply method (corrected version)
-      const totalSupply = await readContract({
-        contract: nftContract,
-        method: "function totalSupply() view returns (uint256)",
-        params: []
-      });
-      
-      realTokenId = (totalSupply - BigInt(1)).toString();
-      console.log("🔄 GASLESS: FALLBACK TOKEN ID (corrected):");
-      console.log("  📊 Total supply:", totalSupply.toString());
-      console.log("  🎯 Token ID (supply-1):", realTokenId);
-      
-    } catch (supplyError) {
-      console.log("⚠️ GASLESS: Token ID extraction failed, using transaction-based fallback");
-      
-      // Fallback: Use transaction hash for deterministic but unique ID
-      const hashNum = parseInt(receipt.transactionHash.slice(-8), 16);
-      realTokenId = (hashNum % 1000000).toString();
-      console.log("🎯 GASLESS: Fallback token ID from hash:", realTokenId);
+      try {
+        // Fallback to totalSupply method (corrected version)
+        const totalSupply = await readContract({
+          contract: nftContract,
+          method: "function totalSupply() view returns (uint256)",
+          params: []
+        });
+        
+        realTokenId = (totalSupply - BigInt(1)).toString();
+        console.log("🔄 GASLESS: FALLBACK TOKEN ID (corrected):");
+        console.log("  📊 Total supply:", totalSupply.toString());
+        console.log("  🎯 Token ID (supply-1):", realTokenId);
+        
+      } catch (supplyError) {
+        console.log("⚠️ GASLESS: Token ID extraction failed, using transaction-based fallback");
+        
+        // Fallback: Use transaction hash for deterministic but unique ID
+        const hashNum = parseInt(receipt.transactionHash.slice(-8), 16);
+        realTokenId = (hashNum % 1000000).toString();
+        console.log("🎯 GASLESS: Fallback token ID from hash:", realTokenId);
+      }
     }
     
     return {
