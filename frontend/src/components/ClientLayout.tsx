@@ -4,7 +4,6 @@ import dynamic from "next/dynamic";
 import { ErrorBoundary } from "./ErrorBoundary";
 import { ThemeProvider } from "./providers/ThemeProvider";
 import { StaticBackground } from "./ui/StaticBackground";
-import { GlassHeader } from "./layout/GlassHeader";
 
 const ThirdwebWrapper = dynamic(() => import("./ThirdwebWrapper").then(mod => ({ default: mod.ThirdwebWrapper })), {
   ssr: false,
@@ -13,12 +12,12 @@ const ThirdwebWrapper = dynamic(() => import("./ThirdwebWrapper").then(mod => ({
 
 const Navbar = dynamic(() => import("./Navbar").then(mod => ({ default: mod.Navbar })), {
   ssr: false,
-  loading: () => <div className="h-16 glass-panel" />
+  loading: () => <div className="h-16 bg-background shadow-lg" />
 });
 
 const Footer = dynamic(() => import("./Footer").then(mod => ({ default: mod.Footer })), {
   ssr: false,
-  loading: () => <div className="h-32 glass-panel" />
+  loading: () => <div className="h-32 bg-background" />
 });
 
 const MintDebugger = dynamic(() => import("./MintDebugger").then(mod => ({ default: mod.MintDebugger })), {
@@ -39,14 +38,12 @@ export function ClientLayout({ children }: ClientLayoutProps) {
           <StaticBackground />
           
           {/* ESTRUCTURA PRINCIPAL */}
-          <div className="relative min-h-screen">
-            {/* HEADER CON MOSAICO */}
-            <GlassHeader>
-              <div></div>
-            </GlassHeader>
+          <div className="relative min-h-screen flex flex-col">
+            {/* NAVBAR ORIGINAL CON THEME TOGGLE */}
+            <Navbar />
             
             {/* CONTENIDO PRINCIPAL */}
-            <main className="relative z-0">
+            <main className="flex-1 relative z-0">
               {children}
             </main>
             
