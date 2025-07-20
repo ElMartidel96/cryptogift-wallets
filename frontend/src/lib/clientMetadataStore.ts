@@ -346,7 +346,8 @@ export function clearAllUserCache(): { cleared: boolean; details: any } {
         serviceWorkerCaches: 0,
         totalLocalStorageKeys: 0,
         totalSessionStorageKeys: 0,
-        clearedKeys: []
+        clearedKeys: [],
+        walletDisconnection: {} as any
       }
     };
 
