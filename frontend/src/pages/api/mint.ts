@@ -223,25 +223,62 @@ async function mintNFTGasless(to: string, tokenURI: string, client: any) {
       blockNumber: receipt.blockNumber 
     });
     
-    // CRITICAL FIX: Extract REAL token ID using totalSupply (gasless)
-    console.log("🔍 GASLESS: Extracting REAL token ID from contract...");
+    // CRITICAL FIX: Extract REAL token ID from Transfer event (gasless)
+    console.log("🔍 GASLESS: Extracting token ID from Transfer event...");
     let realTokenId;
     
     try {
-      // RELIABLE METHOD: gasless transaction is confirmed, use totalSupply
-      console.log("🎯 GASLESS: Using totalSupply for reliable tokenId extraction...");
+      // Parse Transfer event from gasless transaction receipt
+      console.log("🎯 GASLESS: Parsing Transfer event for exact tokenId...");
+      console.log("📜 Receipt logs:", receipt.logs?.length || 0, "logs found");
       
+      let tokenIdFromEvent = null;
+      
+      for (const log of receipt.logs || []) {
+        // Check if this log is from our NFT contract
+        if (log.address && log.address.toLowerCase() === process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS?.toLowerCase()) {
+          console.log("✅ GASLESS: Found log from NFT contract");
+          
+          // Transfer event signature: Transfer(address indexed from, address indexed to, uint256 indexed tokenId)
+          const transferEventSignature = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef";
+          
+          if (log.topics && log.topics[0] === transferEventSignature && log.topics.length >= 4) {
+            // Extract tokenId from topic[3] (indexed parameter)
+            const tokenIdHex = log.topics[3];
+            const tokenIdDecimal = BigInt(tokenIdHex).toString();
+            
+            console.log("🎯 GASLESS: TRANSFER EVENT PARSED:");
+            console.log("  📝 TokenId (hex):", tokenIdHex);
+            console.log("  📝 TokenId (decimal):", tokenIdDecimal);
+            
+            tokenIdFromEvent = tokenIdDecimal;
+            break;
+          }
+        }
+      }
+      
+      if (tokenIdFromEvent) {
+        realTokenId = tokenIdFromEvent;
+        console.log("✅ GASLESS: SUCCESS - TokenId from Transfer event:", realTokenId);
+      } else {
+        throw new Error("No Transfer event found in gasless transaction");
+      }
+      
+    } catch (eventParseError) {
+      console.log("⚠️ GASLESS: Transfer event parsing failed:", eventParseError.message);
+      console.log("🔄 GASLESS: FALLBACK to corrected totalSupply method...");
+      
+      // Fallback to totalSupply method (corrected version)
       const totalSupply = await readContract({
         contract: nftContract,
         method: "function totalSupply() view returns (uint256)",
         params: []
       });
       
-      // CRITICAL FIX: totalSupply is count of tokens, last token ID is totalSupply - 1
       realTokenId = (totalSupply - BigInt(1)).toString();
-      console.log("✅ GASLESS: CORRECTED TOKEN ID calculation:");
+      console.log("🔄 GASLESS: FALLBACK TOKEN ID (corrected):");
       console.log("  📊 Total supply:", totalSupply.toString());
-      console.log("  🎯 Last token ID (supply-1):", realTokenId);
+      console.log("  🎯 Token ID (supply-1):", realTokenId);
       
     } catch (supplyError) {
       console.log("⚠️ GASLESS: Token ID extraction failed, using transaction-based fallback");
@@ -588,21 +625,63 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           }
         }
         
-        // RELIABLE METHOD: Use totalSupply after transaction confirmation
-        console.log("🎯 Using totalSupply method for reliable tokenId extraction...");
+        // CRITICAL FIX: Parse Transfer event for EXACT tokenId (no more totalSupply fallback)
+        console.log("🎯 PARSING TRANSFER EVENT for exact tokenId...");
+        let tokenIdFromEvent = null;
         
-        // Transaction is confirmed, now read totalSupply to get the new tokenId
-        const totalSupply = await readContract({
-          contract: cryptoGiftNFTContract,
-          method: "function totalSupply() view returns (uint256)",
-          params: []
-        });
-        
-        // CRITICAL FIX: totalSupply is count of tokens, last token ID is totalSupply - 1
-        actualTokenId = (totalSupply - BigInt(1)).toString();
-        console.log("✅ CORRECTED TOKEN ID calculation:");
-        console.log("  📊 Total supply:", totalSupply.toString());
-        console.log("  🎯 Last token ID (supply-1):", actualTokenId);
+        try {
+          // Parse Transfer events from transaction logs
+          console.log("📜 Analyzing", receipt.logs?.length || 0, "transaction logs");
+          
+          for (const log of receipt.logs || []) {
+            // Check if this log is from our NFT contract
+            if (log.address && log.address.toLowerCase() === process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS?.toLowerCase()) {
+              console.log("✅ Found log from NFT contract");
+              console.log("🔍 Log topics:", log.topics);
+              
+              // Transfer event signature: Transfer(address indexed from, address indexed to, uint256 indexed tokenId)
+              const transferEventSignature = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef";
+              
+              if (log.topics && log.topics[0] === transferEventSignature && log.topics.length >= 4) {
+                // Extract tokenId from topic[3] (indexed parameter)
+                const tokenIdHex = log.topics[3];
+                const tokenIdDecimal = BigInt(tokenIdHex).toString();
+                
+                console.log("🎯 TRANSFER EVENT PARSED:");
+                console.log("  📝 TokenId (hex):", tokenIdHex);
+                console.log("  📝 TokenId (decimal):", tokenIdDecimal);
+                console.log("  📝 From:", log.topics[1]);
+                console.log("  📝 To:", log.topics[2]);
+                
+                tokenIdFromEvent = tokenIdDecimal;
+                break;
+              }
+            }
+          }
+          
+          if (tokenIdFromEvent) {
+            actualTokenId = tokenIdFromEvent;
+            console.log("✅ SUCCESS: TokenId extracted from Transfer event:", actualTokenId);
+          } else {
+            throw new Error("No Transfer event found with tokenId");
+          }
+          
+        } catch (eventParseError) {
+          console.log("⚠️ Transfer event parsing failed:", eventParseError.message);
+          console.log("🔄 FALLBACK: Using corrected totalSupply method...");
+          
+          // Last resort fallback to totalSupply method (corrected version)
+          const totalSupply = await readContract({
+            contract: cryptoGiftNFTContract,
+            method: "function totalSupply() view returns (uint256)",
+            params: []
+          });
+          
+          actualTokenId = (totalSupply - BigInt(1)).toString();
+          console.log("🔄 FALLBACK TOKEN ID (corrected):");
+          console.log("  📊 Total supply:", totalSupply.toString());
+          console.log("  🎯 Token ID (supply-1):", actualTokenId);
+        }
         
       } catch (extractError) {
         console.error("❌ Failed to extract real token ID:", extractError);
@@ -956,6 +1035,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           tokenId,
           contractAddress: nftMetadata.contractAddress
         });
+        
+        // CRITICAL FIX: Fail the entire mint if metadata cannot be verified
+        throw new Error(`Metadata storage verification failed for token ${tokenId}. Cannot proceed with mint.`);
       }
       
     } catch (metadataError) {
@@ -966,7 +1048,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         error: metadataError instanceof Error ? metadataError.message : 'Unknown error',
         stack: metadataError instanceof Error ? metadataError.stack : undefined
       });
-      // Don't fail the whole mint for this, but log the error
+      
+      // CRITICAL FIX: Metadata storage is REQUIRED for proper NFT function
+      throw new Error(`Metadata storage failed for token ${tokenId}: ${metadataError instanceof Error ? metadataError.message : 'Unknown error'}`);
     }
 
     res.status(200).json({

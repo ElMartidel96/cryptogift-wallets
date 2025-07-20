@@ -25,7 +25,7 @@ export const MintDebugger: React.FC = () => {
 
   const testMintFlow = () => {
     try {
-      const contractAddress = process.env.NEXT_PUBLIC_NFT_DROP_ADDRESS || '0x54314166B36E3Cc66cFb36265D99697f4F733231';
+      const contractAddress = process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS || '0x54314166B36E3Cc66cFb36265D99697f4F733231';
       const tokenId = '999';
       
       // Simulate the exact metadata structure from GiftWizard

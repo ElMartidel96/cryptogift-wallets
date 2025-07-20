@@ -1,5 +1,5 @@
 import { NextApiRequest, NextApiResponse } from "next";
-import { createThirdwebClient, getContract, prepareContractCall, sendTransaction } from "thirdweb";
+import { createThirdwebClient, getContract, prepareContractCall, sendTransaction, waitForReceipt, readContract } from "thirdweb";
 import { baseSepolia } from "thirdweb/chains";
 import { privateKeyToAccount } from "thirdweb/wallets";
 import { uploadMetadata } from "../../lib/ipfs";
@@ -50,7 +50,7 @@ function validateEnvironment(): void {
   const required = [
     'NEXT_PUBLIC_TW_CLIENT_ID',
     'TW_SECRET_KEY',
-    'NEXT_PUBLIC_NFT_DROP_ADDRESS',
+    'NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS',
     'PRIVATE_KEY_DEPLOY'
   ];
 
@@ -70,10 +70,10 @@ async function calculateTBAAddress(tokenId: string, nftContract: string): Promis
   try {
     addMintLog('INFO', 'TBA_CALCULATION_START', { tokenId, nftContract });
 
-    // ERC-6551 standard addresses
-    const REGISTRY_ADDRESS = "0x000000006551c19487814612e58FE06813775758";
-    const IMPLEMENTATION_ADDRESS = "0x2d25602551487c3f3354dd80d76d54383a243358";
-    const CHAIN_ID = 84532; // Base Sepolia
+    // CRITICAL FIX: Use environment variables instead of hard-coded addresses  
+    const REGISTRY_ADDRESS = process.env.NEXT_PUBLIC_ERC6551_REGISTRY_ADDRESS || "0x000000006551c19487814612e58FE06813775758";
+    const IMPLEMENTATION_ADDRESS = process.env.NEXT_PUBLIC_ERC6551_IMPLEMENTATION_ADDRESS || "0x2d25602551487c3f3354dd80d76d54383a243358";
+    const CHAIN_ID = parseInt(process.env.NEXT_PUBLIC_CHAIN_ID || "84532");
     
     // Security: Input validation and sanitization
     if (!ethers.isAddress(nftContract)) {
@@ -208,13 +208,13 @@ async function mintNFTReal(to: string, metadataUri: string): Promise<{
     const contract = getContract({
       client,
       chain: customChain,
-      address: process.env.NEXT_PUBLIC_NFT_DROP_ADDRESS!,
+      address: process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS!,
     });
 
     addMintLog('INFO', 'REAL_MINT_TRANSACTION_PREP', { contract: contract.address });
 
-    // FIXED: Use NFT Collection mintTo method (same as main API)
-    const generatedTokenId = Date.now();
+    // CRITICAL FIX: Don't pre-generate tokenId, get it from transaction
+    // Use NFT Collection mintTo method (same as main API)
     const transaction = prepareContractCall({
       contract,
       method: "function mintTo(address to, string memory tokenURI) external",
@@ -236,8 +236,63 @@ async function mintNFTReal(to: string, metadataUri: string): Promise<{
       transactionHash: result.transactionHash
     });
 
-    // Use the same token ID that was generated above
-    const tokenId = generatedTokenId.toString();
+    // CRITICAL FIX: Wait for receipt and extract real tokenId from Transfer event
+    addMintLog('INFO', 'WAITING_FOR_RECEIPT', { transactionHash: result.transactionHash });
+    
+    const receipt = await waitForReceipt({
+      client,
+      chain: baseSepolia,
+      transactionHash: result.transactionHash,
+    });
+
+    addMintLog('SUCCESS', 'RECEIPT_RECEIVED', { 
+      blockNumber: receipt.blockNumber,
+      logs: receipt.logs?.length || 0 
+    });
+
+    // Extract real tokenId from Transfer event
+    let actualTokenId = null;
+    
+    try {
+      console.log("🎯 MINT-REAL: Parsing Transfer event for exact tokenId...");
+      
+      for (const log of receipt.logs || []) {
+        if (log.address && log.address.toLowerCase() === process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS?.toLowerCase()) {
+          // Transfer event signature
+          const transferEventSignature = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef";
+          
+          if (log.topics && log.topics[0] === transferEventSignature && log.topics.length >= 4) {
+            const tokenIdHex = log.topics[3];
+            actualTokenId = BigInt(tokenIdHex).toString();
+            
+            console.log("✅ MINT-REAL: TokenId extracted from Transfer event:", actualTokenId);
+            addMintLog('SUCCESS', 'TOKEN_ID_EXTRACTED', { tokenId: actualTokenId, method: 'transfer_event' });
+            break;
+          }
+        }
+      }
+      
+      if (!actualTokenId) {
+        throw new Error("No Transfer event found");
+      }
+      
+    } catch (eventParseError) {
+      console.log("⚠️ MINT-REAL: Transfer event parsing failed, using totalSupply fallback");
+      addMintLog('WARNING', 'TRANSFER_PARSE_FAILED', { error: eventParseError.message });
+      
+      // Fallback to totalSupply method
+      const totalSupply = await readContract({
+        contract,
+        method: "function totalSupply() view returns (uint256)",
+        params: []
+      });
+      
+      actualTokenId = (totalSupply - BigInt(1)).toString();
+      console.log("🔄 MINT-REAL: Fallback tokenId from totalSupply:", actualTokenId);
+      addMintLog('SUCCESS', 'TOKEN_ID_EXTRACTED', { tokenId: actualTokenId, method: 'totalsupply_fallback' });
+    }
+
+    const tokenId = actualTokenId;
 
     return {
       transactionHash: result.transactionHash,
@@ -338,7 +393,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     
     const tbaAddress = await calculateTBAAddress(
       mintResult.tokenId,
-      process.env.NEXT_PUBLIC_NFT_DROP_ADDRESS!
+      process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS!
     );
 
     // Step 4: Generate sharing URLs

@@ -11,7 +11,7 @@ const nextConfig = {
   },
   env: {
     NEXT_PUBLIC_TW_CLIENT_ID: process.env.NEXT_PUBLIC_TW_CLIENT_ID,
-    NEXT_PUBLIC_NFT_DROP_ADDRESS: process.env.NEXT_PUBLIC_NFT_DROP_ADDRESS,
+    NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS: process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS,
     NEXT_PUBLIC_CHAIN_ID: process.env.NEXT_PUBLIC_CHAIN_ID,
   },
   serverExternalPackages: [

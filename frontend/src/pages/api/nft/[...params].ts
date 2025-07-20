@@ -182,10 +182,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       owner = process.env.WALLET_ADDRESS || "0xA362a26F6100Ff5f8157C0ed1c2bcC0a1919Df4a";
     }
 
-    // DISABLED FOR TESTING: Skip stored metadata completely
+    // CRITICAL FIX: Add runtime cache toggle via environment variable
+    const disableCache = process.env.DISABLE_METADATA_CACHE === 'true';
     let nft;
+    let storedMetadata = null;
     
     console.log("💾 METADATA LOOKUP ===========================================");
+    console.log("🔧 Cache disabled:", disableCache ? "YES" : "NO");
     console.log("🔍 SEARCHING FOR STORED METADATA:");
     console.log("  📝 Contract Address:", contractAddress);
     console.log("  🎯 Token ID:", tokenId);
@@ -194,9 +197,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     console.log("  📏 Contract length:", contractAddress?.length);
     console.log("  🏗️ Expected format: 0x[40 chars]");
     
-    // REACTIVATED: Normal metadata lookup from storage
-    console.log("🔍 Calling getNFTMetadata...");
-    const storedMetadata = await getNFTMetadata(contractAddress, tokenId);
+    if (!disableCache) {
+      // Normal metadata lookup from storage
+      console.log("🔍 Calling getNFTMetadata...");
+      storedMetadata = await getNFTMetadata(contractAddress, tokenId);
+    } else {
+      console.log("⚠️ CACHE DISABLED: Skipping metadata lookup via DISABLE_METADATA_CACHE env var");
+    }
     console.log("📊 Metadata lookup result:", {
       found: !!storedMetadata,
       hasImage: !!(storedMetadata?.image),
