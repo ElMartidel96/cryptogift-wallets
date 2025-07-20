@@ -982,20 +982,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       
       console.log("✅ Image verification passed - proceeding with mint");
       
-      // Get deployer wallet address for tracking
-      let creatorWallet = 'unknown';
-      try {
-        const deployerAccount = privateKeyToAccount({
-          client: createThirdwebClient({
-            clientId: process.env.NEXT_PUBLIC_TW_CLIENT_ID!,
-            secretKey: process.env.TW_SECRET_KEY!,
-          }),
-          privateKey: process.env.PRIVATE_KEY_DEPLOY!,
-        });
-        creatorWallet = deployerAccount.address;
-      } catch (error) {
-        console.warn('Could not determine creator wallet:', error);
-      }
+      // Note: creatorWallet is now originalCreatorAddress (the user who initiated the gift)
+      // The deployer address is used as neutral custodial, not as creator
 
       console.log("📦 CREATING NFT METADATA OBJECT ===========================================");
       console.log("🔧 METADATA CONFIGURATION:");
@@ -1066,9 +1054,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             value: "Testing - Ignoring IPFS verification"
           }
         ],
-        mintTransactionHash: transactionHash,
-        owner: to,
-        creatorWallet: creatorWallet // CRITICAL: Track who created this to prevent cache conflicts
+        mintTransactionHash: transactionHash
       });
       
       console.log("🔍 CRITICAL DEBUG: Created NFT metadata object:");
