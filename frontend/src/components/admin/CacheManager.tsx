@@ -444,7 +444,7 @@ export const CacheManager: React.FC<CacheManagerProps> = ({ isOpen, onClose }) =
               <p>1. <strong>Try "Force Disconnect"</strong> si wallet sigue conectada</p>
               <p>2. <strong>Clear ALL Cache</strong> para limpieza completa</p>
               <p>3. <strong>Refresh browser</strong> (F5) para confirmar limpieza</p>
-              <p>4. <strong>Si persiste:</strong> DevTools > Application > Clear Storage</p>
+              <p>4. <strong>Si persiste:</strong> DevTools &gt; Application &gt; Clear Storage</p>
               <p>5. <strong>Check /api/debug/storage-analysis</strong> para debugging</p>
             </div>
           </div>

@@ -25,7 +25,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         contractAddress: contractAddress as string,
         tokenId: tokenId as string
       },
-      steps: {} as any
+      steps: {} as any,
+      analysis: {} as any
     };
 
     // Step 1: Check stored metadata
