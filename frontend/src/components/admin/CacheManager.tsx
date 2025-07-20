@@ -441,7 +441,7 @@ export const CacheManager: React.FC<CacheManagerProps> = ({ isOpen, onClose }) =
           <div className="bg-yellow-50 rounded-xl p-4">
             <h3 className="font-semibold text-yellow-800 mb-2">⚡ Testing Instructions</h3>
             <div className="text-sm text-yellow-700 space-y-1">
-              <p>1. <strong>Try "Force Disconnect"</strong> si wallet sigue conectada</p>
+              <p>1. <strong>Try &quot;Force Disconnect&quot;</strong> si wallet sigue conectada</p>
               <p>2. <strong>Clear ALL Cache</strong> para limpieza completa</p>
               <p>3. <strong>Refresh browser</strong> (F5) para confirmar limpieza</p>
               <p>4. <strong>Si persiste:</strong> DevTools &gt; Application &gt; Clear Storage</p>
