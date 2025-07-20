@@ -267,6 +267,12 @@ async function mintNFTGasless(to: string, tokenURI: string, client: any) {
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  console.log("🚀 MINT API STARTED ===========================================");
+  console.log("📅 Timestamp:", new Date().toISOString());
+  console.log("🔧 Method:", req.method);
+  console.log("📋 Request body keys:", Object.keys(req.body || {}));
+  console.log("🌐 User Agent:", req.headers['user-agent']?.substring(0, 100));
+  
   addMintLog('INFO', 'API_START', { timestamp: new Date().toISOString() });
   addAPIStep('API_HANDLER_STARTED', { method: req.method, timestamp: new Date().toISOString() }, 'pending');
   
@@ -279,13 +285,25 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   addAPIDecision('isMethodPOST', true, { method: req.method });
 
   try {
+    console.log("📝 EXTRACTING PARAMETERS from request body...");
     const { to, imageFile, giftMessage, initialBalance, filter = "Original", referrer } = req.body;
+    
+    console.log("🔍 PARAMETER ANALYSIS:");
+    console.log("  📮 To address:", to?.slice(0, 20) + "...");
+    console.log("  🖼️ Image file:", !!imageFile ? `Present (${imageFile?.substring(0, 50)}...)` : "MISSING");
+    console.log("  💬 Gift message:", giftMessage?.substring(0, 50) + "...");
+    console.log("  💰 Initial balance:", initialBalance, typeof initialBalance);
+    console.log("  🎨 Filter:", filter);
+    console.log("  🔗 Referrer:", referrer?.slice(0, 20) + "...");
+    
     addMintLog('INFO', 'PARAMETERS_RECEIVED', { 
       to: to?.slice(0, 10) + "...", 
       hasImageFile: !!imageFile, 
+      imageFileLength: imageFile?.length,
       hasGiftMessage: !!giftMessage, 
       initialBalance,
-      filter 
+      filter,
+      hasReferrer: !!referrer
     });
     
     addAPIStep('PARAMETERS_EXTRACTED', { 
@@ -323,17 +341,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
     }
 
+    console.log("🏗️ CREATING NFT METADATA ===========================================");
+    
     // Create metadata following NFT standards
     // Clean and ensure imageFile has proper IPFS format (avoid double prefix)
     const cleanImageFile = imageFile.replace(/^ipfs:\/\//, ''); // Remove existing prefix if any
     const imageUri = `ipfs://${cleanImageFile}`;
     
-    console.log('🖼️ NFT Image URI for metadata:', {
-      originalImageFile: imageFile,
-      finalImageUri: imageUri,
-      isIPFSFormat: imageFile.startsWith('ipfs://'),
-      imageFileType: typeof imageFile
-    });
+    console.log('🖼️ IMAGE URI PROCESSING:');
+    console.log("  📥 Original imageFile:", imageFile?.substring(0, 100) + "...");
+    console.log("  🧹 Clean imageFile:", cleanImageFile?.substring(0, 100) + "...");
+    console.log("  📤 Final imageUri:", imageUri?.substring(0, 100) + "...");
+    console.log("  ✅ Is IPFS format:", imageFile.startsWith('ipfs://'));
+    console.log("  📊 ImageFile type:", typeof imageFile);
+    console.log("  📏 ImageFile length:", imageFile?.length);
     
     addMintLog('INFO', 'NFT_IMAGE_URI_PREPARED', {
       originalImageFile: imageFile,
@@ -452,11 +473,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         rpc: process.env.NEXT_PUBLIC_RPC_URL || "https://base-sepolia.g.alchemy.com/v2/GJfW9U_S-o-boMw93As3e"
       };
 
-      console.log("🔍 CONTRACT DEBUG: Using Factory as NFT contract");
-      console.log("📝 Contract address:", process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS);
-      console.log("📝 Recipient:", to);
-      console.log("📝 Metadata URI:", metadataUri);
-      console.log("📝 Initial Balance:", initialBalance, "USDC");
+      console.log("🎯 MINTING TRANSACTION SETUP ===========================================");
+      console.log("🔍 CONTRACT CONFIGURATION:");
+      console.log("  📝 CryptoGift NFT Address:", process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS);
+      console.log("  📝 Chain ID:", process.env.NEXT_PUBLIC_CHAIN_ID);
+      console.log("  📝 RPC URL:", process.env.NEXT_PUBLIC_RPC_URL?.substring(0, 50) + "...");
+      console.log("🎯 TRANSACTION PARAMETERS:");
+      console.log("  📮 Recipient:", to);
+      console.log("  📄 Metadata URI:", metadataUri?.substring(0, 100) + "...");
+      console.log("  💰 Initial Balance:", initialBalance, "USDC");
+      console.log("  🔗 Referrer:", referrer?.slice(0, 20) + "...");
       
       // Use the Factory contract as the main NFT contract
       console.log("🎯 APPROACH: Using Factory contract directly");
@@ -821,6 +847,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         console.warn('Could not determine creator wallet:', error);
       }
 
+      console.log("📦 CREATING NFT METADATA OBJECT ===========================================");
+      console.log("🔧 METADATA CONFIGURATION:");
+      console.log("  📝 Contract Address:", process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS);
+      console.log("  🎯 Token ID:", tokenId);
+      console.log("  🖼️ Image IPFS CID:", imageIpfsCid);
+      console.log("  📄 Metadata URI:", metadataUri?.substring(0, 100) + "...");
+      console.log("  💬 Gift Message:", giftMessage?.substring(0, 50) + "...");
+      console.log("  💰 Initial Balance:", initialBalance);
+      console.log("  🎨 Filter:", filter);
+      
       const nftMetadata = createNFTMetadata({
         contractAddress: process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS || '',
         tokenId: tokenId,
@@ -881,18 +917,35 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         cidIsValid: !!(nftMetadata.imageIpfsCid && nftMetadata.imageIpfsCid.length > 10) ? 'YES' : 'NO - PROBLEM!'
       });
       
+      console.log("💾 STORING NFT METADATA ===========================================");
+      console.log("🔧 STORAGE PARAMETERS:");
+      console.log("  📝 Contract Address:", nftMetadata.contractAddress);
+      console.log("  🎯 Token ID:", nftMetadata.tokenId);
+      console.log("  🖼️ Image IPFS CID:", nftMetadata.imageIpfsCid);
+      console.log("  📄 Metadata IPFS CID:", nftMetadata.metadataIpfsCid);
+      console.log("  🌐 Image field:", nftMetadata.image);
+      console.log("  📊 Metadata object keys:", Object.keys(nftMetadata));
+      
       // CRITICAL: Ensure storage completes successfully
-      console.log("💾 Attempting to store NFT metadata...");
+      console.log("💾 Calling storeNFTMetadata...");
       await storeNFTMetadata(nftMetadata);
       console.log("✅ storeNFTMetadata call completed");
       
       // VERIFICATION: Double-check storage worked
+      console.log("🔍 VERIFYING STORAGE: Attempting to retrieve stored metadata...");
       const storedCheck = await getNFTMetadata(nftMetadata.contractAddress, nftMetadata.tokenId);
       if (storedCheck) {
-        console.log("✅ NFT metadata stored and verified successfully");
-        console.log("🔍 Stored image:", storedCheck.image);
+        console.log("✅ NFT metadata stored and verified successfully!");
+        console.log("🔍 RETRIEVED METADATA:");
+        console.log("  📝 Contract:", storedCheck.contractAddress);
+        console.log("  🎯 Token ID:", storedCheck.tokenId);
+        console.log("  🖼️ Image field:", storedCheck.image);
+        console.log("  📊 Attributes count:", storedCheck.attributes?.length || 0);
       } else {
         console.error("❌ CRITICAL: Metadata storage verification failed!");
+        console.error("🔍 LOOKUP FAILED FOR:");
+        console.error("  📝 Contract:", nftMetadata.contractAddress);
+        console.error("  🎯 Token ID:", nftMetadata.tokenId);
         addMintLog('ERROR', 'METADATA_STORAGE_VERIFICATION_FAILED', {
           tokenId,
           contractAddress: nftMetadata.contractAddress

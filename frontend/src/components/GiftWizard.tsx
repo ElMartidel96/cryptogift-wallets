@@ -373,12 +373,12 @@ export const GiftWizard: React.FC<GiftWizardProps> = ({ isOpen, onClose, referre
     // Store NFT metadata on client for future retrieval
     try {
       console.log('💾 Storing NFT metadata on client...');
-      console.log('🔍 Contract address:', process.env.NEXT_PUBLIC_NFT_DROP_ADDRESS);
+      console.log('🔍 Contract address:', process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS);
       console.log('🔍 Token ID:', tokenId);
       console.log('🔍 IPFS CID:', ipfsCid);
       
       const nftMetadata: NFTMetadata = {
-        contractAddress: process.env.NEXT_PUBLIC_NFT_DROP_ADDRESS || '',
+        contractAddress: process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS || '',
         tokenId: tokenId,
         name: `CryptoGift NFT-Wallet #${tokenId}`,
         description: wizardData.message || 'Un regalo cripto único creado con amor',
@@ -590,12 +590,12 @@ export const GiftWizard: React.FC<GiftWizardProps> = ({ isOpen, onClose, referre
       // Store NFT metadata on client for future retrieval
       try {
         console.log('💾 Storing NFT metadata on client (gas-paid)...');
-        console.log('🔍 Contract address (gas-paid):', process.env.NEXT_PUBLIC_NFT_DROP_ADDRESS);
+        console.log('🔍 Contract address (gas-paid):', process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS);
         console.log('🔍 Token ID (gas-paid):', tokenId);
         console.log('🔍 IPFS CID (gas-paid):', ipfsCid);
         
         const nftMetadata: NFTMetadata = {
-          contractAddress: process.env.NEXT_PUBLIC_NFT_DROP_ADDRESS || '',
+          contractAddress: process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS || '',
           tokenId: tokenId,
           name: `CryptoGift NFT-Wallet #${tokenId}`,
           description: wizardData.message || 'Un regalo cripto único creado con amor',

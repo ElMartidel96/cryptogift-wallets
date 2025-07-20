@@ -87,13 +87,24 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
 
       if (metadata) {
+        // CRITICAL FIX: Extract CID properly from metadata.image
+        let imageIpfsCid = metadata.image;
+        if (imageIpfsCid && imageIpfsCid.startsWith('ipfs://')) {
+          imageIpfsCid = imageIpfsCid.replace('ipfs://', ''); // Strip ipfs:// prefix
+        }
+        
+        console.log("🔧 FIXED CID HANDLING:", {
+          originalImage: metadata.image,
+          cleanedCid: imageIpfsCid
+        });
+
         // Create our internal metadata format
         const nftMetadata = createNFTMetadata({
           contractAddress,
           tokenId,
           name: metadata.name || `CryptoGift NFT-Wallet #${tokenId}`,
           description: metadata.description || 'Un regalo cripto único creado con amor',
-          imageIpfsCid: metadata.image, // Use the image from IPFS metadata
+          imageIpfsCid: imageIpfsCid, // Now properly cleaned CID
           metadataIpfsCid: cid,
           owner: "unknown" // Will be updated when fetched
         });

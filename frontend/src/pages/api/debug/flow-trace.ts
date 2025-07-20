@@ -96,9 +96,13 @@ function handleInMemoryStorage(req: NextApiRequest, res: NextApiResponse) {
   }
 }
 
-// NFT Metadata Flow Diagnostic
+// Enhanced NFT Metadata Flow Diagnostic with ThirdWeb Integration
 async function handleNFTFlowDiagnostic(req: NextApiRequest, res: NextApiResponse) {
   const { contractAddress, tokenId } = req.body;
+
+  console.log("🚀 ENHANCED NFT FLOW DIAGNOSTIC STARTED ===========================================");
+  console.log("📅 Timestamp:", new Date().toISOString());
+  console.log("🎯 Target NFT:", { contractAddress, tokenId });
 
   try {
     const trace = {
@@ -106,68 +110,260 @@ async function handleNFTFlowDiagnostic(req: NextApiRequest, res: NextApiResponse
       contractAddress,
       tokenId,
       checks: {
-        serverMetadata: null,
-        tmpFiles: [],
-        clientStorageTest: null,
-        writePermissions: null,
         environment: {
           nodeEnv: process.env.NODE_ENV,
           vercelEnv: process.env.VERCEL_ENV,
           workingDir: process.cwd(),
           tmpDir: '/tmp',
-          storageDir: '/tmp/nft-metadata'
-        }
+          storageDir: '/tmp/nft-metadata',
+          contractEnvVar: process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS,
+          contractMatches: process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS === contractAddress
+        },
+        thirdwebConnection: null,
+        contractValidation: null,
+        tokenValidation: null,
+        serverMetadata: null,
+        tmpFiles: [],
+        writePermissions: null,
+        ipfsVerification: null,
+        rootCauseAnalysis: []
       }
     };
 
-    // 1. Check server metadata storage
+    // 1. ThirdWeb Connection Test
+    console.log("🌐 TESTING THIRDWEB CONNECTION ===========================================");
+    try {
+      const { createThirdwebClient, getContract, readContract } = await import("thirdweb");
+      const { baseSepolia } = await import("thirdweb/chains");
+      
+      const client = createThirdwebClient({
+        clientId: process.env.NEXT_PUBLIC_TW_CLIENT_ID!,
+        secretKey: process.env.TW_SECRET_KEY!,
+      });
+
+      const nftContract = getContract({
+        client,
+        chain: baseSepolia,
+        address: contractAddress,
+      });
+
+      trace.checks.thirdwebConnection = {
+        status: 'success',
+        clientId: process.env.NEXT_PUBLIC_TW_CLIENT_ID ? 'Set' : 'Missing',
+        secretKey: process.env.TW_SECRET_KEY ? 'Set' : 'Missing'
+      };
+
+      // 2. Contract Validation
+      console.log("📄 VALIDATING CONTRACT ===========================================");
+      try {
+        const totalSupply = await readContract({
+          contract: nftContract,
+          method: "function totalSupply() view returns (uint256)",
+          params: [],
+        });
+
+        trace.checks.contractValidation = {
+          status: 'success',
+          totalSupply: totalSupply.toString(),
+          isValidContract: true
+        };
+
+        // 3. Token Validation
+        console.log("🎯 VALIDATING TOKEN ===========================================");
+        if (BigInt(tokenId) >= totalSupply) {
+          trace.checks.tokenValidation = {
+            status: 'error',
+            exists: false,
+            error: `Token ${tokenId} does not exist. Total supply: ${totalSupply}`
+          };
+          trace.checks.rootCauseAnalysis.push(`TOKEN_NOT_EXISTS: Token ID ${tokenId} exceeds total supply ${totalSupply}`);
+        } else {
+          // Try to get tokenURI and owner
+          let tokenURI = null;
+          let owner = null;
+
+          try {
+            tokenURI = await readContract({
+              contract: nftContract,
+              method: "function tokenURI(uint256 tokenId) view returns (string)",
+              params: [BigInt(tokenId)],
+            });
+          } catch (uriError) {
+            console.log("⚠️ TokenURI read failed:", uriError);
+          }
+
+          try {
+            owner = await readContract({
+              contract: nftContract,
+              method: "function ownerOf(uint256 tokenId) view returns (address)",
+              params: [BigInt(tokenId)],
+            });
+          } catch (ownerError) {
+            console.log("⚠️ Owner read failed:", ownerError);
+          }
+
+          trace.checks.tokenValidation = {
+            status: 'success',
+            exists: true,
+            tokenURI,
+            owner,
+            hasTokenURI: !!tokenURI,
+            hasOwner: !!owner
+          };
+        }
+      } catch (contractError) {
+        trace.checks.contractValidation = {
+          status: 'error',
+          error: contractError instanceof Error ? contractError.message : 'Unknown error',
+          isValidContract: false
+        };
+        trace.checks.rootCauseAnalysis.push(`CONTRACT_ERROR: ${contractError}`);
+      }
+    } catch (thirdwebError) {
+      trace.checks.thirdwebConnection = {
+        status: 'error',
+        error: thirdwebError instanceof Error ? thirdwebError.message : 'Unknown error'
+      };
+      trace.checks.rootCauseAnalysis.push(`THIRDWEB_ERROR: ${thirdwebError}`);
+    }
+
+    // 4. Check server metadata storage
+    console.log("💾 CHECKING METADATA STORAGE ===========================================");
     try {
       const serverMetadata = await getNFTMetadata(contractAddress, tokenId);
       trace.checks.serverMetadata = {
         found: !!serverMetadata,
         data: serverMetadata,
-        status: 'success'
+        status: 'success',
+        hasImage: !!(serverMetadata?.image),
+        hasImageCid: !!(serverMetadata?.imageIpfsCid),
+        isPlaceholder: serverMetadata?.image?.includes('placeholder') || false,
+        contractMatches: serverMetadata?.contractAddress === contractAddress,
+        tokenIdMatches: serverMetadata?.tokenId?.toString() === tokenId?.toString()
       };
+
+      if (!serverMetadata) {
+        trace.checks.rootCauseAnalysis.push("METADATA_NOT_FOUND: No metadata stored in Redis/Upstash - mint process failed to store");
+      } else if (serverMetadata.image?.includes('placeholder')) {
+        trace.checks.rootCauseAnalysis.push("PLACEHOLDER_STORED: Placeholder image was stored instead of real image during mint");
+      } else if (serverMetadata.contractAddress !== contractAddress) {
+        trace.checks.rootCauseAnalysis.push(`CONTRACT_MISMATCH: Stored contract ${serverMetadata.contractAddress} != requested ${contractAddress}`);
+      } else if (serverMetadata.tokenId?.toString() !== tokenId?.toString()) {
+        trace.checks.rootCauseAnalysis.push(`TOKENID_MISMATCH: Stored token ${serverMetadata.tokenId} != requested ${tokenId}`);
+      }
     } catch (error) {
       trace.checks.serverMetadata = {
         found: false,
         error: error instanceof Error ? error.message : 'Unknown error',
         status: 'error'
       };
+      trace.checks.rootCauseAnalysis.push(`METADATA_ERROR: ${error}`);
     }
 
-    // 2. Check /tmp directory contents
-    try {
-      const tmpDir = '/tmp/nft-metadata';
-      const files = await fsPromises.readdir(tmpDir).catch(() => []);
-      trace.checks.tmpFiles = files.map(file => ({
-        name: file,
-        path: path.join(tmpDir, file),
-        isTarget: file === `${contractAddress.toLowerCase()}_${tokenId}.json`
-      }));
-    } catch (error) {
-      trace.checks.tmpFiles = [];
+    // 5. IPFS Verification (if image exists and is not placeholder)
+    console.log("🔗 IPFS VERIFICATION ===========================================");
+    if (trace.checks.serverMetadata?.data?.image && !trace.checks.serverMetadata.isPlaceholder) {
+      try {
+        const imageUrl = trace.checks.serverMetadata.data.image;
+        let testUrl = imageUrl;
+        
+        if (imageUrl.startsWith('ipfs://')) {
+          const cid = imageUrl.replace('ipfs://', '');
+          testUrl = `https://nftstorage.link/ipfs/${cid}`;
+        }
+
+        console.log(`🔍 Testing image accessibility: ${testUrl}`);
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000);
+        
+        const response = await fetch(testUrl, { 
+          method: 'HEAD',
+          signal: controller.signal 
+        });
+        clearTimeout(timeoutId);
+        
+        trace.checks.ipfsVerification = {
+          originalUrl: imageUrl,
+          testUrl,
+          accessible: response.ok,
+          status: response.status,
+          contentType: response.headers.get('content-type'),
+          contentLength: response.headers.get('content-length')
+        };
+
+        if (!response.ok) {
+          trace.checks.rootCauseAnalysis.push(`IPFS_INACCESSIBLE: Image not accessible - ${response.status} at ${testUrl}`);
+        }
+      } catch (error) {
+        trace.checks.ipfsVerification = {
+          error: error instanceof Error ? error.message : 'Unknown error',
+          status: 'error'
+        };
+        trace.checks.rootCauseAnalysis.push(`IPFS_ERROR: ${error}`);
+      }
     }
 
-    // 3. Test file write permissions
-    try {
-      const testFile = '/tmp/test-write.json';
-      await fsPromises.writeFile(testFile, JSON.stringify({ test: true }));
-      await fsPromises.unlink(testFile);
-      trace.checks.writePermissions = { status: 'success' };
-    } catch (error) {
-      trace.checks.writePermissions = {
-        status: 'error',
-        error: error instanceof Error ? error.message : 'Unknown error'
-      };
+    // 6. Check /tmp directory contents (development only)
+    if (process.env.NODE_ENV !== 'production') {
+      try {
+        const tmpDir = '/tmp/nft-metadata';
+        const files = await fsPromises.readdir(tmpDir).catch(() => []);
+        trace.checks.tmpFiles = files.map(file => ({
+          name: file,
+          path: path.join(tmpDir, file),
+          isTarget: file === `${contractAddress.toLowerCase()}_${tokenId}.json`
+        }));
+      } catch (error) {
+        trace.checks.tmpFiles = [];
+      }
+
+      // 7. Test file write permissions
+      try {
+        const testFile = '/tmp/test-write.json';
+        await fsPromises.writeFile(testFile, JSON.stringify({ test: true }));
+        await fsPromises.unlink(testFile);
+        trace.checks.writePermissions = { status: 'success' };
+      } catch (error) {
+        trace.checks.writePermissions = {
+          status: 'error',
+          error: error instanceof Error ? error.message : 'Unknown error'
+        };
+      }
     }
 
-    console.log('🔍 NFT Flow trace:', trace);
-    res.status(200).json(trace);
+    // 8. Generate Final Analysis
+    const criticalIssues = trace.checks.rootCauseAnalysis.filter(issue => 
+      issue.includes('METADATA_NOT_FOUND') || 
+      issue.includes('PLACEHOLDER_STORED') ||
+      issue.includes('CONTRACT_MISMATCH') ||
+      issue.includes('TOKEN_NOT_EXISTS')
+    );
+
+    const analysis = {
+      criticalIssues,
+      systemHealth: {
+        thirdwebConnection: trace.checks.thirdwebConnection?.status === 'success',
+        contractValid: trace.checks.contractValidation?.status === 'success',
+        tokenExists: trace.checks.tokenValidation?.status === 'success',
+        metadataStored: trace.checks.serverMetadata?.found || false,
+        imageAccessible: trace.checks.ipfsVerification?.accessible !== false
+      },
+      recommendations: criticalIssues.length > 0 ? [
+        "Check the mint.ts API logs for the specific NFT creation process",
+        "Verify contract addresses match between mint and lookup operations",
+        "Test the image upload and IPFS storage process manually",
+        "Check Redis/Upstash connection and verify data is being stored"
+      ] : [
+        "System appears healthy - check browser console for client-side issues"
+      ]
+    };
+
+    console.log('✅ Enhanced NFT Flow diagnostic complete');
+    res.status(200).json({ trace, analysis });
   } catch (error) {
-    console.error('❌ NFT Flow trace error:', error);
+    console.error('❌ Enhanced NFT Flow diagnostic error:', error);
     res.status(500).json({ 
-      error: 'NFT Flow trace failed', 
+      error: 'Enhanced NFT Flow diagnostic failed', 
       details: error instanceof Error ? error.message : 'Unknown error' 
     });
   }

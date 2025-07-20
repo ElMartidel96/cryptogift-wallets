@@ -48,7 +48,7 @@ export const ReceiveModal: React.FC<ReceiveModalProps> = ({
     }
   };
 
-  const shareUrl = `${process.env.NEXT_PUBLIC_SITE_URL || 'https://cryptogift-wallets.vercel.app'}/token/${process.env.NEXT_PUBLIC_NFT_DROP_ADDRESS}/${tokenId}`;
+  const shareUrl = `${process.env.NEXT_PUBLIC_SITE_URL || 'https://cryptogift-wallets.vercel.app'}/token/${process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS}/${tokenId}`;
 
   if (!isOpen) return null;
 

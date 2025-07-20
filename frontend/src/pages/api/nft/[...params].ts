@@ -4,20 +4,38 @@ import { baseSepolia } from "thirdweb/chains";
 import { getNFTMetadata, resolveIPFSUrl } from "../../../lib/nftMetadataStore";
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  console.log("🔍 NFT API LOOKUP STARTED ===========================================");
+  console.log("📅 Timestamp:", new Date().toISOString());
+  console.log("🔧 Method:", req.method);
+  console.log("📋 Query params:", req.query);
+  console.log("🌐 User Agent:", req.headers['user-agent']?.substring(0, 100));
+  
   if (req.method !== 'GET') {
+    console.error("❌ Invalid method:", req.method);
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
   try {
     const { params } = req.query;
+    console.log("📝 Raw params:", params);
     
     if (!Array.isArray(params) || params.length !== 2) {
+      console.error("❌ Invalid parameters format:", { 
+        isArray: Array.isArray(params), 
+        length: params?.length,
+        params 
+      });
       return res.status(400).json({ 
         error: 'Invalid parameters. Expected: [contractAddress, tokenId]' 
       });
     }
 
     const [contractAddress, tokenId] = params;
+    console.log("🎯 PARSED PARAMETERS:");
+    console.log("  📝 Contract Address:", contractAddress);
+    console.log("  🎯 Token ID:", tokenId);
+    console.log("  📏 Contract length:", contractAddress?.length);
+    console.log("  📊 Token ID type:", typeof tokenId);
 
     // Initialize ThirdWeb Client
     const client = createThirdwebClient({
@@ -127,7 +145,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                   description: metadata.description,
                   image: processedImageUrl,
                   attributes: metadata.attributes || [],
-                  tokenId: parseInt(tokenId),
+                  tokenId: tokenId, // Keep as string
                   contractAddress,
                   owner,
                   tbaAddress,
@@ -167,16 +185,25 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // DISABLED FOR TESTING: Skip stored metadata completely
     let nft;
     
-    console.log("🔍 CACHE REACTIVATED: Checking for stored metadata...");
-    console.log("🔍 Search parameters:", { 
-      contractAddress, 
-      tokenId,
-      contractType: typeof contractAddress,
-      tokenIdType: typeof tokenId 
-    });
+    console.log("💾 METADATA LOOKUP ===========================================");
+    console.log("🔍 SEARCHING FOR STORED METADATA:");
+    console.log("  📝 Contract Address:", contractAddress);
+    console.log("  🎯 Token ID:", tokenId);
+    console.log("  📊 Contract type:", typeof contractAddress);
+    console.log("  📊 TokenID type:", typeof tokenId);
+    console.log("  📏 Contract length:", contractAddress?.length);
+    console.log("  🏗️ Expected format: 0x[40 chars]");
     
     // REACTIVATED: Normal metadata lookup from storage
+    console.log("🔍 Calling getNFTMetadata...");
     const storedMetadata = await getNFTMetadata(contractAddress, tokenId);
+    console.log("📊 Metadata lookup result:", {
+      found: !!storedMetadata,
+      hasImage: !!(storedMetadata?.image),
+      hasImageCid: !!(storedMetadata?.imageIpfsCid),
+      contractMatches: storedMetadata?.contractAddress === contractAddress,
+      tokenIdMatches: storedMetadata?.tokenId === tokenId
+    });
     
     console.log("🔍 CRITICAL DEBUG: Redis lookup result:", {
       found: !!storedMetadata,
@@ -329,6 +356,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const isDeployed = false;
 
     // Return the NFT data directly (not nested under 'nft')
+    // CRITICAL FIX: Keep tokenId as string to prevent exponential notation
     res.status(200).json({
       success: true,
       ...nft,
@@ -337,7 +365,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       tbaBalance: balance,
       tbaDeployed: isDeployed,
       contractAddress,
-      tokenId: parseInt(tokenId),
+      tokenId: tokenId, // Keep as string - no parseInt()
       network: "Base Sepolia",
       chainId: 84532,
     });

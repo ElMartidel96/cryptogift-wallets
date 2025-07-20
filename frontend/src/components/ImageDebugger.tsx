@@ -267,6 +267,19 @@ export const ImageDebugger: React.FC<ImageDebuggerProps> = ({
                 </span>
               )}
             </div>
+            
+            {/* ENHANCED: Show URL being used for debugging */}
+            <div className="mb-2 p-2 bg-yellow-50 border border-yellow-200 rounded">
+              <strong>🔍 Current Image URL:</strong>
+              <div className="break-all text-xs mt-1">{imageUrl}</div>
+              {debugInfo.apiData?.image && (
+                <div className="mt-1">
+                  <strong>📋 API Image:</strong>
+                  <div className="break-all text-xs">{debugInfo.apiData.image}</div>
+                </div>
+              )}
+            </div>
+            
             <div className="space-y-1">
               {debugInfo.steps?.map((step: string, index: number) => (
                 <div key={index} className="text-gray-600">
@@ -274,6 +287,33 @@ export const ImageDebugger: React.FC<ImageDebuggerProps> = ({
                 </div>
               ))}
             </div>
+            
+            {/* ENHANCED: Add enhanced debug trace button */}
+            <div className="mt-3 p-2 bg-blue-50 border border-blue-200 rounded">
+              <button
+                onClick={async () => {
+                  try {
+                    const response = await fetch('/api/debug/flow-trace', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ contractAddress: nftContract, tokenId })
+                    });
+                    const result = await response.json();
+                    console.log('🔍 ENHANCED DEBUG TRACE:', result);
+                    alert('Debug trace complete - check console for detailed analysis');
+                  } catch (error) {
+                    console.error('Debug trace failed:', error);
+                  }
+                }}
+                className="text-sm bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600"
+              >
+                🔬 Run Enhanced Debug Trace
+              </button>
+              <div className="text-xs text-gray-500 mt-1">
+                Runs comprehensive system analysis and logs results to console
+              </div>
+            </div>
+            
             {debugInfo.apiData && (
               <details className="mt-2">
                 <summary className="cursor-pointer font-medium">API Data</summary>
