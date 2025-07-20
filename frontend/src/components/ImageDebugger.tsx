@@ -290,27 +290,45 @@ export const ImageDebugger: React.FC<ImageDebuggerProps> = ({
             
             {/* ENHANCED: Add enhanced debug trace button */}
             <div className="mt-3 p-2 bg-blue-50 border border-blue-200 rounded">
-              <button
-                onClick={async () => {
-                  try {
-                    const response = await fetch('/api/debug/flow-trace', {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({ contractAddress: nftContract, tokenId })
-                    });
-                    const result = await response.json();
-                    console.log('🔍 ENHANCED DEBUG TRACE:', result);
-                    alert('Debug trace complete - check console for detailed analysis');
-                  } catch (error) {
-                    console.error('Debug trace failed:', error);
-                  }
-                }}
-                className="text-sm bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600"
-              >
-                🔬 Run Enhanced Debug Trace
-              </button>
-              <div className="text-xs text-gray-500 mt-1">
-                Runs comprehensive system analysis and logs results to console
+              <div className="flex gap-2 mb-2">
+                <button
+                  onClick={async () => {
+                    try {
+                      const response = await fetch('/api/debug/flow-trace', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ contractAddress: nftContract, tokenId })
+                      });
+                      const result = await response.json();
+                      console.log('🔍 ENHANCED DEBUG TRACE:', result);
+                      alert('Debug trace complete - check console for detailed analysis');
+                    } catch (error) {
+                      console.error('Debug trace failed:', error);
+                    }
+                  }}
+                  className="text-sm bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600"
+                >
+                  🔬 Full Debug
+                </button>
+                
+                <button
+                  onClick={async () => {
+                    try {
+                      const response = await fetch(`/api/debug/token-numbering-check?contractAddress=${nftContract}`);
+                      const result = await response.json();
+                      console.log('🔢 TOKEN NUMBERING CHECK:', result);
+                      alert(`Token indexing: ${result.conclusions.indexingStartsAt === 0 ? '0-based (0 to supply-1)' : '1-based (1 to supply)'}\nFirst token: ${result.conclusions.firstTokenId}\nLast token: ${result.conclusions.lastTokenId}\nTotal supply: ${result.totalSupply}`);
+                    } catch (error) {
+                      console.error('Token numbering check failed:', error);
+                    }
+                  }}
+                  className="text-sm bg-purple-500 text-white px-2 py-1 rounded hover:bg-purple-600"
+                >
+                  🔢 Check Indexing
+                </button>
+              </div>
+              <div className="text-xs text-gray-500">
+                Full Debug: Comprehensive system analysis | Check Indexing: Verify token numbering (0-based vs 1-based)
               </div>
             </div>
             

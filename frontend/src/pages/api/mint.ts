@@ -237,8 +237,11 @@ async function mintNFTGasless(to: string, tokenURI: string, client: any) {
         params: []
       });
       
-      realTokenId = totalSupply.toString();
-      console.log("✅ GASLESS: REAL TOKEN ID from totalSupply:", realTokenId);
+      // CRITICAL FIX: totalSupply is count of tokens, last token ID is totalSupply - 1
+      realTokenId = (totalSupply - BigInt(1)).toString();
+      console.log("✅ GASLESS: CORRECTED TOKEN ID calculation:");
+      console.log("  📊 Total supply:", totalSupply.toString());
+      console.log("  🎯 Last token ID (supply-1):", realTokenId);
       
     } catch (supplyError) {
       console.log("⚠️ GASLESS: Token ID extraction failed, using transaction-based fallback");
@@ -595,8 +598,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           params: []
         });
         
-        actualTokenId = totalSupply.toString();
-        console.log("✅ REAL TOKEN ID from totalSupply (post-confirmation):", actualTokenId);
+        // CRITICAL FIX: totalSupply is count of tokens, last token ID is totalSupply - 1
+        actualTokenId = (totalSupply - BigInt(1)).toString();
+        console.log("✅ CORRECTED TOKEN ID calculation:");
+        console.log("  📊 Total supply:", totalSupply.toString());
+        console.log("  🎯 Last token ID (supply-1):", actualTokenId);
         
       } catch (extractError) {
         console.error("❌ Failed to extract real token ID:", extractError);
