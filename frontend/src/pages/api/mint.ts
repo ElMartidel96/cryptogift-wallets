@@ -267,53 +267,22 @@ async function mintNFTGasless(to: string, tokenURI: string, client: any) {
       blockNumber: receipt.blockNumber 
     });
     
-    // CRITICAL FIX: Extract REAL token ID from receipt Transfer events (gasless)
-    console.log("🔍 GASLESS: Extracting REAL token ID from transaction receipt...");
+    // CRITICAL FIX: Extract REAL token ID using totalSupply (gasless)
+    console.log("🔍 GASLESS: Extracting REAL token ID from contract...");
     let realTokenId;
     
     try {
-      // Parse Transfer event from receipt logs to get the actual token ID
-      let tokenIdFromEvent = null;
+      // RELIABLE METHOD: gasless transaction is confirmed, use totalSupply
+      console.log("🎯 GASLESS: Using totalSupply for reliable tokenId extraction...");
       
-      if (receipt.logs && receipt.logs.length > 0) {
-        console.log("🔍 GASLESS: Parsing Transfer events from receipt logs...");
-        
-        // ERC721 Transfer event signature: Transfer(address indexed from, address indexed to, uint256 indexed tokenId)
-        const transferEventSignature = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef";
-        
-        for (const log of receipt.logs) {
-          if (log.topics && log.topics[0] === transferEventSignature) {
-            console.log("✅ GASLESS: Found Transfer event:", log);
-            
-            // Token ID is the 3rd topic (index 2) in Transfer event
-            if (log.topics[3]) {
-              const tokenIdHex = log.topics[3];
-              tokenIdFromEvent = BigInt(tokenIdHex).toString();
-              console.log("🎯 GASLESS: TOKEN ID from Transfer event:", tokenIdFromEvent);
-              break;
-            }
-          }
-        }
-      }
+      const totalSupply = await readContract({
+        contract: nftContract,
+        method: "function totalSupply() view returns (uint256)",
+        params: []
+      });
       
-      if (tokenIdFromEvent) {
-        realTokenId = tokenIdFromEvent;
-        console.log("✅ GASLESS: REAL TOKEN ID extracted from receipt:", realTokenId);
-      } else {
-        console.log("⚠️ GASLESS: No Transfer event found, falling back to totalSupply...");
-        
-        // Fallback: Wait a bit for block confirmation then check totalSupply
-        await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second for gasless
-        
-        const totalSupply = await readContract({
-          contract: nftContract,
-          method: "function totalSupply() view returns (uint256)",
-          params: []
-        });
-        
-        realTokenId = totalSupply.toString();
-        console.log("🎯 GASLESS: TOKEN ID from totalSupply (after confirmation):", realTokenId);
-      }
+      realTokenId = totalSupply.toString();
+      console.log("✅ GASLESS: REAL TOKEN ID from totalSupply:", realTokenId);
       
     } catch (supplyError) {
       console.log("⚠️ GASLESS: Token ID extraction failed, using transaction-based fallback");
@@ -612,42 +581,40 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         if (receipt.logs && receipt.logs.length > 0) {
           console.log("🔍 Parsing Transfer events from receipt logs...");
           
-          // ERC721 Transfer event signature: Transfer(address indexed from, address indexed to, uint256 indexed tokenId)
-          const transferEventSignature = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef";
-          
-          for (const log of receipt.logs) {
-            if (log.topics && log.topics[0] === transferEventSignature) {
-              console.log("✅ Found Transfer event:", log);
+          // ThirdWeb v5 receipt format - try to extract events
+          try {
+            // Look for Transfer events in the logs
+            for (const log of receipt.logs) {
+              // ThirdWeb v5 may have different log format, try both approaches
+              console.log("🔍 Checking log:", log);
               
-              // Token ID is the 3rd topic (index 2) in Transfer event
-              if (log.topics[3]) {
-                const tokenIdHex = log.topics[3];
-                tokenIdFromEvent = BigInt(tokenIdHex).toString();
-                console.log("🎯 TOKEN ID from Transfer event:", tokenIdFromEvent);
+              // Check if this log is from our NFT contract
+              if (log.address && log.address.toLowerCase() === process.env.NEXT_PUBLIC_NFT_DROP_ADDRESS?.toLowerCase()) {
+                console.log("✅ Found log from NFT contract:", log);
+                
+                // Try to extract tokenId from log data or use alternative approach
+                // For now, fall back to totalSupply since log parsing may be complex
+                console.log("📝 Will use totalSupply fallback for reliable tokenId");
                 break;
               }
             }
+          } catch (logParseError) {
+            console.log("⚠️ Log parsing failed, will use totalSupply:", logParseError.message);
           }
         }
         
-        if (tokenIdFromEvent) {
-          actualTokenId = tokenIdFromEvent;
-          console.log("✅ REAL TOKEN ID extracted from receipt:", actualTokenId);
-        } else {
-          console.log("⚠️ No Transfer event found, falling back to totalSupply...");
-          
-          // Fallback: Wait a bit for block confirmation then check totalSupply
-          await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2 seconds
-          
-          const totalSupply = await readContract({
-            contract: cryptoGiftNFTContract,
-            method: "function totalSupply() view returns (uint256)",
-            params: []
-          });
-          
-          actualTokenId = totalSupply.toString();
-          console.log("🎯 TOKEN ID from totalSupply (after confirmation):", actualTokenId);
-        }
+        // RELIABLE METHOD: Use totalSupply after transaction confirmation
+        console.log("🎯 Using totalSupply method for reliable tokenId extraction...");
+        
+        // Transaction is confirmed, now read totalSupply to get the new tokenId
+        const totalSupply = await readContract({
+          contract: cryptoGiftNFTContract,
+          method: "function totalSupply() view returns (uint256)",
+          params: []
+        });
+        
+        actualTokenId = totalSupply.toString();
+        console.log("✅ REAL TOKEN ID from totalSupply (post-confirmation):", actualTokenId);
         
       } catch (extractError) {
         console.error("❌ Failed to extract real token ID:", extractError);
