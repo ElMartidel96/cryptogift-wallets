@@ -155,16 +155,16 @@ export default function KnowledgePage() {
         {/* Header */}
         <div className="text-center mb-12">
           <div className="flex items-center justify-center gap-4 mb-4">
-            <div className="w-16 h-16 flex items-center justify-center 
-                          bg-gradient-to-br from-blue-100 to-cyan-100 dark:from-blue-900/30 dark:to-cyan-900/30 
-                          rounded-2xl shadow-lg dark:shadow-blue-500/20 border border-blue-200/50 dark:border-blue-500/30 
+            <div className="w-20 h-20 flex items-center justify-center 
+                          bg-gray-50 dark:bg-gray-800/50 
+                          rounded-2xl shadow-lg border border-gray-200/30 dark:border-gray-700/30 
                           backdrop-blur-sm transition-all duration-300">
               <Image
                 src="/knowledge-logo.png"
                 alt="Knowledge"
-                width={56}
-                height={56}
-                className="object-contain drop-shadow-lg"
+                width={76}
+                height={76}
+                className="object-contain drop-shadow-lg w-full h-full p-1"
               />
             </div>
             <h1 className="text-4xl font-bold text-text-primary transition-colors duration-300">

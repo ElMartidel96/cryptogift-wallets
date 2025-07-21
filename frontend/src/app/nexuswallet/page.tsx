@@ -124,16 +124,16 @@ export default function NexusWalletPage() {
                      dark:from-bg-primary dark:via-bg-secondary dark:to-bg-primary 
                      flex items-center justify-center transition-all duration-500">
         <div className="text-center">
-          <div className="w-20 h-20 flex items-center justify-center mx-auto mb-6
-                        bg-gradient-to-br from-cyan-100 to-blue-100 dark:from-cyan-900/30 dark:to-blue-900/30 
-                        rounded-2xl shadow-lg dark:shadow-cyan-500/20 border border-cyan-200/50 dark:border-cyan-500/30 
+          <div className="w-24 h-24 flex items-center justify-center mx-auto mb-6
+                        bg-gray-50 dark:bg-gray-800/50 
+                        rounded-2xl shadow-lg border border-gray-200/30 dark:border-gray-700/30 
                         backdrop-blur-sm transition-all duration-300">
             <Image
               src="/NexusWallet-logo.png"
               alt="NexusWallet"
-              width={64}
-              height={64}
-              className="object-contain drop-shadow-lg"
+              width={88}
+              height={88}
+              className="object-contain drop-shadow-lg w-full h-full p-1"
             />
           </div>
           <h1 className="text-3xl font-bold text-text-primary mb-4 transition-colors duration-300">Conecta tu Wallet</h1>
@@ -156,16 +156,16 @@ export default function NexusWalletPage() {
         {/* Header */}
         <div className="text-center mb-8">
           <div className="flex items-center justify-center gap-4 mb-2">
-            <div className="w-16 h-16 flex items-center justify-center 
-                          bg-gradient-to-br from-cyan-100 to-blue-100 dark:from-cyan-900/30 dark:to-blue-900/30 
-                          rounded-2xl shadow-lg dark:shadow-cyan-500/20 border border-cyan-200/50 dark:border-cyan-500/30 
+            <div className="w-20 h-20 flex items-center justify-center 
+                          bg-gray-50 dark:bg-gray-800/50 
+                          rounded-2xl shadow-lg border border-gray-200/30 dark:border-gray-700/30 
                           backdrop-blur-sm transition-all duration-300">
               <Image
                 src="/NexusWallet-logo.png"
                 alt="NexusWallet"
-                width={56}
-                height={56}
-                className="object-contain drop-shadow-lg"
+                width={76}
+                height={76}
+                className="object-contain drop-shadow-lg w-full h-full p-1"
               />
             </div>
             <h1 className="text-4xl font-bold text-text-primary transition-colors duration-300">

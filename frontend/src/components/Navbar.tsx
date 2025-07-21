@@ -60,44 +60,17 @@ export const Navbar: React.FC = () => {
           </Link>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-4">
+          <div className="hidden md:flex items-center space-x-3">
             <Link href="/" className="text-text-secondary hover:text-accent-gold dark:hover:text-accent-silver transition-colors text-sm">
               Inicio
             </Link>
-            <Link href="/referrals" className="text-text-secondary hover:text-accent-gold dark:hover:text-accent-silver transition-colors flex items-center text-sm gap-2">
-              <div className="w-5 h-5">
-                <Image
-                  src="/referrals-logo.png"
-                  alt="Referrals"
-                  width={20}
-                  height={20}
-                  className="object-contain"
-                />
-              </div>
+            <Link href="/referrals" className="text-text-secondary hover:text-accent-gold dark:hover:text-accent-silver transition-colors text-sm">
               Referidos
             </Link>
-            <Link href="/knowledge" className="text-text-secondary hover:text-accent-gold dark:hover:text-accent-silver transition-colors flex items-center text-sm gap-2">
-              <div className="w-5 h-5">
-                <Image
-                  src="/knowledge-logo.png"
-                  alt="Knowledge"
-                  width={20}
-                  height={20}
-                  className="object-contain"
-                />
-              </div>
+            <Link href="/knowledge" className="text-text-secondary hover:text-accent-gold dark:hover:text-accent-silver transition-colors text-sm">
               Knowledge
             </Link>
-            <Link href="/nexuswallet" className="text-text-secondary hover:text-accent-gold dark:hover:text-accent-silver transition-colors flex items-center text-sm gap-2">
-              <div className="w-5 h-5">
-                <Image
-                  src="/NexusWallet-logo.png"
-                  alt="NexusWallet"
-                  width={20}
-                  height={20}
-                  className="object-contain"
-                />
-              </div>
+            <Link href="/nexuswallet" className="text-text-secondary hover:text-accent-gold dark:hover:text-accent-silver transition-colors text-sm">
               NexusWallet
             </Link>
             
@@ -153,50 +126,23 @@ export const Navbar: React.FC = () => {
               </Link>
               <Link 
                 href="/referrals" 
-                className="flex items-center gap-2 text-text-secondary hover:text-accent-gold dark:hover:text-accent-silver transition-colors px-4 py-2"
+                className="block text-text-secondary hover:text-accent-gold dark:hover:text-accent-silver transition-colors px-4 py-2"
                 onClick={() => setIsMenuOpen(false)}
               >
-                <div className="w-5 h-5">
-                  <Image
-                    src="/referrals-logo.png"
-                    alt="Referrals"
-                    width={20}
-                    height={20}
-                    className="object-contain"
-                  />
-                </div>
                 Referidos
               </Link>
               <Link 
                 href="/knowledge" 
-                className="flex items-center gap-2 text-text-secondary hover:text-accent-gold dark:hover:text-accent-silver transition-colors px-4 py-2"
+                className="block text-text-secondary hover:text-accent-gold dark:hover:text-accent-silver transition-colors px-4 py-2"
                 onClick={() => setIsMenuOpen(false)}
               >
-                <div className="w-5 h-5">
-                  <Image
-                    src="/knowledge-logo.png"
-                    alt="Knowledge"
-                    width={20}
-                    height={20}
-                    className="object-contain"
-                  />
-                </div>
                 Knowledge
               </Link>
               <Link 
                 href="/nexuswallet" 
-                className="flex items-center gap-2 text-text-secondary hover:text-accent-gold dark:hover:text-accent-silver transition-colors px-4 py-2"
+                className="block text-text-secondary hover:text-accent-gold dark:hover:text-accent-silver transition-colors px-4 py-2"
                 onClick={() => setIsMenuOpen(false)}
               >
-                <div className="w-5 h-5">
-                  <Image
-                    src="/NexusWallet-logo.png"
-                    alt="NexusWallet"
-                    width={20}
-                    height={20}
-                    className="object-contain"
-                  />
-                </div>
                 NexusWallet
               </Link>
               

@@ -44,20 +44,20 @@ export const WalletSwitcher: React.FC<WalletSwitcherProps> = ({
                    hover:border-accent-gold dark:hover:border-accent-silver transition-all duration-300 w-full"
         >
           {/* Wallet Icon */}
-          <div className="w-8 h-8 rounded-full flex items-center justify-center bg-bg-secondary dark:bg-bg-primary transition-colors duration-300">
+          <div className="w-8 h-8 rounded-full flex items-center justify-center bg-gray-50 dark:bg-gray-800/70 transition-colors duration-300">
             {walletType === 'TBA' && tbaWallet ? (
               <ImageDebugger 
                 nftContract={tbaWallet.nftContract}
                 tokenId={tbaWallet.tokenId}
-                className="w-6 h-6 rounded-full overflow-hidden"
+                className="w-7 h-7 rounded-full overflow-hidden"
               />
             ) : (
               <Image
                 src="/cg-wallet-logo.png"
                 alt="CG Wallet"
-                width={24}
-                height={24}
-                className="object-contain"
+                width={28}
+                height={28}
+                className="object-contain w-7 h-7"
               />
             )}
           </div>
@@ -108,13 +108,13 @@ export const WalletSwitcher: React.FC<WalletSwitcherProps> = ({
                     walletType === 'EOA' ? 'bg-blue-50 dark:bg-accent-gold/20 border border-blue-200 dark:border-accent-gold/30' : ''
                   }`}
                 >
-                  <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-accent-gold/20 flex items-center justify-center transition-colors duration-300">
+                  <div className="w-8 h-8 rounded-full bg-gray-50 dark:bg-gray-800/70 flex items-center justify-center transition-colors duration-300">
                     <Image
                       src="/cg-wallet-logo.png"
                       alt="CG Wallet"
-                      width={24}
-                      height={24}
-                      className="object-contain"
+                      width={28}
+                      height={28}
+                      className="object-contain w-7 h-7"
                     />
                   </div>
                   <div className="flex-1 text-left">
@@ -169,13 +169,13 @@ export const WalletSwitcher: React.FC<WalletSwitcherProps> = ({
                     }}
                     className="w-full flex items-center space-x-3 p-3 rounded-lg hover:bg-bg-secondary transition-colors duration-300 text-left"
                   >
-                    <div className="w-8 h-8 rounded-full bg-purple-100 dark:bg-accent-gold/20 flex items-center justify-center transition-colors duration-300">
+                    <div className="w-8 h-8 rounded-full bg-gray-50 dark:bg-gray-800/70 flex items-center justify-center transition-colors duration-300">
                       <Image
                         src="/cg-wallet-logo.png"
                         alt="CG Wallet"
-                        width={24}
-                        height={24}
-                        className="object-contain"
+                        width={28}
+                        height={28}
+                        className="object-contain w-7 h-7"
                       />
                     </div>
                     <div className="flex-1">
