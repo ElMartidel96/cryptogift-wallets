@@ -284,12 +284,11 @@ async function mintNFTGasless(to: string, tokenURI: string, client: any) {
         console.log("  🎯 Token ID (totalSupply directly):", realTokenId);
         
       } catch (supplyError) {
-        console.log("⚠️ GASLESS: Token ID extraction failed, using transaction-based fallback");
+        console.error("❌ GASLESS: CRITICAL - Token ID extraction failed completely");
+        console.error("🚨 GASLESS: Cannot proceed without real token ID");
         
-        // Fallback: Use transaction hash for deterministic but unique ID
-        const hashNum = parseInt(receipt.transactionHash.slice(-8), 16);
-        realTokenId = (hashNum % 1000000).toString();
-        console.log("🎯 GASLESS: Fallback token ID from hash:", realTokenId);
+        // CRITICAL FIX: FAIL gasless instead of creating synthetic ID
+        throw new Error(`Gasless token ID extraction failed: ${supplyError.message}. Cannot create NFT with synthetic ID.`);
       }
     }
     
@@ -539,7 +538,33 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         console.log("⚠️ GASLESS FAILED (fast fallback):", gaslessError.message);
         addAPIStep('GASLESS_FAILED', { error: gaslessError.message }, 'error');
         
-        // Fast fallback - don't wait
+        // CRITICAL FIX: Add delay to ensure gasless transaction doesn't succeed later
+        console.log("⏳ Waiting 3 seconds to ensure gasless transaction doesn't succeed after timeout...");
+        await new Promise(resolve => setTimeout(resolve, 3000));
+        
+        // Double-check if gasless actually succeeded despite timeout/error
+        try {
+          const totalSupplyCheck = await readContract({
+            contract,
+            method: "function totalSupply() view returns (uint256)",
+            params: []
+          });
+          
+          if (totalSupplyCheck > totalSupply) {
+            console.log("🚨 CRITICAL: Gasless transaction actually succeeded! Aborting fallback.");
+            console.log(`📊 Supply increased: ${totalSupply.toString()} → ${totalSupplyCheck.toString()}`);
+            
+            // Extract the real token ID that was minted
+            tokenId = totalSupplyCheck.toString();
+            gasless = true;
+            transactionHash = "gasless_succeeded_after_timeout";
+            
+            console.log("✅ Using gasless result after timeout recovery");
+            addAPIStep('GASLESS_TIMEOUT_RECOVERY', { tokenId, newTotalSupply: totalSupplyCheck.toString() }, 'success');
+          }
+        } catch (checkError) {
+          console.log("🔍 Could not verify gasless status, proceeding with fallback");
+        }
       }
     } else {
       console.log("⚡ SKIPPING GASLESS: Fast check failed");
@@ -770,13 +795,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         });
         
       } catch (extractError) {
-        console.error("❌ Failed to extract real token ID:", extractError);
-        console.log("🔄 Fallback: Using deterministic transaction-based ID");
+        console.error("❌ CRITICAL: Failed to extract real token ID:", extractError);
+        console.error("🚨 MINT FAILED: Cannot proceed without real token ID");
         
-        // Deterministic fallback based on transaction hash
-        const hashNum = parseInt(nftResult.transactionHash.slice(-8), 16);
-        actualTokenId = (hashNum % 1000000).toString();
-        console.log("🔄 Fallback token ID:", actualTokenId);
+        addMintLog('ERROR', 'TOKEN_ID_EXTRACTION_FAILED', {
+          transactionHash: nftResult.transactionHash,
+          error: extractError.message
+        });
+        
+        // CRITICAL FIX: FAIL mint instead of creating synthetic ID
+        throw new Error(`Token ID extraction failed: ${extractError.message}. Cannot create NFT with synthetic ID.`);
       }
       
       console.log("📝 FINAL Token ID:", actualTokenId);

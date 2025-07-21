@@ -15,22 +15,40 @@ export const generateNeutralGiftAddressServer = (tokenId: string): string => {
   try {
     const { ethers } = require("ethers");
     
-    // Calculate deployer address from private key to ensure consistency
+    // FIXED: Generate UNIQUE neutral address per tokenId using deterministic derivation
     if (process.env.PRIVATE_KEY_DEPLOY) {
       const wallet = new ethers.Wallet(process.env.PRIVATE_KEY_DEPLOY);
-      const deployerAddress = wallet.address;
+      const baseAddress = wallet.address;
       
-      console.log(`🤖 SERVER: Using calculated deployer as neutral custodial for token ${tokenId}: ${deployerAddress}`);
-      return deployerAddress;
+      // Create unique neutral address per token using HDWallet-style derivation
+      const seed = ethers.solidityPackedKeccak256(
+        ['address', 'uint256', 'string'],
+        [baseAddress, tokenId, 'NEUTRAL_CUSTODY_V1']
+      );
+      
+      // Generate unique private key from seed
+      const neutralPrivateKey = ethers.keccak256(seed);
+      const neutralWallet = new ethers.Wallet(neutralPrivateKey);
+      const uniqueNeutralAddress = neutralWallet.address;
+      
+      console.log(`🤖 SERVER: Generated UNIQUE neutral address for token ${tokenId}: ${uniqueNeutralAddress}`);
+      console.log(`🔗 SERVER: Derived from base deployer: ${baseAddress}`);
+      return uniqueNeutralAddress;
     } else {
-      // Fallback for environments without private key
-      const fallbackAddress = '0x75341Ce1E98c24F33b0AB0e5ABE3AaaC5b0A8f01';
-      console.log(`🤖 SERVER: Using fallback deployer as neutral custodial for token ${tokenId}: ${fallbackAddress}`);
+      // Generate deterministic fallback unique per token
+      const seed = ethers.solidityPackedKeccak256(
+        ['string', 'uint256'],
+        ['FALLBACK_NEUTRAL_V1', tokenId]
+      );
+      const fallbackAddress = ethers.getAddress('0x' + ethers.keccak256(seed).slice(-40));
+      console.log(`🤖 SERVER: Generated deterministic fallback neutral for token ${tokenId}: ${fallbackAddress}`);
       return fallbackAddress;
     }
   } catch (error) {
-    console.warn('⚠️ SERVER: Could not calculate deployer address, using fallback');
-    const fallbackAddress = '0x75341Ce1E98c24F33b0AB0e5ABE3AaaC5b0A8f01';
+    console.warn('⚠️ SERVER: Could not generate unique neutral address, using deterministic fallback');
+    const { ethers } = require("ethers");
+    const seed = ethers.solidityPackedKeccak256(['string', 'uint256'], ['ERROR_FALLBACK_V1', tokenId]);
+    const fallbackAddress = ethers.getAddress('0x' + ethers.keccak256(seed).slice(-40));
     return fallbackAddress;
   }
 };
