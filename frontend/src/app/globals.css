@@ -187,12 +187,12 @@
 		}
 	}
 	
-	/* Apply peaceful animations */
+	/* Apply peaceful animations - MUCH slower for zen experience */
 	.animate-peaceful-bounce {
-		animation: peaceful-bounce 3s ease-in-out infinite;
+		animation: peaceful-bounce 6s ease-in-out infinite;
 	}
 	
 	.animate-peaceful-pulse {
-		animation: peaceful-pulse 4s ease-in-out infinite;
+		animation: peaceful-pulse 8s ease-in-out infinite;
 	}
 }

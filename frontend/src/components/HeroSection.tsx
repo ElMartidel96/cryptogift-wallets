@@ -64,10 +64,19 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onCreateGift }) => {
               <Image
                 src="/wallet-regalo.png"
                 alt="Wallet Regalo"
-                width={28}
-                height={28}
+                width={24}
+                height={24}
                 className="object-contain"
+                onError={(e) => {
+                  console.log('Error loading wallet-regalo.png');
+                  e.currentTarget.style.display = 'none';
+                  const fallback = e.currentTarget.nextElementSibling as HTMLElement;
+                  if (fallback) {
+                    fallback.style.display = 'block';
+                  }
+                }}
               />
+              <span className="text-white dark:text-bg-primary text-lg" style={{ display: 'none' }}>🎁</span>
             </div>
           </div>
         </div>
