@@ -45,10 +45,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
     }
 
+    // CRITICAL: Validate environment variables first
+    const clientId = process.env.NEXT_PUBLIC_TW_CLIENT_ID;
+    const secretKey = process.env.TW_SECRET_KEY;
+    
+    if (!clientId) {
+      throw new Error('NEXT_PUBLIC_TW_CLIENT_ID environment variable is required');
+    }
+    if (!secretKey) {
+      throw new Error('TW_SECRET_KEY environment variable is required');
+    }
+
     // Initialize ThirdWeb client
     const client = createThirdwebClient({
-      clientId: process.env.NEXT_PUBLIC_TW_CLIENT_ID!,
-      secretKey: process.env.TW_SECRET_KEY!,
+      clientId,
+      secretKey,
     });
 
     // Get NFT contract
@@ -83,9 +94,25 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       
       // Step 2: Create deployer account for transfer (we need keys to transfer from neutral)
       // Note: This is programmatic, not human custody
+      
+      // CRITICAL FIX: Ensure private key has 0x prefix (same logic as biconomy.ts)
+      const rawPrivateKey = process.env.PRIVATE_KEY_DEPLOY;
+      if (!rawPrivateKey) {
+        throw new Error('PRIVATE_KEY_DEPLOY environment variable is required');
+      }
+      
+      const formattedPrivateKey = rawPrivateKey.startsWith('0x') 
+        ? rawPrivateKey as `0x${string}`
+        : `0x${rawPrivateKey}` as `0x${string}`;
+      
+      console.log('🔍 Private key format check:', {
+        hasPrefix: rawPrivateKey.startsWith('0x'),
+        length: rawPrivateKey.length
+      });
+      
       const deployerAccount = privateKeyToAccount({
         client,
-        privateKey: process.env.PRIVATE_KEY_DEPLOY!,
+        privateKey: formattedPrivateKey,
       });
       
       console.log(`🔑 Using deployer account: ${deployerAccount.address}`);

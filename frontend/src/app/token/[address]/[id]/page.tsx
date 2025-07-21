@@ -98,7 +98,10 @@ export default function TokenPage() {
     try {
       const response = await fetch('/api/claim-nft', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'X-API-Token': process.env.NEXT_PUBLIC_API_ACCESS_TOKEN || ''
+        },
         body: JSON.stringify({
           contractAddress,
           tokenId,
