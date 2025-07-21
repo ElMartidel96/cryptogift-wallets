@@ -133,7 +133,7 @@ export default function NexusWalletPage() {
               alt="NexusWallet"
               width={88}
               height={88}
-              className="object-contain drop-shadow-lg w-full h-full p-1"
+              className="object-contain drop-shadow-lg w-full h-full"
             />
           </div>
           <h1 className="text-3xl font-bold text-text-primary mb-4 transition-colors duration-300">Conecta tu Wallet</h1>
@@ -165,7 +165,7 @@ export default function NexusWalletPage() {
                 alt="NexusWallet"
                 width={76}
                 height={76}
-                className="object-contain drop-shadow-lg w-full h-full p-1"
+                className="object-contain drop-shadow-lg w-full h-full"
               />
             </div>
             <h1 className="text-4xl font-bold text-text-primary transition-colors duration-300">

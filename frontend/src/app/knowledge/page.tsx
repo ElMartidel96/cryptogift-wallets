@@ -164,7 +164,7 @@ export default function KnowledgePage() {
                 alt="Knowledge"
                 width={76}
                 height={76}
-                className="object-contain drop-shadow-lg w-full h-full p-1"
+                className="object-contain drop-shadow-lg w-full h-full"
               />
             </div>
             <h1 className="text-4xl font-bold text-text-primary transition-colors duration-300">

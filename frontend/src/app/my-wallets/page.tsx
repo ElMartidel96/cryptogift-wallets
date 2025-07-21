@@ -110,8 +110,14 @@ export default function MyWalletsPage() {
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-purple-50 
                      dark:from-bg-primary dark:via-bg-secondary dark:to-bg-primary transition-all duration-500">
         <div className="text-center max-w-md mx-auto p-6">
-          <div className="w-16 h-16 bg-orange-100 dark:bg-accent-gold/20 rounded-full flex items-center justify-center mx-auto mb-4 transition-colors duration-300">
-            <span className="text-2xl">💎</span>
+          <div className="w-16 h-16 bg-gray-50 dark:bg-gray-800/50 rounded-full flex items-center justify-center mx-auto mb-4 transition-colors duration-300">
+            <Image
+              src="/cg-wallet-logo.png"
+              alt="CG Wallet"
+              width={56}
+              height={56}
+              className="object-contain w-full h-full"
+            />
           </div>
           <h1 className="text-2xl font-bold text-text-primary mb-2 transition-colors duration-300">Mis CryptoGift Wallets</h1>
           <p className="text-text-secondary mb-6 transition-colors duration-300">
@@ -135,9 +141,23 @@ export default function MyWalletsPage() {
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-3xl md:text-4xl font-bold text-text-primary mb-2 transition-colors duration-300">
-            💎 Mis CryptoGift Wallets
-          </h1>
+          <div className="flex items-center justify-center gap-4 mb-2">
+            <div className="w-16 h-16 flex items-center justify-center 
+                          bg-gray-50 dark:bg-gray-800/50 
+                          rounded-2xl shadow-lg border border-gray-200/30 dark:border-gray-700/30 
+                          backdrop-blur-sm transition-all duration-300">
+              <Image
+                src="/cg-wallet-logo.png"
+                alt="CG Wallet"
+                width={56}
+                height={56}
+                className="object-contain drop-shadow-lg w-full h-full"
+              />
+            </div>
+            <h1 className="text-3xl md:text-4xl font-bold text-text-primary transition-colors duration-300">
+              Mis CryptoGift Wallets
+            </h1>
+          </div>
           <p className="text-text-secondary transition-colors duration-300">
             Gestiona todas tus NFT-Wallets desde un solo lugar
           </p>

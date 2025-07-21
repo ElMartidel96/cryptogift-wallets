@@ -60,17 +60,29 @@ export const Navbar: React.FC = () => {
           </Link>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-3">
-            <Link href="/" className="text-text-secondary hover:text-accent-gold dark:hover:text-accent-silver transition-colors text-sm">
+          <div className="hidden md:flex items-center space-x-4">
+            <Link href="/" className="text-text-secondary hover:text-accent-gold dark:hover:text-accent-silver transition-colors text-base font-bold">
               Inicio
             </Link>
-            <Link href="/referrals" className="text-text-secondary hover:text-accent-gold dark:hover:text-accent-silver transition-colors text-sm">
+            
+            {/* Separator */}
+            <div className="w-px h-6 bg-gradient-to-b from-transparent via-text-muted to-transparent opacity-40"></div>
+            
+            <Link href="/referrals" className="text-text-secondary hover:text-accent-gold dark:hover:text-accent-silver transition-colors text-base font-bold">
               Referidos
             </Link>
-            <Link href="/knowledge" className="text-text-secondary hover:text-accent-gold dark:hover:text-accent-silver transition-colors text-sm">
+            
+            {/* Separator */}
+            <div className="w-px h-6 bg-gradient-to-b from-transparent via-text-muted to-transparent opacity-40"></div>
+            
+            <Link href="/knowledge" className="text-text-secondary hover:text-accent-gold dark:hover:text-accent-silver transition-colors text-base font-bold">
               Knowledge
             </Link>
-            <Link href="/nexuswallet" className="text-text-secondary hover:text-accent-gold dark:hover:text-accent-silver transition-colors text-sm">
+            
+            {/* Separator */}
+            <div className="w-px h-6 bg-gradient-to-b from-transparent via-text-muted to-transparent opacity-40"></div>
+            
+            <Link href="/nexuswallet" className="text-text-secondary hover:text-accent-gold dark:hover:text-accent-silver transition-colors text-base font-bold">
               NexusWallet
             </Link>
             
@@ -119,28 +131,40 @@ export const Navbar: React.FC = () => {
               
               <Link 
                 href="/" 
-                className="block text-text-secondary hover:text-accent-gold dark:hover:text-accent-silver transition-colors px-4 py-2"
+                className="block text-text-secondary hover:text-accent-gold dark:hover:text-accent-silver transition-colors px-4 py-3 font-bold text-base"
                 onClick={() => setIsMenuOpen(false)}
               >
                 Inicio
               </Link>
+              
+              {/* Mobile Separator */}
+              <div className="mx-4 h-px bg-gradient-to-r from-transparent via-text-muted to-transparent opacity-30"></div>
+              
               <Link 
                 href="/referrals" 
-                className="block text-text-secondary hover:text-accent-gold dark:hover:text-accent-silver transition-colors px-4 py-2"
+                className="block text-text-secondary hover:text-accent-gold dark:hover:text-accent-silver transition-colors px-4 py-3 font-bold text-base"
                 onClick={() => setIsMenuOpen(false)}
               >
                 Referidos
               </Link>
+              
+              {/* Mobile Separator */}
+              <div className="mx-4 h-px bg-gradient-to-r from-transparent via-text-muted to-transparent opacity-30"></div>
+              
               <Link 
                 href="/knowledge" 
-                className="block text-text-secondary hover:text-accent-gold dark:hover:text-accent-silver transition-colors px-4 py-2"
+                className="block text-text-secondary hover:text-accent-gold dark:hover:text-accent-silver transition-colors px-4 py-3 font-bold text-base"
                 onClick={() => setIsMenuOpen(false)}
               >
                 Knowledge
               </Link>
+              
+              {/* Mobile Separator */}
+              <div className="mx-4 h-px bg-gradient-to-r from-transparent via-text-muted to-transparent opacity-30"></div>
+              
               <Link 
                 href="/nexuswallet" 
-                className="block text-text-secondary hover:text-accent-gold dark:hover:text-accent-silver transition-colors px-4 py-2"
+                className="block text-text-secondary hover:text-accent-gold dark:hover:text-accent-silver transition-colors px-4 py-3 font-bold text-base"
                 onClick={() => setIsMenuOpen(false)}
               >
                 NexusWallet
