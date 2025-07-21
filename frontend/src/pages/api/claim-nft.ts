@@ -218,7 +218,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       message: error instanceof Error ? error.message : 'Unknown error',
       stack: error instanceof Error ? error.stack?.substring(0, 500) : undefined,
       timestamp: new Date().toISOString(),
-      requestData: { tokenId, contractAddress, claimerAddress }
+      requestData: req.body || {}
     };
     
     console.error('📋 FULL ERROR CONTEXT:', JSON.stringify(errorDetails, null, 2));
