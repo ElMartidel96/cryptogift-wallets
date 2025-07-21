@@ -46,12 +46,12 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onCreateGift }) => {
               </div>
             </div>
             
-            {/* Floating elements with natural beach ball animations */}
+            {/* Floating elements - 2 bounces per second */}
             <div 
               className="absolute -top-2 -right-2 w-14 h-14 bg-green-400 dark:bg-accent-gold 
                         rounded-full flex items-center justify-center transition-colors duration-300"
               style={{
-                animation: 'natural-bounce 2.5s ease-in-out infinite'
+                animation: 'natural-bounce 0.5s ease-in-out infinite'
               }}
             >
               <Image
@@ -66,7 +66,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onCreateGift }) => {
               className="absolute -bottom-2 -left-2 w-12 h-12 bg-yellow-400 dark:bg-accent-silver 
                         rounded-full flex items-center justify-center transition-colors duration-300"
               style={{
-                animation: 'gentle-pulse 2.5s ease-in-out infinite'
+                animation: 'gentle-pulse 0.5s ease-in-out infinite'
               }}
             >
               <Image

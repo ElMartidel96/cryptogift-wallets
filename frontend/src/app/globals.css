@@ -176,12 +176,12 @@
 		}
 	}
 	
-	/* Apply natural animations - Beach ball cadence */
+	/* Apply natural animations - 2 bounces per second */
 	.animate-natural-bounce {
-		animation: natural-bounce 2.5s ease-in-out infinite;
+		animation: natural-bounce 0.5s ease-in-out infinite;
 	}
 	
 	.animate-gentle-pulse {
-		animation: gentle-pulse 2.5s ease-in-out infinite;
+		animation: gentle-pulse 0.5s ease-in-out infinite;
 	}
 }
