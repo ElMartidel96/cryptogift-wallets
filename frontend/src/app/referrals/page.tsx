@@ -185,13 +185,16 @@ export default function ReferralsPage() {
         {/* Header */}
         <div className="text-center mb-8">
           <div className="flex items-center justify-center gap-4 mb-2">
-            <div className="w-12 h-12 flex items-center justify-center">
+            <div className="w-16 h-16 flex items-center justify-center 
+                          bg-gradient-to-br from-purple-100 to-pink-100 dark:from-purple-900/30 dark:to-pink-900/30 
+                          rounded-2xl shadow-lg dark:shadow-purple-500/20 border border-purple-200/50 dark:border-purple-500/30 
+                          backdrop-blur-sm transition-all duration-300">
               <Image
                 src="/referrals-logo.png"
                 alt="Referrals"
-                width={48}
-                height={48}
-                className="object-contain"
+                width={56}
+                height={56}
+                className="object-contain drop-shadow-lg"
               />
             </div>
             <h1 className="text-3xl md:text-4xl font-bold text-text-primary transition-colors duration-300">

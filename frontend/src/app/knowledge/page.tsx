@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 
 interface KnowledgeModule {
   id: string;
@@ -153,9 +154,23 @@ export default function KnowledgePage() {
       <div className="max-w-7xl mx-auto p-6">
         {/* Header */}
         <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-text-primary mb-4 transition-colors duration-300">
-            📚 CryptoGift Knowledge Academy
-          </h1>
+          <div className="flex items-center justify-center gap-4 mb-4">
+            <div className="w-16 h-16 flex items-center justify-center 
+                          bg-gradient-to-br from-blue-100 to-cyan-100 dark:from-blue-900/30 dark:to-cyan-900/30 
+                          rounded-2xl shadow-lg dark:shadow-blue-500/20 border border-blue-200/50 dark:border-blue-500/30 
+                          backdrop-blur-sm transition-all duration-300">
+              <Image
+                src="/knowledge-logo.png"
+                alt="Knowledge"
+                width={56}
+                height={56}
+                className="object-contain drop-shadow-lg"
+              />
+            </div>
+            <h1 className="text-4xl font-bold text-text-primary transition-colors duration-300">
+              CryptoGift Knowledge Academy
+            </h1>
+          </div>
           <p className="text-xl text-text-secondary max-w-3xl mx-auto transition-colors duration-300">
             Aprende cripto de forma simple y didáctica. Desde conceptos básicos hasta estrategias avanzadas.
             <br />

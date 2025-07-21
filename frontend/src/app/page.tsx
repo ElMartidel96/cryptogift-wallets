@@ -35,6 +35,7 @@ export default function Home() {
       }
       
       // Track referral click in real-time
+      console.log('🎯 REFERRAL DETECTED:', ref);
       trackReferralClick(ref);
     } else {
       // Check localStorage for existing referrer
@@ -79,6 +80,13 @@ export default function Home() {
   useEffect(() => {
     if (account?.address && mounted) {
       upgradeIPAccount(account.address);
+      
+      // Re-track referral with wallet address if we have a stored referrer
+      const storedRef = localStorage.getItem("referrer");
+      if (storedRef) {
+        console.log('🔄 Re-tracking referral with connected wallet:', account.address);
+        trackReferralClick(storedRef);
+      }
     }
   }, [account?.address, mounted]);
 

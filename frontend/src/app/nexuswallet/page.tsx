@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { useActiveAccount } from 'thirdweb/react';
 
 interface WalletAsset {
@@ -123,7 +124,18 @@ export default function NexusWalletPage() {
                      dark:from-bg-primary dark:via-bg-secondary dark:to-bg-primary 
                      flex items-center justify-center transition-all duration-500">
         <div className="text-center">
-          <div className="text-6xl mb-6">💼</div>
+          <div className="w-20 h-20 flex items-center justify-center mx-auto mb-6
+                        bg-gradient-to-br from-cyan-100 to-blue-100 dark:from-cyan-900/30 dark:to-blue-900/30 
+                        rounded-2xl shadow-lg dark:shadow-cyan-500/20 border border-cyan-200/50 dark:border-cyan-500/30 
+                        backdrop-blur-sm transition-all duration-300">
+            <Image
+              src="/NexusWallet-logo.png"
+              alt="NexusWallet"
+              width={64}
+              height={64}
+              className="object-contain drop-shadow-lg"
+            />
+          </div>
           <h1 className="text-3xl font-bold text-text-primary mb-4 transition-colors duration-300">Conecta tu Wallet</h1>
           <p className="text-text-secondary mb-8 transition-colors duration-300">
             Necesitas conectar tu wallet para acceder a NexusWallet Hub
@@ -143,9 +155,23 @@ export default function NexusWalletPage() {
       <div className="max-w-7xl mx-auto p-6">
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-text-primary mb-2 transition-colors duration-300">
-            💼 NexusWallet Hub
-          </h1>
+          <div className="flex items-center justify-center gap-4 mb-2">
+            <div className="w-16 h-16 flex items-center justify-center 
+                          bg-gradient-to-br from-cyan-100 to-blue-100 dark:from-cyan-900/30 dark:to-blue-900/30 
+                          rounded-2xl shadow-lg dark:shadow-cyan-500/20 border border-cyan-200/50 dark:border-cyan-500/30 
+                          backdrop-blur-sm transition-all duration-300">
+              <Image
+                src="/NexusWallet-logo.png"
+                alt="NexusWallet"
+                width={56}
+                height={56}
+                className="object-contain drop-shadow-lg"
+              />
+            </div>
+            <h1 className="text-4xl font-bold text-text-primary transition-colors duration-300">
+              NexusWallet Hub
+            </h1>
+          </div>
           <p className="text-xl text-text-secondary transition-colors duration-300">
             Tu centro financiero descentralizado con <span className="text-purple-600 dark:text-accent-gold font-bold transition-colors duration-300">exchange fee-free</span>
           </p>

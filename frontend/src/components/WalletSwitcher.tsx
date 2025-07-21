@@ -52,7 +52,13 @@ export const WalletSwitcher: React.FC<WalletSwitcherProps> = ({
                 className="w-6 h-6 rounded-full overflow-hidden"
               />
             ) : (
-              <span className="text-blue-600 dark:text-accent-gold font-bold text-sm transition-colors duration-300">EOA</span>
+              <Image
+                src="/cg-wallet-logo.png"
+                alt="CG Wallet"
+                width={24}
+                height={24}
+                className="object-contain"
+              />
             )}
           </div>
 
@@ -103,7 +109,13 @@ export const WalletSwitcher: React.FC<WalletSwitcherProps> = ({
                   }`}
                 >
                   <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-accent-gold/20 flex items-center justify-center transition-colors duration-300">
-                    <span className="text-blue-600 dark:text-accent-gold font-bold text-sm transition-colors duration-300">EOA</span>
+                    <Image
+                      src="/cg-wallet-logo.png"
+                      alt="CG Wallet"
+                      width={24}
+                      height={24}
+                      className="object-contain"
+                    />
                   </div>
                   <div className="flex-1 text-left">
                     <div className="font-medium text-text-primary text-sm transition-colors duration-300">
@@ -158,7 +170,13 @@ export const WalletSwitcher: React.FC<WalletSwitcherProps> = ({
                     className="w-full flex items-center space-x-3 p-3 rounded-lg hover:bg-bg-secondary transition-colors duration-300 text-left"
                   >
                     <div className="w-8 h-8 rounded-full bg-purple-100 dark:bg-accent-gold/20 flex items-center justify-center transition-colors duration-300">
-                      <span className="text-purple-600 dark:text-accent-gold text-sm transition-colors duration-300">💎</span>
+                      <Image
+                        src="/cg-wallet-logo.png"
+                        alt="CG Wallet"
+                        width={24}
+                        height={24}
+                        className="object-contain"
+                      />
                     </div>
                     <div className="flex-1">
                       <div className="font-medium text-text-primary text-sm transition-colors duration-300">

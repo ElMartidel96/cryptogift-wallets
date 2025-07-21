@@ -58,6 +58,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       referredIdentifier,
       source: detectedSource,
       hasWallet: !!referredAddress,
+      clientIP: clientIP.split('.').slice(0, 2).join('.') + '.**',
       timestamp: new Date().toISOString()
     });
 
