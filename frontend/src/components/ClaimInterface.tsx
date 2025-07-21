@@ -43,6 +43,13 @@ export const ClaimInterface: React.FC<ClaimInterfaceProps> = ({
         tokenPreview: apiToken?.substring(0, 10) || 'undefined'
       });
       
+      console.log('🔍 DEBUG ClaimInterface: Request params:', {
+        tokenId,
+        contractAddress,
+        claimerAddress,
+        claimerAddressValid: !!claimerAddress && claimerAddress !== '0x0000000000000000000000000000000000000000'
+      });
+      
       const response = await fetch('/api/claim-nft', {
         method: 'POST',
         headers: { 
@@ -101,6 +108,13 @@ export const ClaimInterface: React.FC<ClaimInterfaceProps> = ({
         tokenExists: !!apiToken,
         tokenLength: apiToken?.length || 0,
         tokenPreview: apiToken?.substring(0, 10) || 'undefined'
+      });
+      
+      console.log('🔍 DEBUG ClaimInterface: Request params:', {
+        tokenId,
+        contractAddress,
+        claimerAddress,
+        claimerAddressValid: !!claimerAddress && claimerAddress !== '0x0000000000000000000000000000000000000000'
       });
       
       const response = await fetch('/api/claim-nft', {
