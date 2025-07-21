@@ -47,9 +47,13 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onCreateGift }) => {
             </div>
             
             {/* Floating elements with slower, peaceful animations */}
-            <div className="absolute -top-2 -right-2 w-14 h-14 bg-green-400 dark:bg-accent-gold 
-                          rounded-full flex items-center justify-center transition-colors duration-300
-                          animate-peaceful-bounce">
+            <div 
+              className="absolute -top-2 -right-2 w-14 h-14 bg-green-400 dark:bg-accent-gold 
+                        rounded-full flex items-center justify-center transition-colors duration-300"
+              style={{
+                animation: 'peaceful-bounce 6s ease-in-out infinite'
+              }}
+            >
               <Image
                 src="/cg-wallet-logo.png"
                 alt="CG Wallet"
@@ -58,17 +62,22 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onCreateGift }) => {
                 className="object-contain"
               />
             </div>
-            <div className="absolute -bottom-2 -left-2 w-12 h-12 bg-yellow-400 dark:bg-accent-silver 
-                          rounded-full flex items-center justify-center transition-colors duration-300
-                          animate-peaceful-pulse">
+            <div 
+              className="absolute -bottom-2 -left-2 w-12 h-12 bg-yellow-400 dark:bg-accent-silver 
+                        rounded-full flex items-center justify-center transition-colors duration-300"
+              style={{
+                animation: 'peaceful-pulse 8s ease-in-out infinite'
+              }}
+            >
               <Image
                 src="/wallet-regalo.png"
                 alt="Wallet Regalo"
                 width={24}
                 height={24}
                 className="object-contain"
+                priority
                 onError={(e) => {
-                  console.log('Error loading wallet-regalo.png');
+                  console.log('❌ Error loading wallet-regalo.png from /wallet-regalo.png');
                   e.currentTarget.style.display = 'none';
                   const fallback = e.currentTarget.nextElementSibling as HTMLElement;
                   if (fallback) {
