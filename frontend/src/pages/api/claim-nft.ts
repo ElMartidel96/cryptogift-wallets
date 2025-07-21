@@ -210,11 +210,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
 
   } catch (error) {
-    console.error('Claim API error:', error);
-    res.status(500).json({
+    console.error('🚨 DETAILED CLAIM API ERROR:', error);
+    
+    // Enhanced error logging for debugging
+    const errorDetails = {
       error: 'Failed to claim NFT',
       message: error instanceof Error ? error.message : 'Unknown error',
-    });
+      stack: error instanceof Error ? error.stack?.substring(0, 500) : undefined,
+      timestamp: new Date().toISOString(),
+      requestData: { tokenId, contractAddress, claimerAddress }
+    };
+    
+    console.error('📋 FULL ERROR CONTEXT:', JSON.stringify(errorDetails, null, 2));
+    
+    res.status(500).json(errorDetails);
   }
 }
 
