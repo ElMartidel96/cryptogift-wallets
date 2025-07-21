@@ -57,8 +57,8 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onCreateGift }) => {
               <Image
                 src="/cg-wallet-logo.png"
                 alt="CG Wallet"
-                width={32}
-                height={32}
+                width={48}
+                height={48}
                 className="object-contain"
               />
             </div>
@@ -72,8 +72,8 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onCreateGift }) => {
               <Image
                 src="/wallet-regalo.png"
                 alt="Wallet Regalo"
-                width={32}
-                height={32}
+                width={40}
+                height={40}
                 className="object-contain"
                 priority
                 onError={(e) => {
