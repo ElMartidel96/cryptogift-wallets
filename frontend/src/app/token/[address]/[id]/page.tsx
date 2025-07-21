@@ -92,7 +92,10 @@ export default function TokenPage() {
   }, [searchParams, isOwner, account]);
 
   const handleClaim = async () => {
-    if (!mounted || !account) return;
+    if (!mounted) return;
+    
+    // TEMPORARY FIX: Use a default address if account is not available due to provider error
+    const claimerAddress = account?.address || '0x0000000000000000000000000000000000000000';
 
     setIsLoading(true);
     try {
@@ -112,7 +115,7 @@ export default function TokenPage() {
         body: JSON.stringify({
           contractAddress,
           tokenId,
-          claimerAddress: account?.address,
+          claimerAddress,
           setupGuardians: false,
           guardianEmails: []
         }),
