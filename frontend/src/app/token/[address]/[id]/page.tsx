@@ -312,7 +312,8 @@ export default function TokenPage() {
 
                     {/* Connection Status */}
                     <div className="border-t pt-6">
-                      {!mounted || !account ? (
+                      {/* TEMPORARY: Force show claim button to test API token */}
+                      {false ? (
                         <div className="text-center">
                           <p className="text-gray-600 mb-4">
                             Conecta tu wallet para {isOwner ? 'gestionar' : 'reclamar'} este regalo
