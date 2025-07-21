@@ -332,7 +332,10 @@ export const GiftWizard: React.FC<GiftWizardProps> = ({ isOpen, onClose, referre
 
     const mintResponse = await fetch('/api/mint', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 
+        'Content-Type': 'application/json',
+        'X-API-Token': process.env.NEXT_PUBLIC_API_ACCESS_TOKEN || ''
+      },
       body: JSON.stringify({
         to: account?.address,
         imageFile: actualImageCid, // Use actual image CID instead of metadata CID
@@ -549,7 +552,10 @@ export const GiftWizard: React.FC<GiftWizardProps> = ({ isOpen, onClose, referre
 
       const mintResponse = await fetch('/api/mint', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'X-API-Token': process.env.NEXT_PUBLIC_API_ACCESS_TOKEN || ''
+        },
         body: JSON.stringify({
           to: account?.address,
           imageFile: actualImageCid, // Send actual image CID, not metadata CID
