@@ -176,12 +176,12 @@
 		}
 	}
 	
-	/* Apply natural animations - 1.5 bounces per second */
+	/* Apply natural animations - 1.2 bounces per second (zen timing) */
 	.animate-natural-bounce {
-		animation: natural-bounce 0.67s ease-in-out infinite;
+		animation: natural-bounce 0.83s ease-in-out infinite;
 	}
 	
 	.animate-gentle-pulse {
-		animation: gentle-pulse 0.67s ease-in-out infinite;
+		animation: gentle-pulse 0.83s ease-in-out infinite;
 	}
 }

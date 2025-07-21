@@ -46,12 +46,12 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onCreateGift }) => {
               </div>
             </div>
             
-            {/* Floating elements - 1.5 bounces per second (perfect balance) */}
+            {/* Floating elements - 1.2 bounces per second (zen timing) */}
             <div 
               className="absolute -top-2 -right-2 w-14 h-14 bg-green-400 dark:bg-accent-gold 
                         rounded-full flex items-center justify-center transition-colors duration-300"
               style={{
-                animation: 'natural-bounce 0.67s ease-in-out infinite'
+                animation: 'natural-bounce 0.83s ease-in-out infinite'
               }}
             >
               <Image
@@ -66,7 +66,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onCreateGift }) => {
               className="absolute -bottom-2 -left-2 w-12 h-12 bg-yellow-400 dark:bg-accent-silver 
                         rounded-full flex items-center justify-center transition-colors duration-300"
               style={{
-                animation: 'gentle-pulse 0.67s ease-in-out infinite'
+                animation: 'gentle-pulse 0.83s ease-in-out infinite'
               }}
             >
               <Image
