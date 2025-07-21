@@ -46,12 +46,12 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onCreateGift }) => {
               </div>
             </div>
             
-            {/* Floating elements with slower, peaceful animations */}
+            {/* Floating elements with natural beach ball animations */}
             <div 
               className="absolute -top-2 -right-2 w-14 h-14 bg-green-400 dark:bg-accent-gold 
                         rounded-full flex items-center justify-center transition-colors duration-300"
               style={{
-                animation: 'peaceful-bounce 6s ease-in-out infinite'
+                animation: 'natural-bounce 2.5s ease-in-out infinite'
               }}
             >
               <Image
@@ -66,14 +66,14 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onCreateGift }) => {
               className="absolute -bottom-2 -left-2 w-12 h-12 bg-yellow-400 dark:bg-accent-silver 
                         rounded-full flex items-center justify-center transition-colors duration-300"
               style={{
-                animation: 'peaceful-pulse 8s ease-in-out infinite'
+                animation: 'gentle-pulse 2.5s ease-in-out infinite'
               }}
             >
               <Image
                 src="/wallet-regalo.png"
                 alt="Wallet Regalo"
-                width={24}
-                height={24}
+                width={32}
+                height={32}
                 className="object-contain"
                 priority
                 onError={(e) => {
