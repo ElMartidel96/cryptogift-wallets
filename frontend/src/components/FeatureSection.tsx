@@ -57,7 +57,7 @@ export const FeatureSection: React.FC = () => {
       icon: 'Recuperacion-Social.png',
       title: 'Recuperación Social',
       description: 'Sistema de guardianes para recuperar el acceso sin depender de frases semilla complicadas.',
-      color: 'from-green-500 to-emerald-500',
+      color: 'from-purple-500 to-violet-500',
       detailedContent: {
         subtitle: 'Guardians MultiSig + Cryptographic Verification',
         features: [
@@ -73,7 +73,7 @@ export const FeatureSection: React.FC = () => {
       icon: 'Swap-Integrado.png',
       title: 'Swap Integrado',
       description: 'Cambia entre diferentes criptomonedas directamente desde la wallet del NFT con un clic.',
-      color: 'from-purple-500 to-violet-500',
+      color: 'from-green-500 to-emerald-500',
       detailedContent: {
         subtitle: '0x Protocol + Agregación de Liquidez Inteligente',
         features: [
@@ -132,7 +132,7 @@ export const FeatureSection: React.FC = () => {
                                dark:from-accent-gold dark:to-accent-silver
                                rounded-2xl flex items-center justify-center mb-6 
                                group-hover:scale-110 transition-transform duration-300 
-                               ${feature.icon === 'Arte-IA-Personalizado.png' ? 'p-0 overflow-hidden' : 'p-2'}`}>
+                               ${feature.icon === 'Arte-IA-Personalizado.png' ? 'p-0 overflow-hidden' : 'p-1'}`}>
                   <Image
                     src={`/${feature.icon}`}
                     alt={feature.title}
@@ -141,9 +141,7 @@ export const FeatureSection: React.FC = () => {
                     className={`${
                       feature.icon === 'Arte-IA-Personalizado.png' 
                         ? 'object-cover w-full h-full rounded-2xl' 
-                        : feature.icon === 'cg-wallet-logo.png' 
-                          ? 'object-contain w-full h-full' 
-                          : 'object-contain w-full h-full drop-shadow-lg filter contrast-125 brightness-110 border border-white/20 rounded-lg'
+                        : 'object-contain w-full h-full drop-shadow-lg filter contrast-125 brightness-110'
                     }`}
                     priority
                   />
