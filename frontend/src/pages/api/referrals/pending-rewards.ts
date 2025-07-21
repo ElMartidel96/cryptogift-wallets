@@ -1,5 +1,5 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { getUserPendingRewards } from '../../../lib/referralDatabase';
+import { kvReferralDB } from '../../../lib/referralDatabaseKV';
 
 interface PendingReward {
   id: string;
@@ -59,7 +59,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     console.log('📊 Loading real pending rewards for address:', address);
     
     // Get real pending rewards from database
-    const realPendingRewards = await getUserPendingRewards(address);
+    const realPendingRewards = await kvReferralDB.getUserPendingRewards(address);
     console.log('🔍 Found real pending rewards:', realPendingRewards.length);
     
     // Categorize rewards by day

@@ -1,5 +1,5 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { getUserReferrals, ReferralRecord } from '../../../lib/referralDatabase';
+import { kvReferralDB, ReferralRecord } from '../../../lib/referralDatabaseKV';
 
 interface ReferredFriend {
   id: string;
@@ -55,7 +55,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     console.log('🔍 Loading real referral data for address:', address);
     
     // Get real referral data from database
-    const referralRecords = await getUserReferrals(address);
+    const referralRecords = await kvReferralDB.getUserReferrals(address);
     console.log('📊 Found referral records:', referralRecords.length);
     
     // Transform to ReferredFriend format

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from 'react';
+import Image from 'next/image';
 import { useActiveAccount, ConnectButton, TransactionButton } from 'thirdweb/react';
 import { prepareContractCall, getContract } from 'thirdweb';
 import { baseSepolia, base } from 'thirdweb/chains';
@@ -183,9 +184,20 @@ export default function ReferralsPage() {
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-3xl md:text-4xl font-bold text-text-primary mb-2 transition-colors duration-300">
-            💰 Panel de Referidos
-          </h1>
+          <div className="flex items-center justify-center gap-4 mb-2">
+            <div className="w-12 h-12 flex items-center justify-center">
+              <Image
+                src="/referrals-logo.png"
+                alt="Referrals"
+                width={48}
+                height={48}
+                className="object-contain"
+              />
+            </div>
+            <h1 className="text-3xl md:text-4xl font-bold text-text-primary transition-colors duration-300">
+              Panel de Referidos
+            </h1>
+          </div>
           <p className="text-text-secondary transition-colors duration-300">
             Gana dinero invitando amigos a CryptoGift Wallets
           </p>
