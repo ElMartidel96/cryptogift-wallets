@@ -492,6 +492,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     console.log(`🚀 FAST GASLESS CHECK: ${gaslessAvailable ? 'Available' : 'Not Available'}`);
     addAPIStep('GASLESS_FAST_CHECK', { available: gaslessAvailable }, gaslessAvailable ? 'success' : 'skipped');
     
+    // Store initial total supply to detect gasless success
+    const initialTotalSupply = await readContract({
+      contract,
+      method: "function totalSupply() view returns (uint256)",
+      params: []
+    });
+    console.log(`📊 Initial total supply before gasless attempt: ${initialTotalSupply.toString()}`);
+    
     // TRY GASLESS FIRST - Only if fast check passes
     if (gaslessAvailable) {
       try {
@@ -535,25 +543,56 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         console.log("⚠️ GASLESS FAILED (fast fallback):", gaslessError.message);
         addAPIStep('GASLESS_FAILED', { error: gaslessError.message }, 'error');
         
-        // CRITICAL FIX: Add delay to ensure gasless transaction doesn't succeed later
-        console.log("⏳ Waiting 3 seconds to ensure gasless transaction doesn't succeed after timeout...");
-        await new Promise(resolve => setTimeout(resolve, 3000));
+        // CRITICAL FIX: Intelligent gasless success detection
+        console.log("🔍 SMART VERIFICATION: Checking if gasless actually succeeded despite error...");
+        console.log(`📊 Comparing against initial total supply: ${initialTotalSupply.toString()}`);
         
-        // Double-check if gasless actually succeeded despite timeout/error
-        try {
-          const currentTotalSupply = await readContract({
-            contract,
-            method: "function totalSupply() view returns (uint256)",
-            params: []
-          });
-          
-          console.log(`🔍 Checking total supply for gasless verification: ${currentTotalSupply.toString()}`);
-          
-          // Skip gasless recovery check for now - will implement later if needed
-          console.log("⚠️ Skipping gasless recovery check (temporary)");
-          
-        } catch (checkError) {
-          console.log("🔍 Could not verify gasless status, proceeding with fallback");
+        let gaslessActuallySucceeded = false;
+        let finalTokenId = null;
+        
+        // Try multiple times over 30 seconds to detect gasless success
+        for (let attempt = 1; attempt <= 6; attempt++) {
+          try {
+            await new Promise(resolve => setTimeout(resolve, 5000)); // Wait 5 seconds between checks
+            
+            const currentTotalSupply = await readContract({
+              contract,
+              method: "function totalSupply() view returns (uint256)",
+              params: []
+            });
+            
+            console.log(`🔍 Attempt ${attempt}/6: Supply check ${initialTotalSupply} → ${currentTotalSupply.toString()}`);
+            
+            // SMART DETECTION: If total supply increased, gasless actually succeeded!
+            if (currentTotalSupply > initialTotalSupply) {
+              console.log("🎉 GASLESS SUCCESS DETECTED! Supply increased despite error message");
+              gaslessActuallySucceeded = true;
+              finalTokenId = currentTotalSupply.toString(); // Latest token ID
+              
+              // Set gasless success variables
+              tokenId = finalTokenId;
+              gasless = true;
+              transactionHash = "gasless_detected_by_supply_increase";
+              
+              addAPIStep('GASLESS_SUCCESS_DETECTED', { 
+                initialSupply: initialTotalSupply.toString(),
+                finalSupply: currentTotalSupply.toString(),
+                tokenId: finalTokenId
+              }, 'success');
+              
+              break; // Exit verification loop
+            }
+            
+          } catch (checkError) {
+            console.log(`❌ Attempt ${attempt}/6 failed:`, checkError.message);
+          }
+        }
+        
+        if (gaslessActuallySucceeded) {
+          console.log(`✅ GASLESS CONFIRMED: Token ${finalTokenId} minted successfully`);
+          console.log("🚫 SKIPPING FALLBACK: Gasless transaction was successful");
+        } else {
+          console.log("⚠️ GASLESS TRULY FAILED: No supply increase detected, proceeding with fallback");
         }
       }
     } else {
@@ -561,7 +600,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       addAPIStep('GASLESS_SKIPPED', { reason: 'Fast validation failed' }, 'skipped');
     }
     
-    // FALLBACK: Direct gas-paid transaction (if gasless failed or skipped)
+    // FALLBACK: Direct gas-paid transaction (only if gasless truly failed)
     if (!gasless) {
       console.log("🔍 FALLBACK: Direct gas-paid transaction");
       addAPIStep('DIRECT_GAS_PAID_ATTEMPT', { strategy: 'FAST_FALLBACK' }, 'pending');
