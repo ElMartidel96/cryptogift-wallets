@@ -357,7 +357,7 @@ export default function TokenPage() {
                           nftData={nftData}
                           tokenId={tokenId}
                           contractAddress={contractAddress}
-                          claimerAddress={account?.address || ''}
+                          claimerAddress={'0x1234567890123456789012345678901234567890'}
                           isLoading={isLoading}
                           error={error}
                           onWalletOpen={() => setShowTBAWallet(true)}
