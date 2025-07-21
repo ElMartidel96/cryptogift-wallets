@@ -6,7 +6,7 @@ export const FeatureSection: React.FC = () => {
 
   const features = [
     {
-      icon: '🎨',
+      icon: 'Arte-IA-Personalizado.png',
       title: 'Arte IA Personalizado',
       description: 'Convierte cualquier foto en arte único con filtros de inteligencia artificial profesionales.',
       color: 'from-pink-500 to-rose-500',
@@ -22,7 +22,7 @@ export const FeatureSection: React.FC = () => {
       }
     },
     {
-      icon: 'cg-wallet', // Special case for CG Wallet logo
+      icon: 'cg-wallet-logo.png',
       title: 'NFT = Wallet Real',
       description: 'Cada NFT es una wallet funcional que guarda criptomonedas reales usando tecnología ERC-6551.',
       color: 'from-blue-500 to-cyan-500',
@@ -38,7 +38,7 @@ export const FeatureSection: React.FC = () => {
       }
     },
     {
-      icon: '⚡',
+      icon: 'Gas‑Patrocinado.png',
       title: 'Gas Patrocinado',
       description: 'Todas las transacciones son gratuitas para el usuario final. Nosotros pagamos el gas.',
       color: 'from-yellow-500 to-orange-500',
@@ -54,7 +54,7 @@ export const FeatureSection: React.FC = () => {
       }
     },
     {
-      icon: '🔒',
+      icon: 'Recuperacion-Social.png',
       title: 'Recuperación Social',
       description: 'Sistema de guardianes para recuperar el acceso sin depender de frases semilla complicadas.',
       color: 'from-green-500 to-emerald-500',
@@ -70,7 +70,7 @@ export const FeatureSection: React.FC = () => {
       }
     },
     {
-      icon: '🔄',
+      icon: 'Swap-Integrado.png',
       title: 'Swap Integrado',
       description: 'Cambia entre diferentes criptomonedas directamente desde la wallet del NFT con un clic.',
       color: 'from-purple-500 to-violet-500',
@@ -86,7 +86,7 @@ export const FeatureSection: React.FC = () => {
       }
     },
     {
-      icon: '📊',
+      icon: 'Transparencia-Total.png',
       title: 'Transparencia Total',
       description: 'Código abierto y comunidad de desarrolladores. Dashboard público con estadísticas en tiempo real.',
       color: 'from-indigo-500 to-blue-600',
@@ -128,21 +128,18 @@ export const FeatureSection: React.FC = () => {
                            : 'border-border-primary hover:border-accent-gold dark:hover:border-accent-silver'
                          }`}
               >
-                <div className={`w-16 h-16 bg-gradient-to-r ${feature.color} 
+                <div className={`w-20 h-16 bg-gradient-to-r ${feature.color} 
                                dark:from-accent-gold dark:to-accent-silver
                                rounded-2xl flex items-center justify-center mb-6 
-                               group-hover:scale-110 transition-transform duration-300`}>
-                  {feature.icon === 'cg-wallet' ? (
-                    <Image
-                      src="/cg-wallet-logo.png"
-                      alt="CG Wallet"
-                      width={32}
-                      height={32}
-                      className="object-contain"
-                    />
-                  ) : (
-                    <span className="text-2xl filter dark:brightness-0 dark:invert">{feature.icon}</span>
-                  )}
+                               group-hover:scale-110 transition-transform duration-300 p-2`}>
+                  <Image
+                    src={`/${feature.icon}`}
+                    alt={feature.title}
+                    width={64}
+                    height={48}
+                    className="object-contain w-full h-full"
+                    priority
+                  />
                 </div>
                 
                 <h3 className="text-xl font-bold text-text-primary mb-4 
