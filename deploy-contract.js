@@ -6,16 +6,31 @@ async function deployNFTCollection() {
   try {
     console.log("🚀 Deploying new NFT Collection contract using ThirdWeb v5...");
     
+    // Validate required environment variables
+    const clientId = process.env.NEXT_PUBLIC_TW_CLIENT_ID;
+    const secretKey = process.env.TW_SECRET_KEY;
+    const privateKey = process.env.PRIVATE_KEY_DEPLOY;
+    
+    if (!clientId) {
+      throw new Error('❌ NEXT_PUBLIC_TW_CLIENT_ID environment variable is required');
+    }
+    if (!secretKey) {
+      throw new Error('❌ TW_SECRET_KEY environment variable is required');
+    }
+    if (!privateKey) {
+      throw new Error('❌ PRIVATE_KEY_DEPLOY environment variable is required');
+    }
+
     // Create ThirdWeb client
     const client = createThirdwebClient({
-      clientId: "9183b572b02ec88dd4d8f20c3ed847d3", // TW_CLIENT_ID
-      secretKey: "AUoUv6y69TiDDvfKVOQLTFd8JvFmk0zjPLCTOPGLnh_zbPgmrUmWXCXsYAWPvUrWAU7VhZGvDStMRv6Um3pXZA" // TW_SECRET_KEY
+      clientId,
+      secretKey
     });
 
     // Create account from private key
     const account = privateKeyToAccount({
       client,
-      privateKey: "870c27f0bc97330a7b2fdfd6ddf41930e721e37a372aa67de6ee38f9fe82760f", // PRIVATE_KEY_DEPLOY
+      privateKey,
     });
 
     console.log("✅ ThirdWeb v5 client initialized");

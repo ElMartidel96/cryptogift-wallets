@@ -8,7 +8,11 @@ async function createSimpleNFT() {
     console.log("🚀 Creating simple NFT contract using thirdweb CLI...");
     
     // Use thirdweb CLI to deploy a simple NFT collection
-    const deployCommand = `npx thirdweb@latest deploy --name "CryptoGift-NFT-Simple" --network base-sepolia --private-key 870c27f0bc97330a7b2fdfd6ddf41930e721e37a372aa67de6ee38f9fe82760f`;
+    const privateKey = process.env.PRIVATE_KEY_DEPLOY;
+    if (!privateKey) {
+      throw new Error('❌ PRIVATE_KEY_DEPLOY environment variable is required. Please set it in your .env.local file.');
+    }
+    const deployCommand = `npx thirdweb@latest deploy --name "CryptoGift-NFT-Simple" --network base-sepolia --private-key ${privateKey}`;
     
     console.log("📝 Running command:", deployCommand);
     

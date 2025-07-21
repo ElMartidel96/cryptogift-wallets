@@ -3,12 +3,31 @@ import { createThirdwebClient, getContract, prepareContractCall, sendTransaction
 import { baseSepolia } from "thirdweb/chains";
 import { privateKeyToAccount } from "thirdweb/wallets";
 import { createBiconomySmartAccount, sendGaslessTransaction, validateBiconomyConfig } from "../../lib/biconomy";
-import { generateNeutralGiftAddress, isNeutralGiftAddress } from "../../lib/constants";
+import { generateNeutralGiftAddressServer, isNeutralGiftAddressServer } from "../../lib/serverConstants";
 import { ethers } from "ethers";
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
+  }
+
+  // 🚨 SECURITY: Require authentication for claim operations
+  const authToken = req.headers['x-api-token'] || req.body.apiToken;
+  const requiredToken = process.env.API_ACCESS_TOKEN;
+  
+  if (!requiredToken) {
+    return res.status(503).json({ 
+      error: 'Service temporarily unavailable',
+      message: 'API_ACCESS_TOKEN not configured'
+    });
+  }
+  
+  if (authToken !== requiredToken) {
+    console.log(`🚨 SECURITY: Unauthorized claim attempt from ${req.headers['x-forwarded-for'] || 'unknown'}`);
+    return res.status(401).json({ 
+      error: 'Unauthorized access',
+      message: 'Valid API token required'
+    });
   }
 
   try {
@@ -46,7 +65,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       console.log(`🎯 REAL NFT CLAIM: Processing ownership transfer for token ${tokenId}`);
       
       // Step 1: Verify current owner is neutral address
-      const expectedNeutralAddress = generateNeutralGiftAddress(tokenId);
+      const expectedNeutralAddress = generateNeutralGiftAddressServer(tokenId);
       console.log(`🤖 Expected neutral owner: ${expectedNeutralAddress}`);
       
       const currentOwner = await readContract({
@@ -56,9 +75,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
       
       console.log(`👤 Current NFT owner: ${currentOwner}`);
-      console.log(`🔍 Is neutral address: ${isNeutralGiftAddress(currentOwner, tokenId)}`);
+      console.log(`🔍 Is neutral address: ${isNeutralGiftAddressServer(currentOwner, tokenId)}`);
       
-      if (!isNeutralGiftAddress(currentOwner, tokenId)) {
+      if (!isNeutralGiftAddressServer(currentOwner, tokenId)) {
         throw new Error(`NFT is not in neutral custody. Current owner: ${currentOwner}, Expected: ${expectedNeutralAddress}`);
       }
       

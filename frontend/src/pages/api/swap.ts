@@ -8,6 +8,25 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
+  // 🚨 SECURITY: Block unauthorized access immediately
+  const authToken = req.headers['x-api-token'] || req.body.apiToken;
+  const requiredToken = process.env.API_ACCESS_TOKEN;
+  
+  if (!requiredToken) {
+    return res.status(503).json({ 
+      error: 'Service temporarily unavailable',
+      message: 'API_ACCESS_TOKEN not configured - endpoint disabled for security'
+    });
+  }
+  
+  if (authToken !== requiredToken) {
+    console.log(`🚨 SECURITY ALERT: Unauthorized swap attempt from ${req.headers['x-forwarded-for'] || req.connection.remoteAddress}`);
+    return res.status(401).json({ 
+      error: 'Unauthorized access',
+      message: 'Valid API token required for swap operations'
+    });
+  }
+
   try {
     const { 
       from, 

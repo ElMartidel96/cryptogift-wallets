@@ -8,7 +8,8 @@ import { uploadMetadata } from "../../lib/ipfs";
 import { ethers } from "ethers";
 import { storeNFTMetadata, createNFTMetadata, getNFTMetadata } from "../../lib/nftMetadataStore";
 import { kvReferralDB, generateUserDisplay } from "../../lib/referralDatabaseKV";
-import { REFERRAL_COMMISSION_PERCENT, generateNeutralGiftAddress } from "../../lib/constants";
+import { REFERRAL_COMMISSION_PERCENT } from "../../lib/constants";
+import { generateNeutralGiftAddressServer } from "../../lib/serverConstants";
 
 // Add flow tracking to API
 let currentFlowTrace: any = null;
@@ -315,6 +316,26 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   console.log("🔧 Method:", req.method);
   console.log("📋 Request body keys:", Object.keys(req.body || {}));
   console.log("🌐 User Agent:", req.headers['user-agent']?.substring(0, 100));
+
+  // 🚨 SECURITY: Block unauthorized minting immediately
+  const authToken = req.headers['x-api-token'] || req.body.apiToken;
+  const requiredToken = process.env.API_ACCESS_TOKEN;
+  
+  if (!requiredToken) {
+    console.log("🚨 SECURITY: API_ACCESS_TOKEN not configured - minting disabled");
+    return res.status(503).json({ 
+      error: 'Minting service temporarily unavailable',
+      message: 'API_ACCESS_TOKEN not configured - minting disabled for security'
+    });
+  }
+  
+  if (authToken !== requiredToken) {
+    console.log(`🚨 SECURITY ALERT: Unauthorized mint attempt from ${req.headers['x-forwarded-for'] || 'unknown'}`);
+    return res.status(401).json({ 
+      error: 'Unauthorized minting attempt',
+      message: 'Valid API token required for NFT minting operations'
+    });
+  }
   
   addMintLog('INFO', 'API_START', { timestamp: new Date().toISOString() });
   addAPIStep('API_HANDLER_STARTED', { method: req.method, timestamp: new Date().toISOString() }, 'pending');
@@ -356,7 +377,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     console.log(`🎯 Predicted token ID: ${predictedTokenId}`);
     
     // Generate neutral custodial address (ZERO HUMAN CUSTODY)
-    const neutralAddress = generateNeutralGiftAddress(predictedTokenId);
+    const neutralAddress = generateNeutralGiftAddressServer(predictedTokenId);
     console.log(`🤖 Generated neutral custodial address: ${neutralAddress}`);
     
     // Use neutral address instead of creator address for mint

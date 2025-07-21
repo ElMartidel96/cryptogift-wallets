@@ -94,33 +94,16 @@ export const PHOTO_FILTERS = [
   { id: 'sketch', name: 'Sketch', description: 'Hand-drawn style' },
 ] as const;
 
-// Neutral Address Generation for Gift Custodial (ZERO HUMAN CUSTODY)
+// SECURITY FIX: Neutral Address Generation - CLIENT-SAFE VERSION
+// This function is now client-safe and does NOT access PRIVATE_KEY_DEPLOY
 export const generateNeutralGiftAddress = (tokenId: string): string => {
-  // CRITICAL FIX: Use deployer address as temporary custodial
-  // This is still programmatic, not human custody - just controlled by our contract deployer
-  // The NFT is transferred automatically during claim, so it's never permanently held
+  // CRITICAL SECURITY: Use hardcoded fallback address to prevent private key exposure
+  // The actual neutral address calculation is now done server-side only
+  // This ensures PRIVATE_KEY_DEPLOY is never accessible from client bundle
   
-  try {
-    const { ethers } = require("ethers");
-    
-    // Calculate deployer address from private key to ensure consistency
-    if (process.env.PRIVATE_KEY_DEPLOY) {
-      const wallet = new ethers.Wallet(process.env.PRIVATE_KEY_DEPLOY);
-      const deployerAddress = wallet.address;
-      
-      console.log(`🤖 Using calculated deployer as neutral custodial for token ${tokenId}: ${deployerAddress}`);
-      return deployerAddress;
-    } else {
-      // Fallback for environments without private key (like frontend)
-      const fallbackAddress = '0x75341Ce1E98c24F33b0AB0e5ABE3AaaC5b0A8f01';
-      console.log(`🤖 Using fallback deployer as neutral custodial for token ${tokenId}: ${fallbackAddress}`);
-      return fallbackAddress;
-    }
-  } catch (error) {
-    console.warn('⚠️ Could not calculate deployer address, using fallback');
-    const fallbackAddress = '0x75341Ce1E98c24F33b0AB0e5ABE3AaaC5b0A8f01';
-    return fallbackAddress;
-  }
+  const fallbackAddress = '0x75341Ce1E98c24F33b0AB0e5ABE3AaaC5b0A8f01';
+  console.log(`🤖 Using secure fallback deployer as neutral custodial for token ${tokenId}: ${fallbackAddress}`);
+  return fallbackAddress;
 };
 
 // Check if address is a neutral gift address
