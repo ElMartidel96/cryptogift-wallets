@@ -40,6 +40,42 @@ function addAPIError(action: string, error: Error | string, data?: any) {
   addAPIStep(action, { errorMessage: error instanceof Error ? error.message : error, ...data }, 'error');
 }
 
+// Helper function to extract token ID from transaction receipt
+async function extractTokenIdFromReceipt(receipt: any, client: any): Promise<string> {
+  try {
+    console.log("🔍 Extracting token ID from receipt logs...");
+    
+    // Parse Transfer events from transaction logs
+    for (const log of receipt.logs || []) {
+      // Check if this log is from our NFT contract
+      if (log.address && log.address.toLowerCase() === process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS?.toLowerCase()) {
+        console.log("✅ Found log from NFT contract");
+        
+        // Transfer event signature: Transfer(address indexed from, address indexed to, uint256 indexed tokenId)
+        const transferEventSignature = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef";
+        
+        if (log.topics && log.topics[0] === transferEventSignature && log.topics.length >= 4) {
+          // Extract tokenId from topic[3] (indexed parameter)
+          const tokenIdHex = log.topics[3];
+          const tokenIdDecimal = BigInt(tokenIdHex).toString();
+          
+          console.log("🎯 TOKEN ID EXTRACTED FROM RECEIPT:");
+          console.log("  📝 TokenId (hex):", tokenIdHex);
+          console.log("  📝 TokenId (decimal):", tokenIdDecimal);
+          
+          return tokenIdDecimal;
+        }
+      }
+    }
+    
+    throw new Error("No Transfer event found in receipt logs");
+    
+  } catch (error) {
+    console.error("❌ Failed to extract token ID from receipt:", error);
+    throw error;
+  }
+}
+
 // Helper function to upload metadata to IPFS using robust fallback strategy
 async function uploadMetadataToIPFS(metadata: any) {
   try {
@@ -492,13 +528,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     console.log(`🚀 FAST GASLESS CHECK: ${gaslessAvailable ? 'Available' : 'Not Available'}`);
     addAPIStep('GASLESS_FAST_CHECK', { available: gaslessAvailable }, gaslessAvailable ? 'success' : 'skipped');
     
-    // Store initial total supply to detect gasless success
-    const initialTotalSupply = await readContract({
-      contract,
-      method: "function totalSupply() view returns (uint256)",
-      params: []
-    });
-    console.log(`📊 Initial total supply before gasless attempt: ${initialTotalSupply.toString()}`);
+    // Variables for gasless transaction tracking
+    let gaslessTransactionHash: string | null = null;
+    let gaslessUserOpHash: string | null = null;
     
     // TRY GASLESS FIRST - Only if fast check passes
     if (gaslessAvailable) {
@@ -526,73 +558,108 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           tokenId: string;
         };
         
-        transactionHash = gaslessResult.transactionHash;
-        
-        // CRITICAL FIX: Use REAL token ID from gasless result instead of generating manual ID
-        tokenId = gaslessResult.tokenId; // Use real tokenId from gasless function
-        
-        console.log(`🎯 REAL TOKEN ID: ${tokenId} (gasless - from contract)`);
-        addAPIStep('REAL_TOKEN_ID_EXTRACTED', { tokenId, method: 'gasless-from-contract' }, 'success');
-        
+        // ROBUST FIX: Capture gasless transaction details
+        gaslessTransactionHash = gaslessResult.transactionHash;
+        gaslessUserOpHash = gaslessResult.transactionHash; // In Biconomy, this might be userOpHash
+        tokenId = gaslessResult.tokenId;
+        transactionHash = gaslessResult.transactionHash; // Set main transaction hash
         gasless = true;
         
-        console.log("✅ GASLESS SUCCESS!", { transactionHash, tokenId });
-        addAPIStep('GASLESS_SUCCESS', { transactionHash, tokenId }, 'success');
+        console.log("✅ GASLESS SUCCESS!", { 
+          gaslessTransactionHash, 
+          tokenId,
+          userOpHash: gaslessUserOpHash
+        });
+        addAPIStep('GASLESS_SUCCESS', { gaslessTransactionHash, tokenId }, 'success');
         
       } catch (gaslessError) {
         console.log("⚠️ GASLESS FAILED (fast fallback):", gaslessError.message);
         addAPIStep('GASLESS_FAILED', { error: gaslessError.message }, 'error');
         
-        // CRITICAL FIX: Intelligent gasless success detection
-        console.log("🔍 SMART VERIFICATION: Checking if gasless actually succeeded despite error...");
-        console.log(`📊 Comparing against initial total supply: ${initialTotalSupply.toString()}`);
+        // ROBUST FIX: Check if gasless actually succeeded using proper Biconomy methods
+        console.log("🔍 ROBUST VERIFICATION: Checking if gasless succeeded despite error...");
         
         let gaslessActuallySucceeded = false;
-        let finalTokenId = null;
+        let verifiedTransactionHash: string | null = null;
+        let verifiedTokenId: string | null = null;
         
-        // Try multiple times over 30 seconds to detect gasless success
-        for (let attempt = 1; attempt <= 6; attempt++) {
-          try {
-            await new Promise(resolve => setTimeout(resolve, 5000)); // Wait 5 seconds between checks
+        // Try to recover gasless transaction by checking if we got any transaction hash
+        try {
+          // Option 1: If we have a gasless userOpHash, try to get the actual transaction hash
+          if (gaslessUserOpHash) {
+            console.log(`🔍 Checking userOpHash: ${gaslessUserOpHash}`);
             
-            const currentTotalSupply = await readContract({
-              contract,
-              method: "function totalSupply() view returns (uint256)",
-              params: []
-            });
+            // Wait a few seconds for transaction to be mined
+            await new Promise(resolve => setTimeout(resolve, 5000));
             
-            console.log(`🔍 Attempt ${attempt}/6: Supply check ${initialTotalSupply} → ${currentTotalSupply.toString()}`);
-            
-            // SMART DETECTION: If total supply increased, gasless actually succeeded!
-            if (currentTotalSupply > initialTotalSupply) {
-              console.log("🎉 GASLESS SUCCESS DETECTED! Supply increased despite error message");
+            // Try to get transaction receipt using the userOpHash as transaction hash
+            try {
+              const receipt = await waitForReceipt({
+                client,
+                chain: baseSepolia,
+                transactionHash: gaslessUserOpHash as `0x${string}`
+              });
+              
+              console.log("🎉 GASLESS SUCCESS RECOVERED! Found valid receipt");
               gaslessActuallySucceeded = true;
-              finalTokenId = currentTotalSupply.toString(); // Latest token ID
+              verifiedTransactionHash = gaslessUserOpHash;
               
-              // Set gasless success variables
-              tokenId = finalTokenId;
-              gasless = true;
-              transactionHash = "gasless_detected_by_supply_increase";
+              // Extract token ID from receipt logs
+              verifiedTokenId = await extractTokenIdFromReceipt(receipt, client);
               
-              addAPIStep('GASLESS_SUCCESS_DETECTED', { 
-                initialSupply: initialTotalSupply.toString(),
-                finalSupply: currentTotalSupply.toString(),
-                tokenId: finalTokenId
+              addAPIStep('GASLESS_RECOVERY_SUCCESS', { 
+                userOpHash: gaslessUserOpHash,
+                transactionHash: verifiedTransactionHash,
+                tokenId: verifiedTokenId
               }, 'success');
               
-              break; // Exit verification loop
+            } catch (receiptError) {
+              console.log(`⚠️ Could not get receipt for userOpHash: ${receiptError.message}`);
             }
-            
-          } catch (checkError) {
-            console.log(`❌ Attempt ${attempt}/6 failed:`, checkError.message);
           }
+          
+          // Option 2: If we have gasless transaction hash, verify it directly
+          if (!gaslessActuallySucceeded && gaslessTransactionHash && gaslessTransactionHash !== gaslessUserOpHash) {
+            console.log(`🔍 Checking gasless transaction hash: ${gaslessTransactionHash}`);
+            
+            try {
+              const receipt = await waitForReceipt({
+                client,
+                chain: baseSepolia,
+                transactionHash: gaslessTransactionHash as `0x${string}`
+              });
+              
+              console.log("🎉 GASLESS SUCCESS CONFIRMED! Transaction hash is valid");
+              gaslessActuallySucceeded = true;
+              verifiedTransactionHash = gaslessTransactionHash;
+              
+              // Extract token ID from receipt logs
+              verifiedTokenId = await extractTokenIdFromReceipt(receipt, client);
+              
+              addAPIStep('GASLESS_HASH_VERIFICATION_SUCCESS', { 
+                transactionHash: verifiedTransactionHash,
+                tokenId: verifiedTokenId
+              }, 'success');
+              
+            } catch (receiptError) {
+              console.log(`⚠️ Could not get receipt for transaction hash: ${receiptError.message}`);
+            }
+          }
+          
+        } catch (verificationError) {
+          console.log("❌ Gasless verification failed:", verificationError.message);
         }
         
-        if (gaslessActuallySucceeded) {
-          console.log(`✅ GASLESS CONFIRMED: Token ${finalTokenId} minted successfully`);
-          console.log("🚫 SKIPPING FALLBACK: Gasless transaction was successful");
+        // Set final values if gasless was recovered
+        if (gaslessActuallySucceeded && verifiedTransactionHash && verifiedTokenId) {
+          console.log(`✅ GASLESS RECOVERED: Token ${verifiedTokenId} with hash ${verifiedTransactionHash}`);
+          tokenId = verifiedTokenId;
+          transactionHash = verifiedTransactionHash;
+          gasless = true;
+          
+          console.log("🚫 SKIPPING FALLBACK: Gasless transaction was successfully recovered");
         } else {
-          console.log("⚠️ GASLESS TRULY FAILED: No supply increase detected, proceeding with fallback");
+          console.log("⚠️ GASLESS TRULY FAILED: No valid transaction found, proceeding with fallback");
         }
       }
     } else {
