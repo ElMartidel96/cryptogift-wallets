@@ -36,9 +36,19 @@ export const ClaimInterface: React.FC<ClaimInterfaceProps> = ({
     setError(null);
 
     try {
+      const apiToken = process.env.NEXT_PUBLIC_API_ACCESS_TOKEN;
+      console.log('🔍 DEBUG ClaimInterface: API Token check:', {
+        tokenExists: !!apiToken,
+        tokenLength: apiToken?.length || 0,
+        tokenPreview: apiToken?.substring(0, 10) || 'undefined'
+      });
+      
       const response = await fetch('/api/claim-nft', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'X-API-Token': apiToken || ''
+        },
         body: JSON.stringify({
           tokenId,
           contractAddress,
@@ -86,9 +96,19 @@ export const ClaimInterface: React.FC<ClaimInterfaceProps> = ({
     setError(null);
 
     try {
+      const apiToken = process.env.NEXT_PUBLIC_API_ACCESS_TOKEN;
+      console.log('🔍 DEBUG ClaimInterface: API Token check:', {
+        tokenExists: !!apiToken,
+        tokenLength: apiToken?.length || 0,
+        tokenPreview: apiToken?.substring(0, 10) || 'undefined'
+      });
+      
       const response = await fetch('/api/claim-nft', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'X-API-Token': apiToken || ''
+        },
         body: JSON.stringify({
           tokenId,
           contractAddress,
