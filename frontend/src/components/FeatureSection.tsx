@@ -128,16 +128,23 @@ export const FeatureSection: React.FC = () => {
                            : 'border-border-primary hover:border-accent-gold dark:hover:border-accent-silver'
                          }`}
               >
-                <div className={`w-20 h-16 bg-gradient-to-r ${feature.color} 
+                <div className={`w-16 h-20 bg-gradient-to-r ${feature.color} 
                                dark:from-accent-gold dark:to-accent-silver
                                rounded-2xl flex items-center justify-center mb-6 
-                               group-hover:scale-110 transition-transform duration-300 p-2`}>
+                               group-hover:scale-110 transition-transform duration-300 
+                               ${feature.icon === 'Arte-IA-Personalizado.png' ? 'p-0 overflow-hidden' : 'p-2'}`}>
                   <Image
                     src={`/${feature.icon}`}
                     alt={feature.title}
                     width={64}
-                    height={48}
-                    className="object-contain w-full h-full"
+                    height={80}
+                    className={`${
+                      feature.icon === 'Arte-IA-Personalizado.png' 
+                        ? 'object-cover w-full h-full rounded-2xl' 
+                        : feature.icon === 'cg-wallet-logo.png' 
+                          ? 'object-contain w-full h-full' 
+                          : 'object-contain w-full h-full drop-shadow-lg filter contrast-125 brightness-110 border border-white/20 rounded-lg'
+                    }`}
                     priority
                   />
                 </div>
