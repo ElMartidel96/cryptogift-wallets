@@ -96,11 +96,18 @@ export default function TokenPage() {
 
     setIsLoading(true);
     try {
+      const apiToken = process.env.NEXT_PUBLIC_API_ACCESS_TOKEN;
+      console.log('🔍 DEBUG: API Token check:', {
+        tokenExists: !!apiToken,
+        tokenLength: apiToken?.length || 0,
+        tokenPreview: apiToken?.substring(0, 10) || 'undefined'
+      });
+      
       const response = await fetch('/api/claim-nft', {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
-          'X-API-Token': process.env.NEXT_PUBLIC_API_ACCESS_TOKEN || ''
+          'X-API-Token': apiToken || ''
         },
         body: JSON.stringify({
           contractAddress,
