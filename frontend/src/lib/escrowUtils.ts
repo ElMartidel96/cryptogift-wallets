@@ -85,7 +85,7 @@ export function getEscrowContract() {
  * 
  * EXAMPLES:
  * - getGift() returns: { creator: "0x...", expirationTime: 123n, nftContract: "0x...", ... }
- * - canClaimGift() returns: { canClaim: true, timeRemaining: 86400n }
+ * - canClaimGift() returns: [true, 86400n] (tuple format)
  * 
  * This provides excellent developer experience as you can access properties by name
  * rather than array indices. No additional parsing helpers are needed.

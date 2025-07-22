@@ -79,18 +79,22 @@ async function getGiftInfo(tokenId: string): Promise<{
       status: giftData.status
     };
     
+    // Handle ThirdWeb v5 tuple return format for canClaimGift
+    const canClaim = Array.isArray(claimStatus) ? claimStatus[0] : claimStatus.canClaim;
+    const timeRemaining = Array.isArray(claimStatus) ? Number(claimStatus[1]) : Number(claimStatus.timeRemaining);
+    
     console.log('✅ GIFT INFO: Retrieved gift data:', {
       tokenId,
       status: gift.status,
-      canClaim: claimStatus.canClaim,
-      timeRemaining: Number(claimStatus.timeRemaining)
+      canClaim,
+      timeRemaining
     });
     
     return {
       success: true,
       gift,
-      canClaim: claimStatus.canClaim,
-      timeRemaining: Number(claimStatus.timeRemaining)
+      canClaim,
+      timeRemaining
     };
     
   } catch (error: any) {
