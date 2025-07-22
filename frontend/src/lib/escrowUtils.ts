@@ -76,6 +76,44 @@ export function getEscrowContract() {
   });
 }
 
+/**
+ * ThirdWeb v5 Tuple Parsing Helpers
+ * 
+ * ⚠️  CRITICAL CHANGE IN THIRDWEB v5:
+ * Contract functions that return multiple values (tuples) now return arrays instead of objects.
+ * 
+ * OLD (v4): getGift() returns { creator: "0x...", expirationTime: 123n, ... }
+ * NEW (v5): getGift() returns ["0x...", 123n, "0x...", 456n, "0x...", 0]
+ * 
+ * These helpers ensure safe tuple parsing and prevent future breaking changes.
+ * 
+ * ALWAYS use these helpers when dealing with multi-return contract functions:
+ * - getGift() returns tuple with 6 elements
+ * - canClaimGift() returns tuple with 2 elements
+ * 
+ * DO NOT directly access array indices in business logic!
+ */
+export function parseGiftDataTuple(giftTuple: readonly [string, bigint, string, bigint, string, number]): EscrowGift {
+  // Explicit mapping from tuple indices to meaningful properties
+  // Based on contract ABI: (address creator, uint96 expirationTime, address nftContract, uint256 tokenId, bytes32 passwordHash, uint8 status)
+  return {
+    creator: giftTuple[0],        // address
+    expirationTime: giftTuple[1], // uint96 
+    nftContract: giftTuple[2],    // address
+    tokenId: giftTuple[3],        // uint256
+    passwordHash: giftTuple[4],   // bytes32
+    status: giftTuple[5]          // uint8
+  };
+}
+
+export function parseCanClaimTuple(claimTuple: readonly [boolean, bigint]): { canClaim: boolean; timeRemaining: number } {
+  // Based on contract ABI: (bool canClaim, uint256 timeRemaining)
+  return {
+    canClaim: claimTuple[0],      // bool
+    timeRemaining: Number(claimTuple[1]) // uint256 -> number
+  };
+}
+
 export function prepareCreateGiftCall(
   tokenId: string | number,
   nftContract: string,

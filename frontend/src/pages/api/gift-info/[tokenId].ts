@@ -16,7 +16,9 @@ import {
   isGiftExpired,
   generateGiftLink,
   parseEscrowError,
-  validateTokenId
+  validateTokenId,
+  parseGiftDataTuple,
+  parseCanClaimTuple
 } from '../../../lib/escrowUtils';
 import { ESCROW_ABI, ESCROW_CONTRACT_ADDRESS, type EscrowGift } from '../../../lib/escrowABI';
 
@@ -69,27 +71,22 @@ async function getGiftInfo(tokenId: string): Promise<{
       })
     ]);
     
-    const gift: EscrowGift = {
-      creator: giftData.creator,
-      expirationTime: giftData.expirationTime,
-      nftContract: giftData.nftContract,
-      tokenId: giftData.tokenId,
-      passwordHash: giftData.passwordHash,
-      status: giftData.status
-    };
+    // Parse ThirdWeb v5 tuples using safe helpers
+    const gift = parseGiftDataTuple(giftData);
+    const claimData = parseCanClaimTuple(claimStatus);
     
     console.log('✅ GIFT INFO: Retrieved gift data:', {
       tokenId,
       status: gift.status,
-      canClaim: claimStatus.canClaim,
-      timeRemaining: Number(claimStatus.timeRemaining)
+      canClaim: claimData.canClaim,
+      timeRemaining: claimData.timeRemaining
     });
     
     return {
       success: true,
       gift,
-      canClaim: claimStatus.canClaim,
-      timeRemaining: Number(claimStatus.timeRemaining)
+      canClaim: claimData.canClaim,
+      timeRemaining: claimData.timeRemaining
     };
     
   } catch (error: any) {

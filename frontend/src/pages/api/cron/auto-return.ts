@@ -81,12 +81,12 @@ async function getExpiredGifts(): Promise<{
         });
         
         const gift: EscrowGift = {
-          creator: giftData.creator,
-          expirationTime: giftData.expirationTime,
-          nftContract: giftData.nftContract,
-          tokenId: giftData.tokenId,
-          passwordHash: giftData.passwordHash,
-          status: giftData.status
+          creator: giftData[0],
+          expirationTime: giftData[1],
+          nftContract: giftData[2],
+          tokenId: giftData[3],
+          passwordHash: giftData[4],
+          status: giftData[5]
         };
         
         // Only process gifts that are:
