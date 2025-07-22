@@ -124,18 +124,18 @@ async function getNFTMetadata(nftContract: string, tokenId: string): Promise<{
   error?: string;
 }> {
   try {
-    const nftContractInstance = getContract({
-      client,
-      chain: baseSepolia,
-      address: nftContract
-    });
+    // Use ethers directly to avoid ThirdWeb type complexity for generic NFT contracts
+    const provider = new ethers.JsonRpcProvider(process.env.NEXT_PUBLIC_RPC_URL);
+    
+    // Standard ERC721 tokenURI ABI
+    const erc721ABI = [
+      "function tokenURI(uint256 tokenId) external view returns (string memory)"
+    ];
+    
+    const nftContract_ethers = new ethers.Contract(nftContract, erc721ABI, provider);
     
     // Try to get token URI
-    const tokenURI = await readContract({
-      contract: nftContractInstance,
-      method: "tokenURI",
-      params: [BigInt(tokenId)]
-    });
+    const tokenURI = await nftContract_ethers.tokenURI(tokenId);
     
     if (tokenURI) {
       // If it's an IPFS URI, convert to gateway URL
