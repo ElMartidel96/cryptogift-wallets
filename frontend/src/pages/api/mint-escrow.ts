@@ -9,7 +9,7 @@ import { ethers } from 'ethers';
 import { createThirdwebClient, getContract, prepareContractCall } from 'thirdweb';
 import { baseSepolia } from 'thirdweb/chains';
 import { privateKeyToAccount } from 'thirdweb/wallets';
-import { sendTransaction } from 'thirdweb/transaction';
+import { sendTransaction, waitForReceipt } from 'thirdweb/transaction';
 import { 
   generatePasswordHash,
   generateSalt,
@@ -149,7 +149,11 @@ async function mintNFTEscrowGasless(
     console.log('✅ NFT minted, transaction hash:', mintResult.transactionHash);
     
     // Step 8: Extract token ID from mint transaction
-    const mintReceipt = await mintResult.wait();
+    const mintReceipt = await waitForReceipt({
+      client,
+      chain: baseSepolia,
+      transactionHash: mintResult.transactionHash
+    });
     let tokenId: string | null = null;
     
     // Parse Transfer event to get token ID
