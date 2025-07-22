@@ -31,7 +31,7 @@ const userNonces = new Map<string, number>();
 /**
  * Generate unique transaction nonce for user
  */
-export function generateUserNonce(userAddress: string): string {
+export function generateUserNonce(userAddress: string): `0x${string}` {
   const currentNonce = userNonces.get(userAddress.toLowerCase()) || 0;
   const nextNonce = currentNonce + 1;
   userNonces.set(userAddress.toLowerCase(), nextNonce);
@@ -40,7 +40,7 @@ export function generateUserNonce(userAddress: string): string {
   const timestamp = Date.now();
   const nonceString = `${userAddress.toLowerCase()}_${nextNonce}_${timestamp}`;
   
-  return ethers.keccak256(ethers.toUtf8Bytes(nonceString));
+  return ethers.keccak256(ethers.toUtf8Bytes(nonceString)) as `0x${string}`;
 }
 
 /**
@@ -51,7 +51,7 @@ export function generateMetadataHash(
   metadataUri: string,
   amount: number,
   escrowConfig?: any
-): string {
+): `0x${string}` {
   const hashData = JSON.stringify({
     user: userAddress.toLowerCase(),
     metadata: metadataUri,
@@ -64,7 +64,7 @@ export function generateMetadataHash(
     timestamp: Math.floor(Date.now() / 60000) // 1-minute window
   });
   
-  return ethers.keccak256(ethers.toUtf8Bytes(hashData));
+  return ethers.keccak256(ethers.toUtf8Bytes(hashData)) as `0x${string}`;
 }
 
 /**

@@ -16,12 +16,12 @@ const client = createThirdwebClient({
 /**
  * Password and Salt Management
  */
-export function generateSalt(): string {
-  return ethers.hexlify(ethers.randomBytes(32));
+export function generateSalt(): `0x${string}` {
+  return ethers.hexlify(ethers.randomBytes(32)) as `0x${string}`;
 }
 
-export function generatePasswordHash(password: string, salt: string): string {
-  return ethers.keccak256(ethers.toUtf8Bytes(password + salt));
+export function generatePasswordHash(password: string, salt: string): `0x${string}` {
+  return ethers.keccak256(ethers.toUtf8Bytes(password + salt)) as `0x${string}`;
 }
 
 export function validatePassword(password: string): { valid: boolean; message?: string } {
