@@ -203,7 +203,7 @@ export const EscrowGiftStatus: React.FC<EscrowGiftStatusProps> = ({
         {giftMessage && (
           <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3">
             <p className="text-sm text-gray-700 dark:text-gray-300 italic">
-              "{giftMessage}"
+              &ldquo;{giftMessage}&rdquo;
             </p>
           </div>
         )}
@@ -308,7 +308,7 @@ export const EscrowGiftStatus: React.FC<EscrowGiftStatusProps> = ({
         {giftInfo.status === 'returned' && (
           <div className="bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg p-3">
             <p className="text-gray-700 dark:text-gray-300 text-sm">
-              ↩️ This gift has been returned to the creator's wallet.
+              ↩️ This gift has been returned to the creator&apos;s wallet.
             </p>
           </div>
         )}

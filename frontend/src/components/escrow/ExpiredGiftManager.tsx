@@ -195,7 +195,7 @@ export const ExpiredGiftManager: React.FC<ExpiredGiftManagerProps> = ({
           No Expired Gifts
         </h3>
         <p className="text-gray-600 dark:text-gray-400">
-          You don't have any expired gifts that need to be returned
+          You don&apos;t have any expired gifts that need to be returned
         </p>
         <button
           onClick={loadExpiredGifts}

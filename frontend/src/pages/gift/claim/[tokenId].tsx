@@ -299,7 +299,7 @@ export default function ClaimGiftPage() {
                   <div className="text-sm">
                     <p className="font-medium text-amber-800 mb-1">Security Notice</p>
                     <ul className="text-amber-700 space-y-1">
-                      <li>• Never share your wallet's private key or seed phrase</li>
+                      <li>• Never share your wallet&apos;s private key or seed phrase</li>
                       <li>• This gift is secured by temporal escrow technology</li>
                       <li>• If expired, the gift will be returned to the creator</li>
                     </ul>
