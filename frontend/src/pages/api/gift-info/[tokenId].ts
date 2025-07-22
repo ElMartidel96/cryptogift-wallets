@@ -80,8 +80,9 @@ async function getGiftInfo(tokenId: string): Promise<{
     };
     
     // Handle ThirdWeb v5 tuple return format for canClaimGift
-    const canClaim = Array.isArray(claimStatus) ? claimStatus[0] : claimStatus.canClaim;
-    const timeRemaining = Array.isArray(claimStatus) ? Number(claimStatus[1]) : Number(claimStatus.timeRemaining);
+    // TypeScript sees this as readonly [boolean, bigint] so we need explicit tuple handling
+    const canClaim = (claimStatus as any)[0];
+    const timeRemaining = Number((claimStatus as any)[1]);
     
     console.log('✅ GIFT INFO: Retrieved gift data:', {
       tokenId,
