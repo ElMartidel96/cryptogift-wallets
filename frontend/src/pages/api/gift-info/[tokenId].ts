@@ -59,12 +59,12 @@ async function getGiftInfo(tokenId: string): Promise<{
     const [giftData, claimStatus] = await Promise.all([
       readContract({
         contract: escrowContract,
-        method: "function getGift(uint256 tokenId) external view returns (tuple(address creator, uint96 expirationTime, address nftContract, uint256 tokenId, bytes32 passwordHash, uint8 status))",
+        method: "getGift",
         params: [BigInt(tokenId)]
       }),
       readContract({
         contract: escrowContract,
-        method: "function canClaimGift(uint256 tokenId) external view returns (bool canClaim, uint256 timeRemaining)",
+        method: "canClaimGift",
         params: [BigInt(tokenId)]
       })
     ]);
@@ -127,7 +127,7 @@ async function getNFTMetadata(nftContract: string, tokenId: string): Promise<{
     // Try to get token URI
     const tokenURI = await readContract({
       contract: nftContractInstance,
-      method: "function tokenURI(uint256 tokenId) external view returns (string memory)",
+      method: "tokenURI",
       params: [BigInt(tokenId)]
     });
     

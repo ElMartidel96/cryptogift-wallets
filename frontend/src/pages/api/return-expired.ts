@@ -62,7 +62,7 @@ async function validateReturnRequest(
     // Get gift information
     const giftData = await readContract({
       contract: escrowContract,
-      method: "function getGift(uint256 tokenId) external view returns (tuple(address creator, uint96 expirationTime, address nftContract, uint256 tokenId, bytes32 passwordHash, uint8 status))",
+      method: "getGift",
       params: [BigInt(tokenId)]
     });
     

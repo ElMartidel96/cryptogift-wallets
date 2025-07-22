@@ -89,7 +89,7 @@ export function prepareCreateGiftCall(
   
   return prepareContractCall({
     contract,
-    method: "function createGift(uint256 tokenId, address nftContract, bytes32 passwordHash, uint256 timeframeDays, string calldata giftMessage) external",
+    method: "createGift",
     params: [
       BigInt(tokenId),
       nftContract,
@@ -109,7 +109,7 @@ export function prepareClaimGiftCall(
   
   return prepareContractCall({
     contract,
-    method: "function claimGift(uint256 tokenId, string calldata password, string calldata salt) external",
+    method: "claimGift",
     params: [
       BigInt(tokenId),
       password,
@@ -128,7 +128,7 @@ export function prepareClaimGiftForCall(
   
   return prepareContractCall({
     contract,
-    method: "function claimGiftFor(uint256 tokenId, string calldata password, string calldata salt, address recipient) external",
+    method: "claimGiftFor",
     params: [
       BigInt(tokenId),
       password,
@@ -143,7 +143,7 @@ export function prepareReturnExpiredGiftCall(tokenId: string | number) {
   
   return prepareContractCall({
     contract,
-    method: "function returnExpiredGift(uint256 tokenId) external",
+    method: "returnExpiredGift",
     params: [BigInt(tokenId)]
   });
 }
@@ -292,22 +292,22 @@ export async function getTimeConstants(): Promise<Record<string, number>> {
     const [fifteenMin, sevenDays, fifteenDays, thirtyDays] = await Promise.all([
       readContract({
         contract,
-        method: "function FIFTEEN_MINUTES() external view returns (uint256)",
+        method: "FIFTEEN_MINUTES",
         params: []
       }),
       readContract({
         contract,
-        method: "function SEVEN_DAYS() external view returns (uint256)",
+        method: "SEVEN_DAYS",
         params: []
       }),
       readContract({
         contract,
-        method: "function FIFTEEN_DAYS() external view returns (uint256)",
+        method: "FIFTEEN_DAYS",
         params: []
       }),
       readContract({
         contract,
-        method: "function THIRTY_DAYS() external view returns (uint256)",
+        method: "THIRTY_DAYS",
         params: []
       })
     ]);
