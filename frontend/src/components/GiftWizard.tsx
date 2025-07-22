@@ -10,6 +10,7 @@ import { FilterSelector } from './FilterSelector';
 import { AmountSelector } from './AmountSelector';
 import { GiftSummary } from './GiftSummary';
 import { QRShare } from './QRShare';
+import { GiftEscrowConfig, type EscrowConfig } from './escrow/GiftEscrowConfig';
 import { CREATION_FEE_PERCENT, generateNeutralGiftAddress } from '../lib/constants';
 import { CryptoGiftError, parseApiError, logError } from '../lib/errorHandler';
 import { ErrorModal } from './ErrorModal';
@@ -77,6 +78,7 @@ enum WizardStep {
   UPLOAD = 'upload',
   FILTER = 'filter',
   AMOUNT = 'amount',
+  ESCROW = 'escrow',
   SUMMARY = 'summary',
   MINTING = 'minting',
   SUCCESS = 'success'
@@ -120,7 +122,8 @@ export const GiftWizard: React.FC<GiftWizardProps> = ({ isOpen, onClose, referre
     nftTokenId: null as string | null, // Enhanced numeric string
     shareUrl: '',
     qrCode: '',
-    wasGasless: false
+    wasGasless: false,
+    escrowConfig: null as EscrowConfig | null
   });
 
   const [isLoading, setIsLoading] = useState(false);
@@ -173,6 +176,16 @@ export const GiftWizard: React.FC<GiftWizardProps> = ({ isOpen, onClose, referre
 
   const handleAmountSelect = (amount: number) => {
     setWizardData(prev => ({ ...prev, amount }));
+    handleNext();
+  };
+
+  const handleEscrowConfig = (config: EscrowConfig) => {
+    setWizardData(prev => ({ ...prev, escrowConfig: config }));
+    handleNext();
+  };
+
+  const handleSkipEscrow = () => {
+    setWizardData(prev => ({ ...prev, escrowConfig: null }));
     handleNext();
   };
 
@@ -321,29 +334,44 @@ export const GiftWizard: React.FC<GiftWizardProps> = ({ isOpen, onClose, referre
     // Determine correct image CID to use (prioritize actual image over metadata)
     const actualImageCid = imageIpfsCid || ipfsCid;
     
-    // Step 2: Try gasless mint using /api/mint (which tries gasless first)
-    addStep('GIFT_WIZARD', 'GASLESS_API_CALL_STARTED', {
-      endpoint: '/api/mint',
+    // Step 3: Choose API endpoint based on escrow configuration
+    const isEscrowEnabled = wizardData.escrowConfig?.enabled;
+    const apiEndpoint = isEscrowEnabled ? '/api/mint-escrow' : '/api/mint';
+    
+    addStep('GIFT_WIZARD', 'API_CALL_STARTED', {
+      endpoint: apiEndpoint,
+      escrowEnabled: isEscrowEnabled,
       to: account?.address,
-      imageFile: actualImageCid, // Use actual image CID, not metadata CID
+      imageFile: actualImageCid,
       initialBalance: netAmount,
       filter: wizardData.selectedFilter || 'Original'
     }, 'pending');
 
-    const mintResponse = await fetch('/api/mint', {
+    // Prepare request body based on escrow configuration
+    const requestBody = isEscrowEnabled ? {
+      metadataUri: `ipfs://${ipfsCid}`,
+      recipientAddress: wizardData.escrowConfig?.recipientAddress || undefined,
+      password: wizardData.escrowConfig?.password!,
+      timeframeDays: wizardData.escrowConfig?.timeframe!,
+      giftMessage: wizardData.escrowConfig?.giftMessage!,
+      creatorAddress: account?.address,
+      gasless: true
+    } : {
+      to: account?.address,
+      imageFile: actualImageCid,
+      giftMessage: wizardData.message || 'Un regalo cripto único creado con amor',
+      initialBalance: netAmount,
+      filter: wizardData.selectedFilter || 'Original',
+      referrer: referrer
+    };
+
+    const mintResponse = await fetch(apiEndpoint, {
       method: 'POST',
       headers: { 
         'Content-Type': 'application/json',
-        'X-API-Token': process.env.NEXT_PUBLIC_API_ACCESS_TOKEN || ''
+        'Authorization': `Bearer ${process.env.NEXT_PUBLIC_API_ACCESS_TOKEN || 'cryptogift_escrow_api_2024_secure_token_v1'}`
       },
-      body: JSON.stringify({
-        to: account?.address,
-        imageFile: actualImageCid, // Use actual image CID instead of metadata CID
-        giftMessage: wizardData.message || 'Un regalo cripto único creado con amor',
-        initialBalance: netAmount,
-        filter: wizardData.selectedFilter || 'Original',
-        referrer: referrer
-      }),
+      body: JSON.stringify(requestBody),
     });
 
     addStep('GIFT_WIZARD', 'GASLESS_API_RESPONSE_RECEIVED', {
@@ -362,14 +390,25 @@ export const GiftWizard: React.FC<GiftWizardProps> = ({ isOpen, onClose, referre
     }
 
     const mintResult = await mintResponse.json();
-    const { tokenId, shareUrl, qrCode, gasless, message } = mintResult;
     
-    addStep('GIFT_WIZARD', 'GASLESS_API_RESPONSE_PARSED', {
+    // Handle different response formats for escrow vs regular minting
+    const tokenId = mintResult.tokenId;
+    const shareUrl = mintResult.shareUrl || mintResult.giftLink;
+    const qrCode = mintResult.qrCode;
+    const gasless = mintResult.gasless;
+    const message = mintResult.message;
+    const escrowTransactionHash = mintResult.escrowTransactionHash;
+    const nonce = mintResult.nonce;
+    
+    addStep('GIFT_WIZARD', 'API_RESPONSE_PARSED', {
       tokenId,
       hasShareUrl: !!shareUrl,
       hasQrCode: !!qrCode,
       gasless,
       message,
+      isEscrow: isEscrowEnabled,
+      escrowTransactionHash,
+      nonce: nonce?.slice(0, 10) + '...',
       fullResponse: mintResult
     }, 'success');
     
@@ -751,6 +790,16 @@ export const GiftWizard: React.FC<GiftWizardProps> = ({ isOpen, onClose, referre
           />
         );
 
+      case WizardStep.ESCROW:
+        return (
+          <GiftEscrowConfig
+            onConfigureEscrow={handleEscrowConfig}
+            onSkipEscrow={handleSkipEscrow}
+            initialConfig={wizardData.escrowConfig}
+            isLoading={isLoading}
+          />
+        );
+
       case WizardStep.SUMMARY:
         return (
           <GiftSummary
@@ -808,9 +857,10 @@ export const GiftWizard: React.FC<GiftWizardProps> = ({ isOpen, onClose, referre
       [WizardStep.UPLOAD]: 1,
       [WizardStep.FILTER]: 2,
       [WizardStep.AMOUNT]: 3,
-      [WizardStep.SUMMARY]: 4,
-      [WizardStep.MINTING]: 5,
-      [WizardStep.SUCCESS]: 6
+      [WizardStep.ESCROW]: 4,
+      [WizardStep.SUMMARY]: 5,
+      [WizardStep.MINTING]: 6,
+      [WizardStep.SUCCESS]: 7
     };
     return stepNumbers[currentStep];
   };
@@ -826,7 +876,7 @@ export const GiftWizard: React.FC<GiftWizardProps> = ({ isOpen, onClose, referre
             <h1 className="text-2xl font-bold">Crear Regalo Cripto</h1>
             {currentStep !== WizardStep.SUCCESS && (
               <p className="text-sm text-gray-500 mt-1">
-                Paso {getStepNumber()} de 6
+                Paso {getStepNumber()} de 7
               </p>
             )}
           </div>
@@ -844,7 +894,7 @@ export const GiftWizard: React.FC<GiftWizardProps> = ({ isOpen, onClose, referre
             <div className="w-full bg-gray-200 rounded-full h-2">
               <div
                 className="bg-blue-500 h-2 rounded-full transition-all duration-300"
-                style={{ width: `${(getStepNumber() / 6) * 100}%` }}
+                style={{ width: `${(getStepNumber() / 7) * 100}%` }}
               ></div>
             </div>
           </div>
