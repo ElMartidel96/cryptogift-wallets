@@ -6,7 +6,7 @@
 
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { ethers } from 'ethers';
-import { createThirdwebClient } from 'thirdweb';
+import { createThirdwebClient, readContract } from 'thirdweb';
 import { baseSepolia } from 'thirdweb/chains';
 import { privateKeyToAccount } from 'thirdweb/wallets';
 import { sendTransaction } from 'thirdweb/transaction';
@@ -57,11 +57,14 @@ async function validateReturnRequest(
   creatorAddress: string
 ): Promise<{ valid: boolean; error?: string; gift?: EscrowGift }> {
   try {
-    const provider = new ethers.JsonRpcProvider(process.env.NEXT_PUBLIC_RPC_URL);
-    const contract = new ethers.Contract(ESCROW_CONTRACT_ADDRESS!, ESCROW_ABI, provider);
+    const escrowContract = getEscrowContract();
     
     // Get gift information
-    const giftData = await contract.getGift(BigInt(tokenId));
+    const giftData = await readContract({
+      contract: escrowContract,
+      method: "function getGift(uint256 tokenId) external view returns (tuple(address creator, uint96 expirationTime, address nftContract, uint256 tokenId, bytes32 passwordHash, uint8 status))",
+      params: [BigInt(tokenId)]
+    });
     
     const gift: EscrowGift = {
       creator: giftData.creator,

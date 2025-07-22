@@ -6,29 +6,166 @@
 
 export const ESCROW_ABI = [
   // Core Escrow Functions
-  "function createGift(uint256 tokenId, address nftContract, bytes32 passwordHash, uint256 timeframeDays, string calldata giftMessage) external",
-  "function claimGift(uint256 tokenId, string calldata password, string calldata salt) external", 
-  "function claimGiftFor(uint256 tokenId, string calldata password, string calldata salt, address recipient) external",
-  "function returnExpiredGift(uint256 tokenId) external",
+  {
+    name: "createGift",
+    type: "function",
+    stateMutability: "nonpayable",
+    inputs: [
+      { name: "tokenId", type: "uint256" },
+      { name: "nftContract", type: "address" },
+      { name: "passwordHash", type: "bytes32" },
+      { name: "timeframeDays", type: "uint256" },
+      { name: "giftMessage", type: "string" }
+    ],
+    outputs: []
+  },
+  {
+    name: "claimGift",
+    type: "function",
+    stateMutability: "nonpayable",
+    inputs: [
+      { name: "tokenId", type: "uint256" },
+      { name: "password", type: "string" },
+      { name: "salt", type: "string" }
+    ],
+    outputs: []
+  },
+  {
+    name: "claimGiftFor",
+    type: "function",
+    stateMutability: "nonpayable",
+    inputs: [
+      { name: "tokenId", type: "uint256" },
+      { name: "password", type: "string" },
+      { name: "salt", type: "string" },
+      { name: "recipient", type: "address" }
+    ],
+    outputs: []
+  },
+  {
+    name: "returnExpiredGift",
+    type: "function",
+    stateMutability: "nonpayable",
+    inputs: [
+      { name: "tokenId", type: "uint256" }
+    ],
+    outputs: []
+  },
   
   // View Functions
-  "function canClaimGift(uint256 tokenId) external view returns (bool canClaim, uint256 timeRemaining)",
-  "function getGift(uint256 tokenId) external view returns (tuple(address creator, uint96 expirationTime, address nftContract, uint256 tokenId, bytes32 passwordHash, uint8 status))",
+  {
+    name: "canClaimGift",
+    type: "function",
+    stateMutability: "view",
+    inputs: [
+      { name: "tokenId", type: "uint256" }
+    ],
+    outputs: [
+      { name: "canClaim", type: "bool" },
+      { name: "timeRemaining", type: "uint256" }
+    ]
+  },
+  {
+    name: "getGift",
+    type: "function",
+    stateMutability: "view",
+    inputs: [
+      { name: "tokenId", type: "uint256" }
+    ],
+    outputs: [
+      {
+        name: "",
+        type: "tuple",
+        components: [
+          { name: "creator", type: "address" },
+          { name: "expirationTime", type: "uint96" },
+          { name: "nftContract", type: "address" },
+          { name: "tokenId", type: "uint256" },
+          { name: "passwordHash", type: "bytes32" },
+          { name: "status", type: "uint8" }
+        ]
+      }
+    ]
+  },
   
   // Time Constants
-  "function FIFTEEN_MINUTES() external view returns (uint256)",
-  "function SEVEN_DAYS() external view returns (uint256)", 
-  "function FIFTEEN_DAYS() external view returns (uint256)",
-  "function THIRTY_DAYS() external view returns (uint256)",
+  {
+    name: "FIFTEEN_MINUTES",
+    type: "function",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ name: "", type: "uint256" }]
+  },
+  {
+    name: "SEVEN_DAYS",
+    type: "function",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ name: "", type: "uint256" }]
+  },
+  {
+    name: "FIFTEEN_DAYS",
+    type: "function",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ name: "", type: "uint256" }]
+  },
+  {
+    name: "THIRTY_DAYS",
+    type: "function",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ name: "", type: "uint256" }]
+  },
   
   // Access Control
-  "function owner() external view returns (address)",
-  "function isTrustedForwarder(address forwarder) external view returns (bool)",
+  {
+    name: "owner",
+    type: "function",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ name: "", type: "address" }]
+  },
+  {
+    name: "isTrustedForwarder",
+    type: "function",
+    stateMutability: "view",
+    inputs: [
+      { name: "forwarder", type: "address" }
+    ],
+    outputs: [{ name: "", type: "bool" }]
+  },
   
   // Events
-  "event GiftCreated(uint256 indexed tokenId, address indexed creator, address indexed nftContract, uint256 expirationTime, string giftMessage)",
-  "event GiftClaimed(uint256 indexed tokenId, address indexed claimer, address indexed recipient)",
-  "event GiftReturned(uint256 indexed tokenId, address indexed creator, uint256 timestamp)"
+  {
+    name: "GiftCreated",
+    type: "event",
+    inputs: [
+      { name: "tokenId", type: "uint256", indexed: true },
+      { name: "creator", type: "address", indexed: true },
+      { name: "nftContract", type: "address", indexed: true },
+      { name: "expirationTime", type: "uint256", indexed: false },
+      { name: "giftMessage", type: "string", indexed: false }
+    ]
+  },
+  {
+    name: "GiftClaimed",
+    type: "event",
+    inputs: [
+      { name: "tokenId", type: "uint256", indexed: true },
+      { name: "claimer", type: "address", indexed: true },
+      { name: "recipient", type: "address", indexed: true }
+    ]
+  },
+  {
+    name: "GiftReturned",
+    type: "event",
+    inputs: [
+      { name: "tokenId", type: "uint256", indexed: true },
+      { name: "creator", type: "address", indexed: true },
+      { name: "timestamp", type: "uint256", indexed: false }
+    ]
+  }
 ] as const;
 
 // Type definitions for better TypeScript support

@@ -6,7 +6,7 @@
 
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { ethers } from 'ethers';
-import { createThirdwebClient } from 'thirdweb';
+import { createThirdwebClient, readContract } from 'thirdweb';
 import { baseSepolia } from 'thirdweb/chains';
 import { privateKeyToAccount } from 'thirdweb/wallets';
 import { sendTransaction } from 'thirdweb/transaction';
@@ -52,7 +52,7 @@ async function getExpiredGifts(): Promise<{
 }> {
   try {
     const provider = new ethers.JsonRpcProvider(process.env.NEXT_PUBLIC_RPC_URL);
-    const contract = new ethers.Contract(ESCROW_CONTRACT_ADDRESS!, ESCROW_ABI, provider);
+    const escrowContract = getEscrowContract();
     
     console.log('🔍 CRON AUTO-RETURN: Scanning for expired gifts...');
     
@@ -61,21 +61,23 @@ async function getExpiredGifts(): Promise<{
     const currentBlock = await provider.getBlockNumber();
     const fromBlock = Math.max(0, currentBlock - 100000); // Last ~100k blocks (~2 weeks on Base)
     
-    const filter = contract.filters.GiftCreated();
-    const events = await contract.queryFilter(filter, fromBlock, currentBlock);
-    
-    console.log(`📝 Found ${events.length} gift creation events`);
-    
+    // For now, we'll use a simplified approach - scan known token IDs
+    // In production, you would want to use event indexing or a database
     const expiredGifts: Array<{ tokenId: string; gift: EscrowGift }> = [];
     
-    // Check each gift's current status
-    for (const event of events) {
+    // Scan last 1000 token IDs (this is a simplified approach)
+    const maxTokenId = 1000;
+    console.log(`📝 Scanning token IDs 1-${maxTokenId}...`);
+    
+    // Check each potential token ID
+    for (let tokenId = 1; tokenId <= maxTokenId; tokenId++) {
       try {
-        const tokenId = event.args?.tokenId?.toString();
-        if (!tokenId) continue;
-        
         // Get current gift data
-        const giftData = await contract.getGift(BigInt(tokenId));
+        const giftData = await readContract({
+          contract: escrowContract,
+          method: "function getGift(uint256 tokenId) external view returns (tuple(address creator, uint96 expirationTime, address nftContract, uint256 tokenId, bytes32 passwordHash, uint8 status))",
+          params: [BigInt(tokenId)]
+        });
         
         const gift: EscrowGift = {
           creator: giftData.creator,
@@ -90,11 +92,14 @@ async function getExpiredGifts(): Promise<{
         // 1. Active (status === 0)
         // 2. Expired
         if (gift.status === 0 && isGiftExpired(gift.expirationTime)) {
-          expiredGifts.push({ tokenId, gift });
+          expiredGifts.push({ tokenId: tokenId.toString(), gift });
         }
         
       } catch (error) {
-        console.warn(`⚠️ Failed to check gift ${event.args?.tokenId}:`, error);
+        // Gift doesn't exist or error reading - skip
+        if (!error.message?.includes('Gift not found')) {
+          console.warn(`⚠️ Failed to check gift ${tokenId}:`, error);
+        }
       }
     }
     

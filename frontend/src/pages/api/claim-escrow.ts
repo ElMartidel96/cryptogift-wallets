@@ -74,10 +74,13 @@ function authenticate(req: NextApiRequest): boolean {
 // Get gift information from contract
 async function getGiftInfo(tokenId: string): Promise<EscrowGift | null> {
   try {
-    const provider = new ethers.JsonRpcProvider(process.env.NEXT_PUBLIC_RPC_URL);
-    const contract = new ethers.Contract(ESCROW_CONTRACT_ADDRESS!, ESCROW_ABI, provider);
+    const escrowContract = getEscrowContract();
     
-    const giftData = await contract.getGift(BigInt(tokenId));
+    const giftData = await readContract({
+      contract: escrowContract,
+      method: "function getGift(uint256 tokenId) external view returns (tuple(address creator, uint96 expirationTime, address nftContract, uint256 tokenId, bytes32 passwordHash, uint8 status))",
+      params: [BigInt(tokenId)]
+    });
     
     return {
       creator: giftData.creator,

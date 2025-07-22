@@ -4,7 +4,7 @@
  */
 
 import { ethers } from 'ethers';
-import { createThirdwebClient, getContract, prepareContractCall } from 'thirdweb';
+import { createThirdwebClient, getContract, prepareContractCall, readContract } from 'thirdweb';
 import { baseSepolia } from 'thirdweb/chains';
 import { ESCROW_ABI, ESCROW_CONTRACT_ADDRESS, type EscrowGift } from './escrowABI';
 
@@ -288,14 +288,28 @@ export async function getTimeConstants(): Promise<Record<string, number>> {
   
   try {
     const contract = getEscrowContract();
-    const provider = new ethers.JsonRpcProvider(process.env.NEXT_PUBLIC_RPC_URL);
-    const contractInstance = new ethers.Contract(ESCROW_CONTRACT_ADDRESS!, ESCROW_ABI, provider);
     
     const [fifteenMin, sevenDays, fifteenDays, thirtyDays] = await Promise.all([
-      contractInstance.FIFTEEN_MINUTES(),
-      contractInstance.SEVEN_DAYS(),
-      contractInstance.FIFTEEN_DAYS(),
-      contractInstance.THIRTY_DAYS()
+      readContract({
+        contract,
+        method: "function FIFTEEN_MINUTES() external view returns (uint256)",
+        params: []
+      }),
+      readContract({
+        contract,
+        method: "function SEVEN_DAYS() external view returns (uint256)",
+        params: []
+      }),
+      readContract({
+        contract,
+        method: "function FIFTEEN_DAYS() external view returns (uint256)",
+        params: []
+      }),
+      readContract({
+        contract,
+        method: "function THIRTY_DAYS() external view returns (uint256)",
+        params: []
+      })
     ]);
     
     timeConstantsCache = {
