@@ -313,3 +313,10 @@ export default function ClaimGiftPage() {
     </>
   );
 }
+
+// Disable static generation for this page since it uses ThirdWeb hooks
+export async function getServerSideProps() {
+  return {
+    props: {}
+  };
+}
