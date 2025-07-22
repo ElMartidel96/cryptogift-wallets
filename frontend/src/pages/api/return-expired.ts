@@ -9,7 +9,7 @@ import { ethers } from 'ethers';
 import { createThirdwebClient, readContract } from 'thirdweb';
 import { baseSepolia } from 'thirdweb/chains';
 import { privateKeyToAccount } from 'thirdweb/wallets';
-import { sendTransaction } from 'thirdweb/transaction';
+import { sendTransaction, waitForReceipt } from 'thirdweb/transaction';
 import { 
   prepareReturnExpiredGiftCall,
   getGiftStatus,
@@ -152,7 +152,11 @@ async function returnExpiredGiftGasless(
       account: deployerAccount
     });
     
-    await result.wait();
+    const receipt = await waitForReceipt({
+      client,
+      chain: baseSepolia,
+      transactionHash: result.transactionHash
+    });
     console.log('✅ Return successful, transaction hash:', result.transactionHash);
     
     return {

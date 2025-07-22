@@ -9,7 +9,7 @@ import { ethers } from 'ethers';
 import { createThirdwebClient, getContract } from 'thirdweb';
 import { baseSepolia } from 'thirdweb/chains';
 import { privateKeyToAccount } from 'thirdweb/wallets';
-import { sendTransaction } from 'thirdweb/transaction';
+import { sendTransaction, waitForReceipt } from 'thirdweb/transaction';
 import { readContract } from 'thirdweb';
 import { 
   generatePasswordHash,
@@ -200,7 +200,11 @@ async function claimEscrowGasless(
       account: deployerAccount
     });
     
-    await result.wait();
+    const receipt = await waitForReceipt({
+      client,
+      chain: baseSepolia,
+      transactionHash: result.transactionHash
+    });
     console.log('✅ Claim successful, transaction hash:', result.transactionHash);
     
     // Step 6: Verify transaction on-chain
