@@ -202,7 +202,11 @@ async function mintNFTEscrowGasless(
       account: deployerAccount
     });
     
-    await approveResult.wait();
+    await waitForReceipt({
+      client,
+      chain: baseSepolia,
+      transactionHash: approveResult.transactionHash
+    });
     console.log('✅ NFT approved for escrow transfer');
     
     // Step 10: Create escrow gift (this will transfer NFT to escrow contract)
@@ -221,7 +225,11 @@ async function mintNFTEscrowGasless(
       account: deployerAccount
     });
     
-    await escrowResult.wait();
+    await waitForReceipt({
+      client,
+      chain: baseSepolia,
+      transactionHash: escrowResult.transactionHash
+    });
     console.log('✅ Escrow gift created, transaction hash:', escrowResult.transactionHash);
     
     // Step 11: Verify transactions on-chain
