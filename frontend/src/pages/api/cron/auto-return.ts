@@ -12,6 +12,7 @@ import { privateKeyToAccount } from 'thirdweb/wallets';
 import { sendTransaction, waitForReceipt } from 'thirdweb/transaction';
 import { 
   prepareReturnExpiredGiftCall,
+  getEscrowContract,
   isGiftExpired,
   parseEscrowError
 } from '../../../lib/escrowUtils';
