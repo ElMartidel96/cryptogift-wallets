@@ -83,12 +83,12 @@ async function getGiftInfo(tokenId: string): Promise<EscrowGift | null> {
     });
     
     return {
-      creator: giftData[0],
-      expirationTime: giftData[1],
-      nftContract: giftData[2],
-      tokenId: giftData[3],
-      passwordHash: giftData[4],
-      status: giftData[5]
+      creator: giftData.creator,
+      expirationTime: giftData.expirationTime,
+      nftContract: giftData.nftContract,
+      tokenId: giftData.tokenId,
+      passwordHash: giftData.passwordHash,
+      status: giftData.status
     };
   } catch (error) {
     console.error('Failed to get gift info:', error);
