@@ -286,6 +286,23 @@ export function validateGiftMessage(message: string): { valid: boolean; message?
   return { valid: true };
 }
 
+export function sanitizeGiftMessage(message: string): string {
+  // Remove HTML tags and dangerous characters
+  return message
+    .replace(/<[^>]*>/g, '') // Remove HTML tags
+    .replace(/[<>\"'&]/g, (match) => {
+      const entities: { [key: string]: string } = {
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#x27;',
+        '&': '&amp;'
+      };
+      return entities[match] || match;
+    })
+    .trim();
+}
+
 export function validateTokenId(tokenId: string): { valid: boolean; message?: string } {
   const id = parseInt(tokenId);
   if (isNaN(id) || id <= 0) {

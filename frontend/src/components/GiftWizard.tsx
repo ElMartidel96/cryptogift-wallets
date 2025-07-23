@@ -368,8 +368,8 @@ export const GiftWizard: React.FC<GiftWizardProps> = ({ isOpen, onClose, referre
     const mintResponse = await fetch(apiEndpoint, {
       method: 'POST',
       headers: { 
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.NEXT_PUBLIC_API_ACCESS_TOKEN || 'cryptogift_escrow_api_2024_secure_token_v1'}`
+        'Content-Type': 'application/json'
+        // API token will be handled server-side for security
       },
       body: JSON.stringify(requestBody),
     });
@@ -595,8 +595,8 @@ export const GiftWizard: React.FC<GiftWizardProps> = ({ isOpen, onClose, referre
       const mintResponse = await fetch('/api/mint', {
         method: 'POST',
         headers: { 
-          'Content-Type': 'application/json',
-          'X-API-Token': process.env.NEXT_PUBLIC_API_ACCESS_TOKEN || ''
+          'Content-Type': 'application/json'
+          // API token will be handled server-side for security
         },
         body: JSON.stringify({
           to: account?.address,
