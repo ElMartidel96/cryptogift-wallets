@@ -334,9 +334,9 @@ export const GiftWizard: React.FC<GiftWizardProps> = ({ isOpen, onClose, referre
     // Determine correct image CID to use (prioritize actual image over metadata)
     const actualImageCid = imageIpfsCid || ipfsCid;
     
-    // Step 3: Choose API endpoint based on escrow configuration
+    // Step 3: Always use mint-escrow API (handles both escrow and direct mint)
     const isEscrowEnabled = wizardData.escrowConfig?.enabled;
-    const apiEndpoint = isEscrowEnabled ? '/api/mint-escrow' : '/api/mint';
+    const apiEndpoint = '/api/mint-escrow';
     
     addStep('GIFT_WIZARD', 'API_CALL_STARTED', {
       endpoint: apiEndpoint,
@@ -357,12 +357,12 @@ export const GiftWizard: React.FC<GiftWizardProps> = ({ isOpen, onClose, referre
       creatorAddress: account?.address,
       gasless: true
     } : {
-      to: account?.address,
-      imageFile: actualImageCid,
+      // Direct mint (skip escrow) - use mint-escrow API but without password
+      metadataUri: `ipfs://${ipfsCid}`,
+      // No password = direct mint
       giftMessage: wizardData.message || 'Un regalo cripto único creado con amor',
-      initialBalance: netAmount,
-      filter: wizardData.selectedFilter || 'Original',
-      referrer: referrer
+      creatorAddress: account?.address,
+      gasless: true
     };
 
     const mintResponse = await fetch(apiEndpoint, {
@@ -399,6 +399,7 @@ export const GiftWizard: React.FC<GiftWizardProps> = ({ isOpen, onClose, referre
     const message = mintResult.message;
     const escrowTransactionHash = mintResult.escrowTransactionHash;
     const nonce = mintResult.nonce;
+    const isDirectMint = mintResult.directMint;
     
     addStep('GIFT_WIZARD', 'API_RESPONSE_PARSED', {
       tokenId,
@@ -407,6 +408,7 @@ export const GiftWizard: React.FC<GiftWizardProps> = ({ isOpen, onClose, referre
       gasless,
       message,
       isEscrow: isEscrowEnabled,
+      isDirectMint: isDirectMint,
       escrowTransactionHash,
       nonce: nonce?.slice(0, 10) + '...',
       fullResponse: mintResult
@@ -490,7 +492,8 @@ export const GiftWizard: React.FC<GiftWizardProps> = ({ isOpen, onClose, referre
       nftTokenId: tokenId,
       shareUrl,
       qrCode,
-      wasGasless: true
+      wasGasless: true,
+      message: isDirectMint ? message : prev.message // Store direct mint message
     }));
     
     addStep('GIFT_WIZARD', 'WIZARD_DATA_UPDATED', {
@@ -843,6 +846,8 @@ export const GiftWizard: React.FC<GiftWizardProps> = ({ isOpen, onClose, referre
             qrCode={wizardData.qrCode}
             onClose={onClose}
             wasGasless={wizardData.wasGasless}
+            isDirectMint={!wizardData.escrowConfig?.enabled}
+            message={wizardData.message}
           />
         );
 

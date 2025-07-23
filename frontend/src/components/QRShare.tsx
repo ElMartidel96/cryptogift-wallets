@@ -5,13 +5,15 @@ import { QRCodeSVG } from 'qrcode.react';
 
 interface QRShareProps {
   tokenId: string; // Enhanced numeric string for uniqueness
-  shareUrl: string;
-  qrCode: string;
+  shareUrl?: string;
+  qrCode?: string;
   onClose: () => void;
   wasGasless?: boolean;
+  isDirectMint?: boolean;
+  message?: string;
 }
 
-export const QRShare: React.FC<QRShareProps> = ({ tokenId, shareUrl, qrCode, onClose, wasGasless = false }) => {
+export const QRShare: React.FC<QRShareProps> = ({ tokenId, shareUrl, qrCode, onClose, wasGasless = false, isDirectMint = false, message }) => {
   const [copied, setCopied] = useState(false);
   const [copyType, setCopyType] = useState<'url' | 'message' | null>(null);
 
@@ -52,6 +54,76 @@ Bienvenid@ al futuro de los regalos 💎✨`;
 
     window.open(shareUrls[platform as keyof typeof shareUrls], '_blank');
   };
+
+  // Render different interface for direct mints (skip escrow)
+  if (isDirectMint) {
+    return (
+      <div className="space-y-6">
+        {/* Success Header for Direct Mint */}
+        <div className="text-center">
+          <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg className="w-10 h-10 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+            </svg>
+          </div>
+          <h2 className="text-2xl font-bold text-blue-600 mb-2">¡NFT Creado Directamente! 🎯</h2>
+          <p className="text-gray-600">
+            Tu NFT-wallet #{tokenId} fue minteado directamente a tu wallet
+          </p>
+        </div>
+
+        {/* Direct Mint Info */}
+        <div className="bg-blue-50 rounded-xl p-6 text-center">
+          <div className="text-4xl mb-4">💎</div>
+          <h3 className="text-lg font-semibold text-blue-800 mb-2">Escrow Omitido</h3>
+          <p className="text-blue-700 mb-4">
+            {message || `NFT minteado directamente a tu wallet. Token ID: ${tokenId}`}
+          </p>
+          <div className="bg-white rounded-lg p-3 text-sm text-gray-600">
+            <p className="font-medium mb-1">¿Qué significa esto?</p>
+            <p>• El NFT está directamente en tu wallet</p>
+            <p>• No hay período de espera o password</p>
+            <p>• Puedes usarlo inmediatamente</p>
+            <p>• No es necesario "reclamar" nada</p>
+          </div>
+        </div>
+
+        {/* NFT Details for Direct Mint */}
+        <div className="bg-gray-50 rounded-xl p-4">
+          <h3 className="font-semibold text-gray-800 mb-2">Detalles del NFT</h3>
+          <div className="space-y-1 text-sm text-gray-700">
+            <p>• Token ID: #{tokenId}</p>
+            <p>• Blockchain: Base Sepolia</p>
+            <p>• Estándar: ERC-6551 (Token Bound Account)</p>
+            <p>• Status: ✅ Ya en tu wallet</p>
+            <p>• Wallet integrada: ✅ Lista para usar</p>
+            {wasGasless ? (
+              <p className="text-green-600 font-medium">• 🎉 Transacción GASLESS (gratis)</p>
+            ) : (
+              <p className="text-orange-600 font-medium">• 💰 Gas pagado (~$0.01)</p>
+            )}
+          </div>
+        </div>
+
+        {/* Action Buttons for Direct Mint */}
+        <div className="flex gap-4">
+          <button
+            onClick={() => window.open(`https://basescan.org/token/${process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS}`, '_blank')}
+            className="flex-1 px-6 py-3 border border-gray-300 rounded-lg font-medium hover:bg-gray-50 transition-colors"
+          >
+            Ver en BaseScan
+          </button>
+          
+          <button
+            onClick={onClose}
+            className="flex-1 px-6 py-3 bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 transition-colors"
+          >
+            ¡Perfecto!
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
