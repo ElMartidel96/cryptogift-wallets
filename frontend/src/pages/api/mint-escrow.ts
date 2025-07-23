@@ -522,9 +522,20 @@ export default async function handler(
       PRIVATE_KEY_DEPLOY: process.env.PRIVATE_KEY_DEPLOY,
       NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS: process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS,
       ESCROW_CONTRACT_ADDRESS: ESCROW_CONTRACT_ADDRESS,
+      NEXT_PUBLIC_ESCROW_CONTRACT_ADDRESS: process.env.NEXT_PUBLIC_ESCROW_CONTRACT_ADDRESS,
       NEXT_PUBLIC_RPC_URL: process.env.NEXT_PUBLIC_RPC_URL,
       NEXT_PUBLIC_TW_CLIENT_ID: process.env.NEXT_PUBLIC_TW_CLIENT_ID
     };
+    
+    console.log('🔍 Environment variables check:', {
+      PRIVATE_KEY_DEPLOY: !!process.env.PRIVATE_KEY_DEPLOY,
+      NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS: !!process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS,
+      ESCROW_CONTRACT_ADDRESS: !!ESCROW_CONTRACT_ADDRESS,
+      NEXT_PUBLIC_ESCROW_CONTRACT_ADDRESS: !!process.env.NEXT_PUBLIC_ESCROW_CONTRACT_ADDRESS,
+      NEXT_PUBLIC_RPC_URL: !!process.env.NEXT_PUBLIC_RPC_URL,
+      NEXT_PUBLIC_TW_CLIENT_ID: !!process.env.NEXT_PUBLIC_TW_CLIENT_ID,
+      actualEscrowAddress: ESCROW_CONTRACT_ADDRESS?.substring(0, 10) + '...'
+    });
     
     const missingVars = Object.entries(requiredEnvVars)
       .filter(([key, value]) => !value)
