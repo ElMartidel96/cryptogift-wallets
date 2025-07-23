@@ -213,34 +213,12 @@ async function mintNFTEscrowGasless(
       throw new Error('Failed to extract token ID from mint transaction');
     }
     
-    // Step 9: Approve escrow contract to transfer the NFT
-    console.log('🔓 Approving escrow contract for NFT transfer...');
-    const approveTransaction = prepareContractCall({
-      contract: nftContract,
-      method: "function approve(address to, uint256 tokenId) external",
-      params: [ESCROW_CONTRACT_ADDRESS!, BigInt(tokenId)]
-    });
+    // Step 9: Since NFT is minted directly to escrow, no approval needed
+    // The escrow contract now owns the NFT directly
+    console.log('✅ NFT minted directly to escrow contract - no approval needed');
     
-    const approveResult = await sendTransaction({
-      transaction: approveTransaction,
-      account: deployerAccount
-    });
-    
-    const approveReceipt = await waitForReceipt({
-      client,
-      chain: baseSepolia,
-      transactionHash: approveResult.transactionHash
-    });
-    
-    // CRITICAL: Verify approve transaction succeeded
-    if (approveReceipt.status !== 'success') {
-      throw new Error(`Approve transaction failed with status: ${approveReceipt.status}`);
-    }
-    
-    console.log('✅ NFT approved for escrow transfer');
-    
-    // Step 10: Create escrow gift (this will transfer NFT to escrow contract)
-    console.log('🔒 Creating escrow gift...');
+    // Step 10: Create escrow gift record (NFT is already in escrow contract)
+    console.log('🔒 Creating escrow gift record...');
     const createGiftTransaction = prepareCreateGiftCall(
       tokenId,
       process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS!,
@@ -263,10 +241,10 @@ async function mintNFTEscrowGasless(
     
     // CRITICAL: Verify escrow creation succeeded
     if (escrowReceipt.status !== 'success') {
-      throw new Error(`Escrow creation failed with status: ${escrowReceipt.status}. NFT may be stuck in deployer wallet.`);
+      throw new Error(`Escrow creation failed with status: ${escrowReceipt.status}. NFT is in escrow but gift record failed.`);
     }
     
-    console.log('✅ Escrow gift created successfully, NFT transferred to escrow contract');
+    console.log('✅ Escrow gift record created successfully, NFT secured in escrow contract');
     
     // Step 11: Verify transactions on-chain
     const mintVerification = await verifyGaslessTransaction(
@@ -602,12 +580,11 @@ export default async function handler(
       timeframeIndex = undefined; // No timeframe needed for direct mints
       console.log('🎯 DIRECT MINT TARGET:', targetAddress.slice(0, 10) + '...');
     } else {
-      // Escrow mint: NFT must be minted to deployer first, then:
-      // 1. Approve escrow contract
-      // 2. CreateGift transfers from deployer to escrow contract
-      targetAddress = deployerAccount.address; // First mint to deployer for escrow process
+      // Escrow mint: NFT should be minted directly to escrow contract
+      // This eliminates the problematic route through deployer wallet
+      targetAddress = ESCROW_CONTRACT_ADDRESS!; // Direct mint to escrow contract
       timeframeIndex = TIMEFRAME_OPTIONS[timeframeDays];
-      console.log('🔒 ESCROW MINT TARGET (deployer for escrow):', targetAddress.slice(0, 10) + '...');
+      console.log('🔒 ESCROW MINT TARGET (direct to escrow):', targetAddress.slice(0, 10) + '...');
     }
     
     console.log('🎁 MINT ESCROW REQUEST:', {

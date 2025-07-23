@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useParams, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ConnectButton } from 'thirdweb/react';
+import { ConnectButton, useActiveAccount } from 'thirdweb/react';
 import { client } from '../../../client';
 import { WalletInterface } from '../../../../components/WalletInterface';
 import { ClaimEscrowInterface } from '../../../../components/escrow/ClaimEscrowInterface';
@@ -15,8 +15,8 @@ export default function TokenPage() {
   const params = useParams();
   const searchParams = useSearchParams();
   const [mounted, setMounted] = useState(false);
-  // TEMPORARY: Remove useActiveAccount to prevent ThirdwebProvider error
-  const account = null;
+  // Now using useActiveAccount with proper ThirdwebProvider setup
+  const account = useActiveAccount();
   const [nftData, setNftData] = useState<any>(null);
   const [tbaAddress, setTbaAddress] = useState<string>('');
   const [isOwner, setIsOwner] = useState(false);
@@ -93,10 +93,10 @@ export default function TokenPage() {
   }, [searchParams, isOwner, account]);
 
   const handleClaim = async () => {
-    if (!mounted) return;
+    if (!mounted || !account) return;
     
-    // TEMPORARY FIX: Use a test address since account is disabled
-    const claimerAddress = '0x1234567890123456789012345678901234567890';
+    // Use actual connected account address
+    const claimerAddress = account.address;
 
     setIsLoading(true);
     try {
