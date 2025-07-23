@@ -7,7 +7,7 @@ import Image from 'next/image';
 import { ConnectButton } from 'thirdweb/react';
 import { client } from '../../../client';
 import { WalletInterface } from '../../../../components/WalletInterface';
-import { ClaimInterface } from '../../../../components/ClaimInterface';
+import { ClaimEscrowInterface } from '../../../../components/escrow/ClaimEscrowInterface';
 import { RightSlideWallet } from '../../../../components/TBAWallet/RightSlideWallet';
 import { ImageDebugger } from '../../../../components/ImageDebugger';
 
@@ -353,14 +353,21 @@ export default function TokenPage() {
                           </div>
                         </div>
                       ) : (
-                        <ClaimInterface
-                          nftData={nftData}
+                        <ClaimEscrowInterface
                           tokenId={tokenId}
-                          contractAddress={contractAddress}
-                          claimerAddress={'0x1234567890123456789012345678901234567890'}
-                          isLoading={isLoading}
-                          error={error}
-                          onWalletOpen={() => setShowTBAWallet(true)}
+                          giftInfo={undefined} // Will be loaded by the component
+                          nftMetadata={{
+                            name: nftData?.name,
+                            description: nftData?.description,
+                            image: nftData?.image
+                          }}
+                          onClaimSuccess={(transactionHash, giftInfo) => {
+                            console.log('🎉 Escrow gift claimed successfully!', { transactionHash, giftInfo });
+                            setShowTBAWallet(true);
+                          }}
+                          onClaimError={(error) => {
+                            console.error('❌ Escrow claim failed:', error);
+                          }}
                         />
                       )}
                     </div>

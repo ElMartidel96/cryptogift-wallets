@@ -602,10 +602,11 @@ export default async function handler(
       timeframeIndex = undefined; // No timeframe needed for direct mints
       console.log('🎯 DIRECT MINT TARGET:', targetAddress.slice(0, 10) + '...');
     } else {
-      // Escrow mint: Use provided recipient or creator address
-      targetAddress = recipientAddress || creatorAddress;
+      // Escrow mint: NFT must be minted to the deployer first, then transferred to escrow contract
+      // The mintNFTEscrowGasless function handles the escrow transfer internally
+      targetAddress = deployerAccount.address; // First mint to deployer for escrow process
       timeframeIndex = TIMEFRAME_OPTIONS[timeframeDays];
-      console.log('🔒 ESCROW MINT TARGET:', targetAddress.slice(0, 10) + '...');
+      console.log('🔒 ESCROW MINT TARGET (deployer for escrow):', targetAddress.slice(0, 10) + '...');
     }
     
     console.log('🎁 MINT ESCROW REQUEST:', {
