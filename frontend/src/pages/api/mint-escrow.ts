@@ -213,40 +213,14 @@ async function mintNFTEscrowGasless(
       throw new Error('Failed to extract token ID from mint transaction');
     }
     
-    // Step 9: Since NFT is minted directly to escrow, no approval needed
-    // The escrow contract now owns the NFT directly
-    console.log('✅ NFT minted directly to escrow contract - no approval needed');
+    // Step 9: NFT minted to user wallet - escrow setup will happen later
+    // The user will need to approve and deposit the NFT to escrow in a separate transaction
+    console.log('✅ NFT minted to user wallet - escrow deposit will be handled by frontend');
     
-    // Step 10: Create escrow gift record (NFT is already in escrow contract)
-    console.log('🔒 Creating escrow gift record...');
-    const createGiftTransaction = prepareCreateGiftCall(
-      tokenId,
-      process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS!,
-      password,
-      salt,
-      timeframeDays,
-      giftMessage
-    );
+    // For now, we skip the escrow contract interaction since NFT is in user wallet
+    // The frontend will handle the approve + createGift flow when user is ready
     
-    const escrowResult = await sendTransaction({
-      transaction: createGiftTransaction,
-      account: deployerAccount
-    });
-    
-    const escrowReceipt = await waitForReceipt({
-      client,
-      chain: baseSepolia,
-      transactionHash: escrowResult.transactionHash
-    });
-    
-    // CRITICAL: Verify escrow creation succeeded
-    if (escrowReceipt.status !== 'success') {
-      throw new Error(`Escrow creation failed with status: ${escrowReceipt.status}. NFT is in escrow but gift record failed.`);
-    }
-    
-    console.log('✅ Escrow gift record created successfully, NFT secured in escrow contract');
-    
-    // Step 11: Verify transactions on-chain
+    // Step 10: Verify mint transaction on-chain
     const mintVerification = await verifyGaslessTransaction(
       mintResult.transactionHash,
       creatorAddress,
@@ -257,18 +231,8 @@ async function mintNFTEscrowGasless(
       throw new Error(`Transaction verification failed: ${mintVerification.error}`);
     }
     
-    const escrowVerification = await verifyGaslessTransaction(
-      escrowResult.transactionHash,
-      creatorAddress,
-      tokenId
-    );
-    
-    if (!escrowVerification.verified) {
-      console.warn('⚠️ Escrow verification failed but mint succeeded:', escrowVerification.error);
-    }
-    
-    // Step 12: Mark transaction as completed
-    markTransactionCompleted(transactionNonce, escrowResult.transactionHash);
+    // Step 11: Mark transaction as completed (mint only, escrow will be handled separately)
+    markTransactionCompleted(transactionNonce, mintResult.transactionHash);
     
     console.log('🎉 Enhanced gasless escrow mint completed with verification');
     
@@ -276,7 +240,7 @@ async function mintNFTEscrowGasless(
       success: true,
       tokenId,
       transactionHash: mintResult.transactionHash,
-      escrowTransactionHash: escrowResult.transactionHash,
+      escrowTransactionHash: null, // No escrow transaction yet - will be handled by frontend
       salt,
       passwordHash,
       nonce: transactionNonce
@@ -580,11 +544,11 @@ export default async function handler(
       timeframeIndex = undefined; // No timeframe needed for direct mints
       console.log('🎯 DIRECT MINT TARGET:', targetAddress.slice(0, 10) + '...');
     } else {
-      // Escrow mint: NFT should be minted directly to escrow contract
-      // This eliminates the problematic route through deployer wallet
-      targetAddress = ESCROW_CONTRACT_ADDRESS!; // Direct mint to escrow contract
+      // Escrow mint: NFT goes to user wallet first, then user will deposit to escrow
+      // NEVER to platform deployer wallet
+      targetAddress = creatorAddress; // Mint to user who created the gift
       timeframeIndex = TIMEFRAME_OPTIONS[timeframeDays];
-      console.log('🔒 ESCROW MINT TARGET (direct to escrow):', targetAddress.slice(0, 10) + '...');
+      console.log('🔒 ESCROW MINT TARGET (user wallet):', targetAddress.slice(0, 10) + '...');
     }
     
     console.log('🎁 MINT ESCROW REQUEST:', {

@@ -387,8 +387,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     console.log("📝 EXTRACTING PARAMETERS from request body...");
     const { to: originalCreatorAddress, imageFile, giftMessage, initialBalance, filter = "Original", referrer } = req.body;
     
-    // TEMPORARY FIX: Use deployer address to avoid race condition
-    console.log("🤖 USING DEPLOYER ADDRESS to avoid race condition (temporary fix)...");
+    // FIXED: Mint directly to user as originally intended
+    console.log("✅ MINTING TO USER ADDRESS as originally designed...");
     
     // Create client for later use  
     const client = createThirdwebClient({
@@ -402,18 +402,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       address: process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS!,
     });
     
-    // TEMPORARY: Use deployer address directly (will fix unique addresses later)
-    const { ethers } = require("ethers");
-    const wallet = new ethers.Wallet(process.env.PRIVATE_KEY_DEPLOY!);
-    const deployerAddress = wallet.address;
+    // RESTORED: Use the actual creator address (user who is creating the gift)
+    const to = originalCreatorAddress;
     
-    // Save deployer address for later use in metadata
-    const neutralAddressForMetadata = deployerAddress;
+    // For metadata, also use the creator address as owner
+    const neutralAddressForMetadata = originalCreatorAddress;
     
-    console.log(`🤖 Using deployer address as temporary neutral: ${deployerAddress}`);
-    
-    // Use deployer address instead of predicted neutral address
-    const to = deployerAddress;
+    console.log(`✅ Minting to user wallet: ${to}`);
     
     console.log("🔍 PARAMETER ANALYSIS:");
     console.log("  👤 Original creator:", originalCreatorAddress?.slice(0, 20) + "...");
@@ -1131,7 +1126,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         description: giftMessage || 'Un regalo cripto único creado con amor',
         imageIpfsCid: imageIpfsCid,
         metadataIpfsCid: metadataUri.startsWith('ipfs://') ? metadataUri.replace('ipfs://', '') : undefined,
-        owner: neutralAddressForMetadata, // NFT is owned by deployer address (temporary)
+        owner: originalCreatorAddress, // NFT is owned by the user who created it
         creatorWallet: originalCreatorAddress, // But created by this address
         attributes: [
           {
