@@ -88,6 +88,7 @@ async function mintNFTEscrowGasless(
   passwordHash?: string;
   nonce?: string;
   error?: string;
+  details?: string;
 }> {
   let transactionNonce = '';
   
@@ -471,6 +472,7 @@ async function mintNFTEscrowGasPaid(
   salt?: string;
   passwordHash?: string;
   error?: string;
+  details?: string;
 }> {
   try {
     console.log('💰 MINT ESCROW GAS-PAID: Starting atomic operation');
@@ -491,7 +493,8 @@ async function mintNFTEscrowGasPaid(
     console.error('❌ Gas-paid escrow mint failed:', error);
     return {
       success: false,
-      error: error.message || 'Gas-paid escrow mint failed'
+      error: error.message || 'Gas-paid escrow mint failed',
+      details: error.stack?.substring(0, 500) // Debugging info for gas-paid failures
     };
   }
 }
