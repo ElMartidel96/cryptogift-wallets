@@ -308,6 +308,12 @@ async function mintNFTEscrowGasless(
     
   } catch (error: any) {
     console.error('❌ Enhanced gasless escrow mint failed:', error);
+    console.error('❌ Full error details:', {
+      message: error.message,
+      stack: error.stack,
+      cause: error.cause,
+      step: 'mintNFTEscrowGasless'
+    });
     
     // Mark transaction as failed if nonce was generated
     if (transactionNonce) {
@@ -316,8 +322,9 @@ async function mintNFTEscrowGasless(
     
     return {
       success: false,
-      error: error.message || 'Enhanced gasless escrow mint failed',
-      nonce: transactionNonce
+      error: `Gasless escrow mint failed: ${error.message || 'Unknown error'}`,
+      nonce: transactionNonce,
+      details: error.stack?.substring(0, 500) // Truncated stack trace for debugging
     };
   }
 }

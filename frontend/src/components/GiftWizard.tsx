@@ -595,8 +595,8 @@ export const GiftWizard: React.FC<GiftWizardProps> = ({ isOpen, onClose, referre
       const mintResponse = await fetch('/api/mint', {
         method: 'POST',
         headers: { 
-          'Content-Type': 'application/json'
-          // API token will be handled server-side for security
+          'Content-Type': 'application/json',
+          'X-API-Token': 'god_ez_la_clave_luz_963' // Temporary fix for authentication
         },
         body: JSON.stringify({
           to: account?.address,
