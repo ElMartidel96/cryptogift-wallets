@@ -84,7 +84,7 @@ Bienvenid@ al futuro de los regalos 💎✨`;
             <p>• El NFT está directamente en tu wallet</p>
             <p>• No hay período de espera o password</p>
             <p>• Puedes usarlo inmediatamente</p>
-            <p>• No es necesario "reclamar" nada</p>
+            <p>• No es necesario &quot;reclamar&quot; nada</p>
           </div>
         </div>
 
