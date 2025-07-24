@@ -88,7 +88,7 @@ export async function getChallenge(nonce: string): Promise<SiweChallenge | null>
     try {
       const stored = await redisWithTimeout(redis.get(key));
       
-      if (stored) {
+      if (stored && typeof stored === 'string') {
         const challenge = JSON.parse(stored) as SiweChallenge;
         
         // Validate expiration
