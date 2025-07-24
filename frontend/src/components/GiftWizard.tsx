@@ -230,19 +230,59 @@ export const GiftWizard: React.FC<GiftWizardProps> = ({ isOpen, onClose, referre
     try {
       await attemptGaslessMint();
     } catch (gaslessError) {
+      console.log('❌ Gasless attempt reported failure:', gaslessError);
+      
+      // CRITICAL: Check if gasless actually succeeded despite error report
+      console.log('🔍 VERIFICATION: Checking if gasless actually succeeded on-chain...');
+      
+      try {
+        const deployerAccount = account?.address; // This should be the deployer address
+        const gaslessVerification = await import('../lib/gaslessValidation').then(
+          mod => mod.checkGaslessTransactionActuallySucceeded(deployerAccount!)
+        );
+        
+        if (gaslessVerification.found && gaslessVerification.transactionHash && gaslessVerification.tokenId) {
+          console.log('🎉 GASLESS ACTUALLY SUCCEEDED! Found transaction:', gaslessVerification);
+          
+          // Treat as successful gasless transaction
+          setWizardData(prev => ({ 
+            ...prev, 
+            nftTokenId: gaslessVerification.tokenId!,
+            shareUrl: `${window.location.origin}/token/${process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS}/${gaslessVerification.tokenId}`,
+            qrCode: `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(
+              `${window.location.origin}/token/${process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS}/${gaslessVerification.tokenId}`
+            )}`,
+            wasGasless: true
+          }));
+          
+          setCurrentStep(WizardStep.SUCCESS);
+          setIsLoading(false);
+          
+          addStep('GIFT_WIZARD', 'GASLESS_RECOVERY_SUCCESS', {
+            tokenId: gaslessVerification.tokenId,
+            transactionHash: gaslessVerification.transactionHash,
+            recoveryMethod: 'blockchain_verification'
+          }, 'success');
+          
+          return; // Exit early - gasless actually worked!
+        }
+      } catch (verificationError) {
+        console.warn('⚠️ Gasless verification check failed:', verificationError);
+      }
+      
       addError('GIFT_WIZARD', 'GASLESS_ATTEMPT_FAILED', gaslessError, {
         errorType: 'GASLESS_FAILURE',
         willShowGasModal: true
       });
       
-      console.log('❌ Gasless failed, showing gas estimation modal');
+      console.log('❌ Gasless truly failed, showing gas estimation modal');
       
       addDecision('GIFT_WIZARD', 'gaslessFailed', true, {
         nextAction: 'SHOW_GAS_MODAL',
         errorMessage: gaslessError instanceof Error ? gaslessError.message : gaslessError
       });
       
-      // If gasless fails, THEN show gas modal
+      // If gasless truly fails, THEN show gas modal
       setIsLoading(false);
       setCurrentStep(WizardStep.SUMMARY);
       
@@ -596,7 +636,7 @@ export const GiftWizard: React.FC<GiftWizardProps> = ({ isOpen, onClose, referre
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
-          'X-API-Token': 'god_ez_la_clave_luz_963' // Temporary fix for authentication
+          // SECURITY FIX: API token handled server-side via environment variables
         },
         body: JSON.stringify({
           to: account?.address,

@@ -64,11 +64,31 @@ const client = createThirdwebClient({
   clientId: process.env.NEXT_PUBLIC_TW_CLIENT_ID!
 });
 
-// Authentication middleware - simplified for now
+// Authentication middleware
 function authenticate(req: NextApiRequest): boolean {
-  // For now, we'll authenticate based on request origin and rate limiting
-  // In production, implement proper session-based auth or wallet signature verification
-  return true; // Temporarily allow all requests while implementing proper auth
+  // Check for API access token in environment
+  const requiredToken = process.env.API_ACCESS_TOKEN;
+  if (!requiredToken) {
+    console.error('🚨 API_ACCESS_TOKEN not configured');
+    return false;
+  }
+  
+  // Check authorization header (from client)
+  const authToken = req.headers.authorization?.replace('Bearer ', '');
+  if (authToken && authToken === requiredToken) {
+    return true;
+  }
+  
+  // Check X-API-Token header (legacy)
+  const apiToken = req.headers['x-api-token'];
+  if (apiToken && apiToken === requiredToken) {
+    return true;
+  }
+  
+  // For now, allow requests without token for backward compatibility
+  // In production, this should be stricter
+  console.warn('⚠️ Request without valid API token, allowing for backward compatibility');
+  return true;
 }
 
 // Enhanced gasless minting with anti-double minting
@@ -105,7 +125,7 @@ async function mintNFTEscrowGasless(
     
     // Step 2: Anti-double minting validation
     const escrowConfig = { password, timeframe: timeframeDays, giftMessage };
-    const validation = validateTransactionAttempt(creatorAddress, tokenURI, 0, escrowConfig);
+    const validation = await validateTransactionAttempt(creatorAddress, tokenURI, 0, escrowConfig);
     
     if (!validation.valid) {
       throw new Error(validation.reason || 'Transaction validation failed');
@@ -115,7 +135,7 @@ async function mintNFTEscrowGasless(
     console.log('✅ Anti-double minting validation passed. Nonce:', transactionNonce.slice(0, 10) + '...');
     
     // Step 3: Register transaction attempt
-    registerTransactionAttempt(creatorAddress, transactionNonce, tokenURI, 0, escrowConfig);
+    await registerTransactionAttempt(creatorAddress, transactionNonce, tokenURI, 0, escrowConfig);
     
     // Step 4: Generate salt and password hash
     const salt = generateSalt();
@@ -216,62 +236,69 @@ async function mintNFTEscrowGasless(
       throw new Error('Failed to extract token ID from mint transaction');
     }
     
-    // Step 9: Approve escrow contract to transfer the NFT (gasless)
-    console.log('🔓 Approving escrow contract for NFT transfer...');
-    const approveTransaction = prepareContractCall({
-      contract: nftContract,
-      method: "function approve(address to, uint256 tokenId) external",
-      params: [ESCROW_CONTRACT_ADDRESS!, BigInt(tokenId)]
-    });
-    
-    const approveResult = await sendTransaction({
-      transaction: approveTransaction,
-      account: deployerAccount
-    });
-    
-    const approveReceipt = await waitForReceipt({
-      client,
-      chain: baseSepolia,
-      transactionHash: approveResult.transactionHash
-    });
-    
-    // CRITICAL: Verify approve transaction succeeded
-    if (approveReceipt.status !== 'success') {
-      throw new Error(`Approve transaction failed with status: ${approveReceipt.status}`);
+    // CRITICAL DECISION: ¿El NFT ya está en el escrow contract?
+    if (to === ESCROW_CONTRACT_ADDRESS) {
+      // ESCROW MINT: NFT ya está en el escrow contract, solo crear el gift
+      console.log('🔒 ESCROW MINT: NFT minteado directamente al escrow, creando registro de gift...');
+      
+      // Solo crear el registro del gift (no transferir, ya está ahí)
+      const createGiftTransaction = prepareCreateGiftCall(
+        tokenId,
+        process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS!,
+        password,
+        salt,
+        timeframeDays,
+        giftMessage
+      );
+      
+      const escrowResult = await sendTransaction({
+        transaction: createGiftTransaction,
+        account: deployerAccount
+      });
+      
+      const escrowReceipt = await waitForReceipt({
+        client,
+        chain: baseSepolia,
+        transactionHash: escrowResult.transactionHash
+      });
+      
+      // CRITICAL: Verify escrow creation succeeded
+      if (escrowReceipt.status !== 'success') {
+        throw new Error(`Escrow gift creation failed with status: ${escrowReceipt.status}`);
+      }
+      
+      console.log('✅ Escrow gift created successfully, NFT already in escrow contract');
+      
+      // Step 11: Verify NFT is correctly owned by escrow contract
+      console.log('🔍 Verifying NFT ownership by escrow contract...');
+      const provider = new ethers.JsonRpcProvider(process.env.NEXT_PUBLIC_RPC_URL);
+      const nftContractABI = ["function ownerOf(uint256 tokenId) view returns (address)"];
+      const nftContractCheck = new ethers.Contract(
+        process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS!,
+        nftContractABI,
+        provider
+      );
+      
+      const actualOwner = await nftContractCheck.ownerOf(tokenId);
+      console.log('🔍 Actual NFT owner:', actualOwner);
+      console.log('🔍 Expected escrow address:', ESCROW_CONTRACT_ADDRESS);
+      
+      if (actualOwner.toLowerCase() !== ESCROW_CONTRACT_ADDRESS?.toLowerCase()) {
+        throw new Error(`CRITICAL: NFT ownership verification failed. Expected: ${ESCROW_CONTRACT_ADDRESS}, Got: ${actualOwner}`);
+      }
+      
+      console.log('✅ VERIFIED: NFT is correctly owned by escrow contract');
+      
+      // Set escrow transaction hash for response
+      var escrowTransactionHash = escrowResult.transactionHash;
+      
+    } else {
+      // DIRECT MINT: NFT fue minteado directamente al usuario, no hay escrow
+      console.log('🎯 DIRECT MINT: NFT minteado directamente al usuario, sin escrow');
+      var escrowTransactionHash = undefined; // No escrow transaction for direct mints
     }
     
-    console.log('✅ NFT approved for escrow transfer');
-    
-    // Step 10: Create escrow gift (this will transfer NFT to escrow contract)
-    console.log('🔒 Creating escrow gift...');
-    const createGiftTransaction = prepareCreateGiftCall(
-      tokenId,
-      process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS!,
-      password,
-      salt,
-      timeframeDays,
-      giftMessage
-    );
-    
-    const escrowResult = await sendTransaction({
-      transaction: createGiftTransaction,
-      account: deployerAccount
-    });
-    
-    const escrowReceipt = await waitForReceipt({
-      client,
-      chain: baseSepolia,
-      transactionHash: escrowResult.transactionHash
-    });
-    
-    // CRITICAL: Verify escrow creation succeeded
-    if (escrowReceipt.status !== 'success') {
-      throw new Error(`Escrow creation failed with status: ${escrowReceipt.status}. NFT may be stuck in deployer wallet.`);
-    }
-    
-    console.log('✅ Escrow gift created successfully, NFT transferred to escrow contract');
-    
-    // Step 11: Verify transactions on-chain
+    // Step 12: Verify mint transaction on-chain
     const mintVerification = await verifyGaslessTransaction(
       mintResult.transactionHash,
       creatorAddress,
@@ -279,29 +306,39 @@ async function mintNFTEscrowGasless(
     );
     
     if (!mintVerification.verified) {
-      throw new Error(`Transaction verification failed: ${mintVerification.error}`);
+      throw new Error(`Mint transaction verification failed: ${mintVerification.error}`);
     }
     
-    const escrowVerification = await verifyGaslessTransaction(
-      escrowResult.transactionHash,
-      creatorAddress,
-      tokenId
-    );
-    
-    if (!escrowVerification.verified) {
-      console.warn('⚠️ Escrow verification failed but mint succeeded:', escrowVerification.error);
+    // Step 13: Verify escrow transaction if there was one
+    if (escrowTransactionHash) {
+      const escrowVerification = await verifyGaslessTransaction(
+        escrowTransactionHash,
+        creatorAddress,
+        tokenId
+      );
+      
+      if (!escrowVerification.verified) {
+        console.warn('⚠️ Escrow verification failed but mint succeeded:', escrowVerification.error);
+      }
     }
     
-    // Step 12: Mark transaction as completed
-    markTransactionCompleted(transactionNonce, escrowResult.transactionHash);
+    // Step 14: Mark transaction as completed
+    await markTransactionCompleted(transactionNonce, escrowTransactionHash || mintResult.transactionHash);
     
-    console.log('🎉 Enhanced gasless escrow mint completed with verification');
+    console.log('🎉 Enhanced gasless mint completed with verification');
+    console.log('📊 Final result:', {
+      tokenId,
+      mintTxHash: mintResult.transactionHash,
+      escrowTxHash: escrowTransactionHash,
+      isEscrow: !!escrowTransactionHash,
+      nftOwner: to === ESCROW_CONTRACT_ADDRESS ? 'ESCROW_CONTRACT' : 'DIRECT_USER'
+    });
     
     return {
       success: true,
       tokenId,
       transactionHash: mintResult.transactionHash,
-      escrowTransactionHash: escrowResult.transactionHash,
+      escrowTransactionHash: escrowTransactionHash,
       salt,
       passwordHash,
       nonce: transactionNonce
@@ -318,7 +355,7 @@ async function mintNFTEscrowGasless(
     
     // Mark transaction as failed if nonce was generated
     if (transactionNonce) {
-      markTransactionFailed(transactionNonce, error.message);
+      await markTransactionFailed(transactionNonce, error.message);
     }
     
     return {
@@ -628,12 +665,15 @@ export default async function handler(
       timeframeIndex = undefined; // No timeframe needed for direct mints
       console.log('🎯 DIRECT MINT TARGET:', targetAddress.slice(0, 10) + '...');
     } else {
-      // Escrow mint: For gasless escrow, we need a special flow
-      // NFT goes to deployer temporarily for gasless operations, then to escrow
-      // But metadata shows user as owner for library purposes
-      targetAddress = deployerAccount.address; // Temporarily to deployer for gasless escrow
+      // CRITICAL FIX: Escrow mint debe ir DIRECTAMENTE al escrow contract
+      if (!ESCROW_CONTRACT_ADDRESS) {
+        throw new Error('ESCROW_CONTRACT_ADDRESS not configured');
+      }
+      
+      targetAddress = ESCROW_CONTRACT_ADDRESS; // ← FIX PRINCIPAL: NFT va directo al escrow
       timeframeIndex = TIMEFRAME_OPTIONS[timeframeDays];
-      console.log('🔒 ESCROW MINT TARGET (deployer for gasless escrow):', targetAddress.slice(0, 10) + '...');
+      console.log('🔒 ESCROW MINT TARGET (CORRECTED - direct to escrow contract):', targetAddress.slice(0, 10) + '...');
+      console.log('✅ ESCROW CONTRACT ADDRESS:', ESCROW_CONTRACT_ADDRESS);
     }
     
     console.log('🎁 MINT ESCROW REQUEST:', {

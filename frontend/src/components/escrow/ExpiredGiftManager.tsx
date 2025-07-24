@@ -99,8 +99,8 @@ export const ExpiredGiftManager: React.FC<ExpiredGiftManagerProps> = ({
       const response = await fetch('/api/return-expired', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${process.env.NEXT_PUBLIC_API_ACCESS_TOKEN || 'cryptogift_escrow_api_2024_secure_token_v1'}`
+          'Content-Type': 'application/json'
+          // SECURITY FIX: Authorization handled server-side via environment variables
         },
         body: JSON.stringify({
           tokenId,
