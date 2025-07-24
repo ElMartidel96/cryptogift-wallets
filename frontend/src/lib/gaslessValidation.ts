@@ -486,10 +486,10 @@ export async function checkGaslessTransactionActuallySucceeded(
                 
                 // If we have an expected token ID, check for match
                 if (expectedTokenId && tokenId === expectedTokenId) {
-                  console.log(`✅ Found matching gasless transaction: ${tx.hash} with token ${tokenId}`);
+                  console.log(`✅ Found matching gasless transaction: ${transaction.hash} with token ${tokenId}`);
                   return {
                     found: true,
-                    transactionHash: tx.hash,
+                    transactionHash: transaction.hash,
                     tokenId,
                     blockNumber
                   };
@@ -497,10 +497,10 @@ export async function checkGaslessTransactionActuallySucceeded(
                 
                 // If no expected token ID, return the most recent mint transaction
                 if (!expectedTokenId) {
-                  console.log(`✅ Found recent gasless transaction: ${tx.hash} with token ${tokenId}`);
+                  console.log(`✅ Found recent gasless transaction: ${transaction.hash} with token ${tokenId}`);
                   return {
                     found: true,
-                    transactionHash: tx.hash,
+                    transactionHash: transaction.hash,
                     tokenId,
                     blockNumber
                   };
