@@ -464,8 +464,11 @@ export async function checkGaslessTransactionActuallySucceeded(
         if (!block || !block.transactions) continue;
         
         for (const tx of block.transactions) {
+          // Skip if tx is just a hash string instead of transaction object
+          if (typeof tx === 'string') continue;
+          
           // Check if transaction is from deployer (gasless transactions appear as deployer transactions)
-          if (tx.from.toLowerCase() === deployerAddress.toLowerCase()) {
+          if (tx.from && tx.from.toLowerCase() === deployerAddress.toLowerCase()) {
             
             // Get transaction receipt to check for NFT mint events
             const receipt = await provider.getTransactionReceipt(tx.hash);
