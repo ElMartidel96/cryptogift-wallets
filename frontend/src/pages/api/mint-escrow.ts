@@ -236,6 +236,9 @@ async function mintNFTEscrowGasless(
       throw new Error('Failed to extract token ID from mint transaction');
     }
     
+    // Initialize escrow transaction hash variable
+    let escrowTransactionHash: string | undefined;
+    
     // CRITICAL DECISION: ¿El NFT ya está en el escrow contract?
     if (to === ESCROW_CONTRACT_ADDRESS) {
       // ESCROW MINT: NFT ya está en el escrow contract, solo crear el gift
@@ -290,12 +293,12 @@ async function mintNFTEscrowGasless(
       console.log('✅ VERIFIED: NFT is correctly owned by escrow contract');
       
       // Set escrow transaction hash for response
-      var escrowTransactionHash = escrowResult.transactionHash;
+      escrowTransactionHash = escrowResult.transactionHash;
       
     } else {
       // DIRECT MINT: NFT fue minteado directamente al usuario, no hay escrow
       console.log('🎯 DIRECT MINT: NFT minteado directamente al usuario, sin escrow');
-      var escrowTransactionHash = undefined; // No escrow transaction for direct mints
+      escrowTransactionHash = undefined; // No escrow transaction for direct mints
     }
     
     // Step 12: Verify mint transaction on-chain
