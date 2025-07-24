@@ -89,6 +89,8 @@ export const GiftWizard: React.FC<GiftWizardProps> = ({ isOpen, onClose, referre
   const [mounted, setMounted] = useState(false);
   const account = useActiveAccount();
   const [currentStep, setCurrentStep] = useState<WizardStep>(WizardStep.CONNECT);
+  const [isAuthenticating, setIsAuthenticating] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -159,8 +161,6 @@ export const GiftWizard: React.FC<GiftWizardProps> = ({ isOpen, onClose, referre
   const [showErrorModal, setShowErrorModal] = useState(false);
   const [showGasModal, setShowGasModal] = useState(false);
   const [showDeviceLimitModal, setShowDeviceLimitModal] = useState(false);
-  const [isAuthenticating, setIsAuthenticating] = useState(false);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [gasEstimation, setGasEstimation] = useState({
     estimatedGas: '21000',
     gasPrice: '0.1',
