@@ -170,7 +170,7 @@ async function claimEscrowGasless(
     
     // Step 2: Anti-double claiming validation
     const claimConfig = { tokenId, password, recipient: recipientAddress };
-    const validation = validateTransactionAttempt(claimerAddress, `claim_${tokenId}`, 0, claimConfig);
+    const validation = await validateTransactionAttempt(claimerAddress, `claim_${tokenId}`, 0, claimConfig);
     
     if (!validation.valid) {
       throw new Error(validation.reason || 'Claim validation failed');
@@ -180,7 +180,7 @@ async function claimEscrowGasless(
     console.log('✅ Anti-double claiming validation passed. Nonce:', transactionNonce.slice(0, 10) + '...');
     
     // Step 3: Register claim attempt
-    registerTransactionAttempt(claimerAddress, transactionNonce, `claim_${tokenId}`, 0, claimConfig);
+    await registerTransactionAttempt(claimerAddress, transactionNonce, `claim_${tokenId}`, 0, claimConfig);
     
     // Step 4: Get deployer account (for now, we use deployer for gasless claims)
     // In production, this would use Biconomy smart accounts
@@ -219,7 +219,7 @@ async function claimEscrowGasless(
     }
     
     // Step 7: Mark transaction as completed
-    markTransactionCompleted(transactionNonce, result.transactionHash);
+    await markTransactionCompleted(transactionNonce, result.transactionHash);
     
     console.log('🎉 Enhanced gasless claim completed with verification');
     
@@ -234,7 +234,7 @@ async function claimEscrowGasless(
     
     // Mark transaction as failed if nonce was generated
     if (transactionNonce) {
-      markTransactionFailed(transactionNonce, error.message);
+      await markTransactionFailed(transactionNonce, error.message);
     }
     
     return {
