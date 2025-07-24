@@ -12,7 +12,7 @@ import { GiftSummary } from './GiftSummary';
 import { QRShare } from './QRShare';
 import { GiftEscrowConfig, type EscrowConfig } from './escrow/GiftEscrowConfig';
 import { CREATION_FEE_PERCENT, generateNeutralGiftAddress } from '../lib/constants';
-import { CryptoGiftError, parseApiError, logError } from '../lib/errorHandler';
+import { CryptoGiftError, ErrorType, parseApiError, logError } from '../lib/errorHandler';
 import { ErrorModal } from './ErrorModal';
 import { GasEstimationModal } from './GasEstimationModal';
 import { startTrace, addStep, addDecision, addError, finishTrace } from '../lib/flowTracker';
@@ -227,9 +227,12 @@ export const GiftWizard: React.FC<GiftWizardProps> = ({ isOpen, onClose, referre
     } catch (error: any) {
       console.error('❌ SIWE authentication failed:', error);
       setError(new CryptoGiftError(
-        'Authentication failed',
+        ErrorType.API_KEY,
         `Please sign the message with your wallet to continue: ${error.message}`,
-        'AUTHENTICATION_ERROR'
+        {
+          code: 'AUTHENTICATION_ERROR',
+          userMessage: 'Authentication failed'
+        }
       ));
       setIsAuthenticated(false);
       
@@ -284,9 +287,12 @@ export const GiftWizard: React.FC<GiftWizardProps> = ({ isOpen, onClose, referre
       // Check again after authentication attempt
       if (!isAuthenticated || !isAuthValid()) {
         setError(new CryptoGiftError(
-          'Authentication Required',
+          ErrorType.API_KEY,
           'Please sign the authentication message with your wallet to continue',
-          'AUTHENTICATION_REQUIRED'
+          {
+            code: 'AUTHENTICATION_REQUIRED',
+            userMessage: 'Authentication Required'
+          }
         ));
         return;
       }
