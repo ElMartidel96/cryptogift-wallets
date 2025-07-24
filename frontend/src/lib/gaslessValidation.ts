@@ -26,20 +26,32 @@ interface TransactionAttempt {
 // Redis integration for persistent anti-double minting
 import { Redis } from '@upstash/redis';
 
-// Initialize Redis client if available
+// Initialize Redis client if available with Vercel-optimized configuration
 let redis: any = null;
 try {
   if (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN) {
     redis = new Redis({
       url: process.env.UPSTASH_REDIS_REST_URL,
       token: process.env.UPSTASH_REDIS_REST_TOKEN,
+      enableAutoPipelining: false, // Disable pipelining to prevent hanging in Vercel
+      retry: false, // CRITICAL: Disable retry to prevent hanging in serverless functions
+      lazyConnect: true, // Connect only when needed
     });
-    console.log('✅ Redis client initialized for anti-double minting');
+    console.log('✅ Redis client initialized for anti-double minting (Vercel optimized)');
   } else {
     console.warn('⚠️ Redis not configured, using in-memory fallback for anti-double minting');
   }
 } catch (error) {
   console.warn('⚠️ Redis initialization failed, using in-memory fallback:', error);
+}
+
+// Helper function to wrap Redis operations with timeout protection
+async function redisWithTimeout<T>(operation: Promise<T>, timeoutMs: number = 3000): Promise<T> {
+  const timeoutPromise = new Promise<never>((_, reject) => 
+    setTimeout(() => reject(new Error('Redis operation timeout')), timeoutMs)
+  );
+  
+  return Promise.race([operation, timeoutPromise]);
 }
 
 // Fallback in-memory store when Redis is not available
@@ -103,10 +115,11 @@ export async function validateTransactionAttempt(
   const metadataHash = generateMetadataHash(userAddress, metadataUri, amount, escrowConfig);
   
   if (redis) {
-    // Use Redis for persistent validation
+    // Use Redis for persistent validation with timeout protection
     try {
       const key = `tx_attempt:${userAddress.toLowerCase()}:${metadataHash}`;
-      const existing = await redis.get(key);
+      
+      const existing = await redisWithTimeout(redis.get(key));
       
       if (existing) {
         const attemptData = JSON.parse(existing);
@@ -140,6 +153,8 @@ export async function validateTransactionAttempt(
       
     } catch (redisError) {
       console.warn('⚠️ Redis validation failed, falling back to memory:', redisError);
+      // Temporarily disable redis to prevent future hangs in this request
+      redis = null;
       // Fall through to memory-based validation
     }
   }
@@ -206,7 +221,10 @@ export async function registerTransactionAttempt(
   if (redis) {
     try {
       const key = `tx_attempt:${userAddress.toLowerCase()}:${metadataHash}`;
-      await redis.setex(key, 300, JSON.stringify(attempt)); // 5 minutes TTL
+      
+      await redisWithTimeout(
+        redis.setex(key, 300, JSON.stringify(attempt)) // 5 minutes TTL
+      );
       console.log('📝 Transaction attempt registered in Redis:', {
         nonce: nonce.slice(0, 10) + '...',
         user: userAddress.slice(0, 10) + '...',
