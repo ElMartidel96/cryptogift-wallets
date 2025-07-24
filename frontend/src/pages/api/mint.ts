@@ -10,6 +10,7 @@ import { storeNFTMetadata, createNFTMetadata, getNFTMetadata } from "../../lib/n
 import { kvReferralDB, generateUserDisplay } from "../../lib/referralDatabaseKV";
 import { REFERRAL_COMMISSION_PERCENT } from "../../lib/constants";
 import { generateNeutralGiftAddressServer } from "../../lib/serverConstants";
+import { verifyJWT, extractTokenFromHeaders } from "../../lib/siweAuth";
 
 // Add flow tracking to API
 let currentFlowTrace: any = null;
@@ -352,22 +353,43 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   console.log("📋 Request body keys:", Object.keys(req.body || {}));
   console.log("🌐 User Agent:", req.headers['user-agent']?.substring(0, 100));
 
-  // 🚨 SECURITY: Block unauthorized minting immediately
-  const authToken = req.headers['x-api-token'] || req.body.apiToken;
-  const requiredToken = process.env.API_ACCESS_TOKEN;
-  
-  if (!requiredToken) {
-    console.log("🚨 SECURITY: API_ACCESS_TOKEN not configured - minting disabled");
-    return res.status(503).json({ 
-      error: 'Minting service temporarily unavailable',
-      message: 'API_ACCESS_TOKEN not configured - minting disabled for security'
+  // 🚨 SECURITY: JWT Authentication required for minting
+  try {
+    const authHeader = req.headers.authorization;
+    const token = extractTokenFromHeaders(authHeader);
+    
+    if (!token) {
+      console.log("🚨 SECURITY: No JWT token provided - minting denied");
+      return res.status(401).json({ 
+        error: 'Authentication required',
+        message: 'Valid JWT token required for minting operations'
+      });
+    }
+    
+    const payload = verifyJWT(token);
+    if (!payload) {
+      console.log("🚨 SECURITY: Invalid JWT token - minting denied");
+      return res.status(401).json({ 
+        error: 'Invalid authentication token',
+        message: 'Please sign in again to continue'
+      });
+    }
+    
+    const authenticatedAddress = payload.address;
+    console.log('✅ JWT authentication successful for minting:', {
+      address: authenticatedAddress.slice(0, 10) + '...',
+      exp: new Date(payload.exp * 1000).toISOString()
     });
-  }
-  
-  if (authToken !== requiredToken) {
-    console.log(`🚨 SECURITY ALERT: Unauthorized mint attempt from ${req.headers['x-forwarded-for'] || 'unknown'}`);
-    console.warn('⚠️ Request without valid API token, allowing for backward compatibility');
-    // TODO: In production, this should be stricter - temporarily allowing for transition period
+    
+    // Store authenticated address for later validation
+    req.body.authenticatedWallet = authenticatedAddress;
+    
+  } catch (authError: any) {
+    console.error('❌ JWT authentication error:', authError);
+    return res.status(401).json({
+      error: 'Authentication verification failed',
+      message: 'Unable to verify authentication token'
+    });
   }
   
   addMintLog('INFO', 'API_START', { timestamp: new Date().toISOString() });
@@ -383,7 +405,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   try {
     console.log("📝 EXTRACTING PARAMETERS from request body...");
-    const { to: originalCreatorAddress, imageFile, giftMessage, initialBalance, filter = "Original", referrer } = req.body;
+    const { to: originalCreatorAddress, imageFile, giftMessage, initialBalance, filter = "Original", referrer, authenticatedWallet } = req.body;
+    
+    // Validate that authenticated address matches the creator address
+    if (authenticatedWallet && originalCreatorAddress && 
+        authenticatedWallet.toLowerCase() !== originalCreatorAddress.toLowerCase()) {
+      console.log(`🚨 SECURITY: Address mismatch - auth: ${authenticatedWallet.slice(0, 10)}... vs creator: ${originalCreatorAddress.slice(0, 10)}...`);
+      return res.status(403).json({
+        error: 'Forbidden',
+        message: 'You can only mint NFTs from your authenticated wallet address'
+      });
+    }
     
     // FIXED: Mint directly to user as originally intended
     console.log("✅ MINTING TO USER ADDRESS as originally designed...");

@@ -31,6 +31,7 @@ import {
   checkRateLimit
 } from '../../lib/gaslessValidation';
 import { ESCROW_ABI, ESCROW_CONTRACT_ADDRESS, type EscrowGift } from '../../lib/escrowABI';
+import { verifyJWT, extractTokenFromHeaders } from '../../lib/siweAuth';
 
 // Types
 interface ClaimEscrowRequest {
@@ -65,10 +66,44 @@ const client = createThirdwebClient({
   clientId: process.env.NEXT_PUBLIC_TW_CLIENT_ID!
 });
 
-// Authentication middleware
-function authenticate(req: NextApiRequest): boolean {
-  const apiToken = req.headers.authorization?.replace('Bearer ', '');
-  return apiToken === process.env.API_ACCESS_TOKEN;
+// JWT Authentication middleware
+function authenticate(req: NextApiRequest): { success: boolean; address?: string; error?: string } {
+  try {
+    const authHeader = req.headers.authorization;
+    const token = extractTokenFromHeaders(authHeader);
+    
+    if (!token) {
+      return { 
+        success: false, 
+        error: 'Authentication required. Please provide a valid JWT token.' 
+      };
+    }
+    
+    const payload = verifyJWT(token);
+    if (!payload) {
+      return { 
+        success: false, 
+        error: 'Invalid or expired authentication token. Please sign in again.' 
+      };
+    }
+    
+    console.log('✅ Claim escrow JWT authentication successful:', {
+      address: payload.address.slice(0, 10) + '...',
+      exp: new Date(payload.exp * 1000).toISOString()
+    });
+    
+    return { 
+      success: true, 
+      address: payload.address 
+    };
+    
+  } catch (error: any) {
+    console.error('❌ Claim escrow JWT authentication error:', error);
+    return { 
+      success: false, 
+      error: 'Authentication verification failed' 
+    };
+  }
 }
 
 // Get gift information from contract
@@ -289,13 +324,17 @@ export default async function handler(
   }
   
   try {
-    // Authenticate request
-    if (!authenticate(req)) {
+    // Authenticate request using JWT
+    const authResult = authenticate(req);
+    if (!authResult.success) {
       return res.status(401).json({ 
         success: false, 
-        error: 'Unauthorized' 
+        error: authResult.error || 'Unauthorized' 
       });
     }
+    
+    const authenticatedAddress = authResult.address!;
+    console.log('🔐 Claim escrow authenticated for address:', authenticatedAddress.slice(0, 10) + '...');
     
     // Validate required environment variables
     if (!process.env.PRIVATE_KEY_DEPLOY || !ESCROW_CONTRACT_ADDRESS) {
@@ -320,6 +359,14 @@ export default async function handler(
       return res.status(400).json({ 
         success: false, 
         error: 'Missing required fields' 
+      });
+    }
+    
+    // Verify that authenticated address matches the claimer address
+    if (authenticatedAddress.toLowerCase() !== claimerAddress.toLowerCase()) {
+      return res.status(403).json({
+        success: false,
+        error: 'Forbidden: You can only claim gifts from your authenticated wallet address'
       });
     }
     

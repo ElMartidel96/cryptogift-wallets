@@ -29,6 +29,7 @@ import {
   checkRateLimit
 } from '../../lib/gaslessValidation';
 import { ESCROW_CONTRACT_ADDRESS } from '../../lib/escrowABI';
+import { verifyJWT, extractTokenFromHeaders } from '../../lib/siweAuth';
 
 // Types
 interface MintEscrowRequest {
@@ -64,31 +65,48 @@ const client = createThirdwebClient({
   clientId: process.env.NEXT_PUBLIC_TW_CLIENT_ID!
 });
 
-// Authentication middleware
-function authenticate(req: NextApiRequest): boolean {
-  // Check for API access token in environment
-  const requiredToken = process.env.API_ACCESS_TOKEN;
-  if (!requiredToken) {
-    console.error('🚨 API_ACCESS_TOKEN not configured');
-    return false;
+// JWT Authentication middleware
+function authenticate(req: NextApiRequest): { success: boolean; address?: string; error?: string } {
+  try {
+    // Extract JWT token from Authorization header
+    const authHeader = req.headers.authorization;
+    const token = extractTokenFromHeaders(authHeader);
+    
+    if (!token) {
+      console.warn('⚠️ No JWT token provided in Authorization header');
+      return { 
+        success: false, 
+        error: 'Authentication required. Please provide a valid JWT token.' 
+      };
+    }
+    
+    // Verify JWT token
+    const payload = verifyJWT(token);
+    if (!payload) {
+      console.warn('⚠️ Invalid or expired JWT token');
+      return { 
+        success: false, 
+        error: 'Invalid or expired authentication token. Please sign in again.' 
+      };
+    }
+    
+    console.log('✅ JWT authentication successful:', {
+      address: payload.address.slice(0, 10) + '...',
+      exp: new Date(payload.exp * 1000).toISOString()
+    });
+    
+    return { 
+      success: true, 
+      address: payload.address 
+    };
+    
+  } catch (error: any) {
+    console.error('❌ JWT authentication error:', error);
+    return { 
+      success: false, 
+      error: 'Authentication verification failed' 
+    };
   }
-  
-  // Check authorization header (from client)
-  const authToken = req.headers.authorization?.replace('Bearer ', '');
-  if (authToken && authToken === requiredToken) {
-    return true;
-  }
-  
-  // Check X-API-Token header (legacy)
-  const apiToken = req.headers['x-api-token'];
-  if (apiToken && apiToken === requiredToken) {
-    return true;
-  }
-  
-  // For now, allow requests without token for backward compatibility
-  // In production, this should be stricter
-  console.warn('⚠️ Request without valid API token, allowing for backward compatibility');
-  return true;
 }
 
 // Enhanced gasless minting with anti-double minting
@@ -552,13 +570,17 @@ export default async function handler(
   }
   
   try {
-    // Authenticate request
-    if (!authenticate(req)) {
+    // Authenticate request using JWT
+    const authResult = authenticate(req);
+    if (!authResult.success) {
       return res.status(401).json({ 
         success: false, 
-        error: 'Unauthorized' 
+        error: authResult.error || 'Unauthorized' 
       });
     }
+    
+    const authenticatedAddress = authResult.address!;
+    console.log('🔐 Request authenticated for address:', authenticatedAddress.slice(0, 10) + '...');
     
     // Enhanced environment variable validation with detailed logging
     const requiredEnvVars = {
@@ -610,6 +632,14 @@ export default async function handler(
       return res.status(400).json({ 
         success: false, 
         error: 'Missing required fields: metadataUri, giftMessage, creatorAddress' 
+      });
+    }
+    
+    // Verify that authenticated address matches the creatorAddress in request
+    if (authenticatedAddress.toLowerCase() !== creatorAddress.toLowerCase()) {
+      return res.status(403).json({
+        success: false,
+        error: 'Forbidden: You can only create gifts from your authenticated wallet address'
       });
     }
     

@@ -1,0 +1,129 @@
+/**
+ * SIWE Challenge Generation Endpoint
+ * Generates secure challenges for wallet-based authentication
+ * POST /api/auth/challenge
+ */
+
+import type { NextApiRequest, NextApiResponse } from 'next';
+import { 
+  generateNonce, 
+  createSiweMessage, 
+  formatSiweMessage,
+  isValidEthereumAddress,
+  SIWE_DOMAIN 
+} from '../../../lib/siweAuth';
+import { storeChallenge } from '../../../lib/challengeStorage';
+import { checkRateLimit } from '../../../lib/gaslessValidation';
+
+interface ChallengeRequest {
+  address: string;
+  chainId?: number;
+}
+
+interface ChallengeResponse {
+  success: boolean;
+  nonce?: string;
+  message?: string;
+  domain?: string;
+  error?: string;
+  rateLimit?: {
+    remaining: number;
+    resetTime: number;
+  };
+}
+
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse<ChallengeResponse>
+) {
+  // Only allow POST requests
+  if (req.method !== 'POST') {
+    return res.status(405).json({ 
+      success: false, 
+      error: 'Method not allowed' 
+    });
+  }
+
+  try {
+    console.log('🎯 SIWE Challenge Request:', {
+      method: req.method,
+      userAgent: req.headers['user-agent']?.substring(0, 50),
+      origin: req.headers.origin
+    });
+
+    // Parse and validate request
+    const { address, chainId = 84532 }: ChallengeRequest = req.body;
+
+    if (!address) {
+      return res.status(400).json({
+        success: false,
+        error: 'Wallet address is required'
+      });
+    }
+
+    if (!isValidEthereumAddress(address)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid Ethereum address format'
+      });
+    }
+
+    // Rate limiting check per address
+    const rateLimit = checkRateLimit(address);
+    if (!rateLimit.allowed) {
+      return res.status(429).json({
+        success: false,
+        error: `Rate limit exceeded. Try again in ${Math.ceil((rateLimit.resetTime - Date.now()) / 1000)} seconds.`,
+        rateLimit: {
+          remaining: rateLimit.remaining,
+          resetTime: rateLimit.resetTime
+        }
+      });
+    }
+
+    console.log('✅ Rate limit check passed for address:', address.slice(0, 10) + '...');
+
+    // Generate secure nonce
+    const nonce = generateNonce();
+
+    // Create SIWE message
+    const siweMessage = createSiweMessage(address, nonce, chainId);
+    const formattedMessage = formatSiweMessage(siweMessage);
+
+    // Store challenge securely
+    const challenge = {
+      nonce,
+      timestamp: Date.now(),
+      address: siweMessage.address // Use normalized address
+    };
+
+    await storeChallenge(nonce, challenge);
+
+    console.log('🎯 SIWE Challenge generated:', {
+      address: address.slice(0, 10) + '...',
+      nonce: nonce.slice(0, 10) + '...',
+      chainId,
+      domain: SIWE_DOMAIN
+    });
+
+    // Return challenge to client
+    return res.status(200).json({
+      success: true,
+      nonce,
+      message: formattedMessage,
+      domain: SIWE_DOMAIN,
+      rateLimit: {
+        remaining: rateLimit.remaining,
+        resetTime: rateLimit.resetTime
+      }
+    });
+
+  } catch (error: any) {
+    console.error('❌ SIWE Challenge generation failed:', error);
+    
+    return res.status(500).json({
+      success: false,
+      error: 'Challenge generation failed'
+    });
+  }
+}

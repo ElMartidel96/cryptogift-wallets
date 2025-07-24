@@ -1,0 +1,164 @@
+/**
+ * SIWE Signature Verification Endpoint
+ * Verifies wallet signatures and generates JWT tokens
+ * POST /api/auth/verify
+ */
+
+import type { NextApiRequest, NextApiResponse } from 'next';
+import { 
+  createSiweMessage, 
+  verifySiweSignature, 
+  generateJWT,
+  isValidEthereumAddress 
+} from '../../../lib/siweAuth';
+import { getChallenge, removeChallenge } from '../../../lib/challengeStorage';
+import { checkRateLimit } from '../../../lib/gaslessValidation';
+
+interface VerifyRequest {
+  address: string;
+  signature: string;
+  nonce: string;
+  chainId?: number;
+}
+
+interface VerifyResponse {
+  success: boolean;
+  token?: string;
+  address?: string;
+  expiresAt?: number;
+  error?: string;
+  rateLimit?: {
+    remaining: number;
+    resetTime: number;
+  };
+}
+
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse<VerifyResponse>
+) {
+  // Only allow POST requests
+  if (req.method !== 'POST') {
+    return res.status(405).json({ 
+      success: false, 
+      error: 'Method not allowed' 
+    });
+  }
+
+  try {
+    console.log('🔐 SIWE Verification Request:', {
+      method: req.method,
+      userAgent: req.headers['user-agent']?.substring(0, 50),
+      origin: req.headers.origin
+    });
+
+    // Parse and validate request
+    const { address, signature, nonce, chainId = 84532 }: VerifyRequest = req.body;
+
+    if (!address || !signature || !nonce) {
+      return res.status(400).json({
+        success: false,
+        error: 'Address, signature, and nonce are required'
+      });
+    }
+
+    if (!isValidEthereumAddress(address)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid Ethereum address format'
+      });
+    }
+
+    // Rate limiting check per address
+    const rateLimit = checkRateLimit(address);
+    if (!rateLimit.allowed) {
+      return res.status(429).json({
+        success: false,
+        error: `Rate limit exceeded. Try again in ${Math.ceil((rateLimit.resetTime - Date.now()) / 1000)} seconds.`,
+        rateLimit: {
+          remaining: rateLimit.remaining,
+          resetTime: rateLimit.resetTime
+        }
+      });
+    }
+
+    console.log('✅ Rate limit check passed for verification:', address.slice(0, 10) + '...');
+
+    // Retrieve challenge
+    const challenge = await getChallenge(nonce);
+    if (!challenge) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid or expired challenge. Please request a new challenge.'
+      });
+    }
+
+    console.log('✅ Challenge retrieved:', {
+      nonce: nonce.slice(0, 10) + '...',
+      storedAddress: challenge.address.slice(0, 10) + '...',
+      providedAddress: address.slice(0, 10) + '...',
+      age: Math.floor((Date.now() - challenge.timestamp) / 1000) + 's'
+    });
+
+    // Verify addresses match
+    if (challenge.address.toLowerCase() !== address.toLowerCase()) {
+      await removeChallenge(nonce); // Clean up invalid challenge
+      return res.status(400).json({
+        success: false,
+        error: 'Address mismatch. Challenge was issued for a different address.'
+      });
+    }
+
+    // Recreate the SIWE message that should have been signed
+    const siweMessage = createSiweMessage(challenge.address, nonce, chainId);
+
+    // Verify signature
+    const isValidSignature = verifySiweSignature(siweMessage, signature);
+    if (!isValidSignature) {
+      await removeChallenge(nonce); // Clean up failed challenge
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid signature. Please sign the message with your wallet.'
+      });
+    }
+
+    console.log('✅ SIWE signature verified successfully:', {
+      address: address.slice(0, 10) + '...',
+      nonce: nonce.slice(0, 10) + '...',
+      chainId
+    });
+
+    // Generate JWT token
+    const token = generateJWT(challenge.address, nonce);
+    const expiresAt = Math.floor(Date.now() / 1000) + (2 * 60 * 60); // 2 hours
+
+    // Clean up used challenge
+    await removeChallenge(nonce);
+
+    console.log('🎟️ JWT token generated:', {
+      address: challenge.address.slice(0, 10) + '...',
+      expiresAt: new Date(expiresAt * 1000).toISOString(),
+      tokenPreview: token.slice(0, 20) + '...'
+    });
+
+    // Return success response with token
+    return res.status(200).json({
+      success: true,
+      token,
+      address: challenge.address,
+      expiresAt,
+      rateLimit: {
+        remaining: rateLimit.remaining,
+        resetTime: rateLimit.resetTime
+      }
+    });
+
+  } catch (error: any) {
+    console.error('❌ SIWE Verification failed:', error);
+    
+    return res.status(500).json({
+      success: false,
+      error: 'Signature verification failed'
+    });
+  }
+}

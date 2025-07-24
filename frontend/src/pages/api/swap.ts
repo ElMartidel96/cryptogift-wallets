@@ -2,28 +2,49 @@ import { NextApiRequest, NextApiResponse } from "next";
 import { createBiconomySmartAccount, sendGaslessTransaction, validateBiconomyConfig } from "../../lib/biconomy";
 import { createThirdwebClient, getContract, prepareContractCall } from "thirdweb";
 import { baseSepolia } from "thirdweb/chains";
+import { verifyJWT, extractTokenFromHeaders } from "../../lib/siweAuth";
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  // 🚨 SECURITY: Block unauthorized access immediately
-  const authToken = req.headers['x-api-token'] || req.body.apiToken;
-  const requiredToken = process.env.API_ACCESS_TOKEN;
-  
-  if (!requiredToken) {
-    return res.status(503).json({ 
-      error: 'Service temporarily unavailable',
-      message: 'API_ACCESS_TOKEN not configured - endpoint disabled for security'
+  // 🚨 SECURITY: JWT Authentication required for swap operations
+  try {
+    const authHeader = req.headers.authorization;
+    const token = extractTokenFromHeaders(authHeader);
+    
+    if (!token) {
+      console.log("🚨 SECURITY: No JWT token provided for swap - access denied");
+      return res.status(401).json({ 
+        error: 'Authentication required',
+        message: 'Valid JWT token required for swap operations'
+      });
+    }
+    
+    const payload = verifyJWT(token);
+    if (!payload) {
+      console.log("🚨 SECURITY: Invalid JWT token for swap - access denied");
+      return res.status(401).json({ 
+        error: 'Invalid authentication token',
+        message: 'Please sign in again to continue'
+      });
+    }
+    
+    const authenticatedAddress = payload.address;
+    console.log('✅ JWT authentication successful for swap:', {
+      address: authenticatedAddress.slice(0, 10) + '...',
+      exp: new Date(payload.exp * 1000).toISOString()
     });
-  }
-  
-  if (authToken !== requiredToken) {
-    console.log(`🚨 SECURITY ALERT: Unauthorized swap attempt from ${req.headers['x-forwarded-for'] || req.connection.remoteAddress}`);
-    return res.status(401).json({ 
-      error: 'Unauthorized access',
-      message: 'Valid API token required for swap operations'
+    
+    // Store authenticated address for later validation
+    req.body.authenticatedWallet = authenticatedAddress;
+    
+  } catch (authError: any) {
+    console.error('❌ JWT authentication error for swap:', authError);
+    return res.status(401).json({
+      error: 'Authentication verification failed',
+      message: 'Unable to verify authentication token'
     });
   }
 
