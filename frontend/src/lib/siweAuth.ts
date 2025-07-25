@@ -10,13 +10,28 @@ import { createHmac } from 'crypto';
 // Challenge configuration
 export const CHALLENGE_EXPIRY = 10 * 60 * 1000; // 10 minutes
 export const JWT_EXPIRY = 2 * 60 * 60; // 2 hours in seconds
-export const SIWE_DOMAIN = process.env.NEXT_PUBLIC_DOMAIN || 'cryptogift-wallets.vercel.app';
+
+// Dynamic domain detection for SIWE to avoid "suspicious request" warnings
+export function getSiweDomain(): string {
+  // In browser, use current hostname to avoid domain mismatch warnings
+  if (typeof window !== 'undefined') {
+    return window.location.hostname;
+  }
+  
+  // Server-side fallback
+  return process.env.NEXT_PUBLIC_DOMAIN || process.env.VERCEL_URL || 'cryptogift-wallets.vercel.app';
+}
+
+export const SIWE_DOMAIN = getSiweDomain();
 
 // Types
 export interface SiweChallenge {
   nonce: string;
   timestamp: number;
   address: string;
+  issuedAt: string; // ISO string from the SIWE message
+  domain: string;
+  chainId: number;
 }
 
 export interface SiweMessage {
@@ -50,15 +65,19 @@ export function generateNonce(): string {
 export function createSiweMessage(
   address: string,
   nonce: string,
-  chainId: number = 84532 // Base Sepolia
+  chainId: number = 11155111 // Ethereum Sepolia (more widely supported)
 ): SiweMessage {
   const now = new Date();
+  const domain = getSiweDomain();
+  
+  // Use protocol based on environment
+  const protocol = domain.includes('localhost') ? 'http' : 'https';
   
   return {
-    domain: SIWE_DOMAIN,
+    domain,
     address: ethers.getAddress(address), // Normalize address
     statement: "Sign in to CryptoGift Wallets to create and claim NFT gifts securely.",
-    uri: `https://${SIWE_DOMAIN}`,
+    uri: `${protocol}://${domain}`,
     version: "1",
     chainId,
     nonce,

@@ -18,6 +18,7 @@ import { checkRateLimit } from '../../../lib/gaslessValidation';
 interface ChallengeRequest {
   address: string;
   chainId?: number;
+  domain?: string;
 }
 
 interface ChallengeResponse {
@@ -52,7 +53,10 @@ export default async function handler(
     });
 
     // Parse and validate request
-    const { address, chainId = 84532 }: ChallengeRequest = req.body;
+    const { address, chainId = 11155111, domain }: ChallengeRequest = req.body;
+    
+    // Use provided domain (from client) or determine from request headers
+    const requestDomain = domain || req.headers.host || 'cryptogift-wallets.vercel.app';
 
     if (!address) {
       return res.status(400).json({
@@ -86,15 +90,27 @@ export default async function handler(
     // Generate secure nonce
     const nonce = generateNonce();
 
-    // Create SIWE message
-    const siweMessage = createSiweMessage(address, nonce, chainId);
+    // Create SIWE message with dynamic domain to avoid "suspicious request" warnings
+    const siweMessage = {
+      domain: requestDomain,
+      address: ethers.getAddress(address),
+      statement: "Sign in to CryptoGift Wallets to create and claim NFT gifts securely.",
+      uri: `https://${requestDomain}`,
+      version: "1",
+      chainId,
+      nonce,
+      issuedAt: new Date().toISOString()
+    };
     const formattedMessage = formatSiweMessage(siweMessage);
 
-    // Store challenge securely
+    // Store challenge securely with all necessary data for verification
     const challenge = {
       nonce,
       timestamp: Date.now(),
-      address: siweMessage.address // Use normalized address
+      address: siweMessage.address, // Use normalized address
+      issuedAt: siweMessage.issuedAt, // Exact timestamp from message
+      domain: requestDomain,
+      chainId
     };
 
     await storeChallenge(nonce, challenge);
@@ -103,7 +119,7 @@ export default async function handler(
       address: address.slice(0, 10) + '...',
       nonce: nonce.slice(0, 10) + '...',
       chainId,
-      domain: SIWE_DOMAIN
+      domain: requestDomain
     });
 
     // Return challenge to client
@@ -111,7 +127,7 @@ export default async function handler(
       success: true,
       nonce,
       message: formattedMessage,
-      domain: SIWE_DOMAIN,
+      domain: requestDomain,
       rateLimit: {
         remaining: rateLimit.remaining,
         resetTime: rateLimit.resetTime

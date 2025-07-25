@@ -50,7 +50,8 @@ export async function requestChallenge(address: string, chainId?: number): Promi
       },
       body: JSON.stringify({
         address,
-        chainId: targetChainId
+        chainId: targetChainId,
+        domain: typeof window !== 'undefined' ? window.location.hostname : undefined
       })
     });
     
@@ -130,7 +131,8 @@ export async function verifySignature(
         address,
         signature,
         nonce,
-        chainId: targetChainId
+        chainId: targetChainId,
+        domain: typeof window !== 'undefined' ? window.location.hostname : undefined
       })
     });
     
@@ -168,16 +170,19 @@ export async function authenticateWithSiwe(address: string, account: any): Promi
   try {
     console.log('🚀 Starting SIWE authentication flow for:', address.slice(0, 10) + '...');
     
-    // Get current chain ID from wallet or use default
-    let chainId = 84532; // Default to Base Sepolia
+    // Use Ethereum Sepolia (widely supported) instead of Base Sepolia to avoid warnings
+    let chainId = 11155111; // Ethereum Sepolia - widely supported by wallets
     try {
       // Try to get chain ID from account if available
       if (account?.wallet?.getChain) {
         const chain = await account.wallet.getChain();
-        chainId = chain.id;
+        // Only use wallet's chain if it's a well-known testnet
+        if ([1, 11155111, 5, 137, 84532].includes(chain.id)) {
+          chainId = chain.id;
+        }
       }
     } catch (error) {
-      console.warn('⚠️ Could not get chain ID from wallet, using default:', chainId);
+      console.warn('⚠️ Could not get chain ID from wallet, using Ethereum Sepolia:', chainId);
     }
     
     console.log('🔗 Using Chain ID:', chainId);

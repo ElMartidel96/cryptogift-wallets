@@ -19,6 +19,7 @@ interface VerifyRequest {
   signature: string;
   nonce: string;
   chainId?: number;
+  domain?: string;
 }
 
 interface VerifyResponse {
@@ -53,7 +54,10 @@ export default async function handler(
     });
 
     // Parse and validate request
-    const { address, signature, nonce, chainId = 84532 }: VerifyRequest = req.body;
+    const { address, signature, nonce, chainId = 11155111, domain }: VerifyRequest = req.body;
+    
+    // Use provided domain (from client) or determine from request headers
+    const requestDomain = domain || req.headers.host || 'cryptogift-wallets.vercel.app';
 
     if (!address || !signature || !nonce) {
       return res.status(400).json({
@@ -109,8 +113,17 @@ export default async function handler(
       });
     }
 
-    // Recreate the SIWE message that should have been signed
-    const siweMessage = createSiweMessage(challenge.address, nonce, chainId);
+    // Recreate the SIWE message that should have been signed (must match challenge exactly)
+    const siweMessage = {
+      domain: challenge.domain || requestDomain, // Use domain from challenge if available
+      address: ethers.getAddress(challenge.address),
+      statement: "Sign in to CryptoGift Wallets to create and claim NFT gifts securely.",
+      uri: `https://${challenge.domain || requestDomain}`,
+      version: "1",
+      chainId: challenge.chainId || chainId, // Use chainId from challenge if available
+      nonce,
+      issuedAt: challenge.issuedAt || new Date(challenge.timestamp).toISOString() // Use exact issuedAt from challenge
+    };
     
     console.log('🔍 Verifying signature with:', {
       messageAddress: siweMessage.address.slice(0, 10) + '...',

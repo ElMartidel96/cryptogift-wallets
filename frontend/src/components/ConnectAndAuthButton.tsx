@@ -1,9 +1,10 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { useActiveAccount, ConnectButton } from 'thirdweb/react';
+import { ConnectButton } from 'thirdweb/react';
 import { client } from '../app/client';
 import { authenticateWithSiwe, getAuthState, isAuthValid } from '../lib/siweClient';
+import { SafeThirdwebWrapper, useSafeActiveAccount } from './SafeThirdwebWrapper';
 
 interface ConnectAndAuthButtonProps {
   onAuthChange?: (isAuthenticated: boolean, address?: string) => void;
@@ -11,13 +12,13 @@ interface ConnectAndAuthButtonProps {
   showAuthStatus?: boolean;
 }
 
-export const ConnectAndAuthButton: React.FC<ConnectAndAuthButtonProps> = ({
+const ConnectAndAuthButtonInner: React.FC<ConnectAndAuthButtonProps> = ({
   onAuthChange,
   className = "",
   showAuthStatus = false
 }) => {
-  // Always call useActiveAccount - hooks must be called in same order
-  const account = useActiveAccount();
+  // Use safe version of useActiveAccount to handle context errors
+  const account = useSafeActiveAccount();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isAuthenticating, setIsAuthenticating] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
@@ -201,5 +202,14 @@ export const ConnectAndAuthButton: React.FC<ConnectAndAuthButtonProps> = ({
         </button>
       </div>
     </div>
+  );
+};
+
+// Export wrapped version to handle ThirdwebProvider context errors
+export const ConnectAndAuthButton: React.FC<ConnectAndAuthButtonProps> = (props) => {
+  return (
+    <SafeThirdwebWrapper>
+      <ConnectAndAuthButtonInner {...props} />
+    </SafeThirdwebWrapper>
   );
 };
