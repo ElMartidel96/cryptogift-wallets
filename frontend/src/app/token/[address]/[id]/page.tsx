@@ -100,40 +100,14 @@ export default function TokenPage() {
 
     setIsLoading(true);
     try {
-      const apiToken = process.env.NEXT_PUBLIC_API_ACCESS_TOKEN;
-      console.log('🔍 DEBUG: API Token check:', {
-        tokenExists: !!apiToken,
-        tokenLength: apiToken?.length || 0,
-        tokenPreview: apiToken?.substring(0, 10) || 'undefined'
-      });
+      // This function should not be called directly anymore
+      // Authentication and claiming should be handled by ClaimInterface component
+      console.log('🔍 DEBUG: Claim initiated from token page');
       
-      const response = await fetch('/api/claim-nft', {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'X-API-Token': apiToken || ''
-        },
-        body: JSON.stringify({
-          contractAddress,
-          tokenId,
-          claimerAddress,
-          setupGuardians: false,
-          guardianEmails: []
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Claim failed');
-      }
-
-      // Reload data after successful claim
-      await loadNFTData();
-      setIsOwner(true);
-      
-      // AUTO-LAUNCH: Open wallet interface after successful claim
-      setTimeout(() => {
-        setShowTBAWallet(true);
-      }, 1500); // Small delay to let the success message show
+      // This is now a placeholder - the actual claim logic is in ClaimInterface
+      // which handles SIWE authentication properly
+      setError('Please use the claim interface below for secure authentication');
+      return;
       
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to claim NFT');

@@ -9,6 +9,8 @@ import { SiweChallenge, CHALLENGE_EXPIRY } from './siweAuth';
 
 // Initialize Redis with Vercel-optimized configuration
 let redis: any = null;
+let redisStatus: 'connected' | 'fallback' | 'error' = 'fallback';
+
 try {
   if (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN) {
     redis = new Redis({
@@ -17,12 +19,19 @@ try {
       enableAutoPipelining: false, // Disable pipelining to prevent hanging in Vercel
       retry: false, // CRITICAL: Disable retry to prevent hanging in serverless functions
     });
+    redisStatus = 'connected';
     console.log('✅ Redis client initialized for SIWE challenges (Vercel optimized)');
   } else {
-    console.warn('⚠️ Redis not configured, using in-memory fallback for SIWE challenges');
+    redisStatus = 'fallback';
+    console.warn('⚠️ PRODUCTION WARNING: Redis not configured for SIWE challenges');
+    console.warn('   - SIWE challenges will use memory-only storage');
+    console.warn('   - Challenges will be lost on server restart');
+    console.warn('   - Configure UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN for production');
   }
 } catch (error) {
-  console.warn('⚠️ Redis initialization failed, using in-memory fallback:', error);
+  redisStatus = 'error';
+  console.error('❌ CRITICAL: Redis initialization failed for SIWE challenges:', error);
+  console.warn('   - Falling back to memory-only storage with limited security');
 }
 
 // Helper function to wrap Redis operations with timeout protection
@@ -36,6 +45,32 @@ async function redisWithTimeout<T>(operation: Promise<T>, timeoutMs: number = 30
 
 // Fallback in-memory store when Redis is not available
 const challengeStore = new Map<string, SiweChallenge>();
+
+/**
+ * Get Redis connection status for monitoring
+ */
+export function getRedisStatus(): { status: string; message: string; hasRedis: boolean } {
+  switch (redisStatus) {
+    case 'connected':
+      return {
+        status: 'connected',
+        message: 'Redis connected successfully',
+        hasRedis: true
+      };
+    case 'fallback':
+      return {
+        status: 'fallback',
+        message: 'Redis not configured - using memory fallback (production risk)',
+        hasRedis: false
+      };
+    case 'error':
+      return {
+        status: 'error',
+        message: 'Redis connection failed - using memory fallback (security risk)',
+        hasRedis: false
+      };
+  }
+}
 
 /**
  * Store SIWE challenge securely

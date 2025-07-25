@@ -28,6 +28,8 @@ import { Redis } from '@upstash/redis';
 
 // Initialize Redis client if available with Vercel-optimized configuration
 let redis: any = null;
+let gaslessRedisStatus: 'connected' | 'fallback' | 'error' = 'fallback';
+
 try {
   if (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN) {
     redis = new Redis({
@@ -36,12 +38,20 @@ try {
       enableAutoPipelining: false, // Disable pipelining to prevent hanging in Vercel
       retry: false, // CRITICAL: Disable retry to prevent hanging in serverless functions
     });
+    gaslessRedisStatus = 'connected';
     console.log('✅ Redis client initialized for anti-double minting (Vercel optimized)');
   } else {
-    console.warn('⚠️ Redis not configured, using in-memory fallback for anti-double minting');
+    gaslessRedisStatus = 'fallback';
+    console.warn('⚠️ PRODUCTION WARNING: Redis not configured for gasless validation');
+    console.warn('   - Anti-double minting will use memory-only storage');
+    console.warn('   - Rate limits will be lost on server restart');
+    console.warn('   - This allows potential abuse in production');
+    console.warn('   - Configure UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN for production');
   }
 } catch (error) {
-  console.warn('⚠️ Redis initialization failed, using in-memory fallback:', error);
+  gaslessRedisStatus = 'error';
+  console.error('❌ CRITICAL: Redis initialization failed for gasless validation:', error);
+  console.warn('   - Falling back to memory-only storage with security risks');
 }
 
 // Helper function to wrap Redis operations with timeout protection
@@ -57,6 +67,32 @@ async function redisWithTimeout<T>(operation: Promise<T>, timeoutMs: number = 30
 const transactionAttempts = new Map<string, TransactionAttempt>();
 const completedTransactions = new Set<string>();
 const userNonces = new Map<string, number>();
+
+/**
+ * Get Redis connection status for gasless validation monitoring
+ */
+export function getGaslessRedisStatus(): { status: string; message: string; hasRedis: boolean } {
+  switch (gaslessRedisStatus) {
+    case 'connected':
+      return {
+        status: 'connected',
+        message: 'Redis connected for gasless validation',
+        hasRedis: true
+      };
+    case 'fallback':
+      return {
+        status: 'fallback',
+        message: 'Redis not configured - anti-double minting weakened (production risk)',
+        hasRedis: false
+      };
+    case 'error':
+      return {
+        status: 'error',
+        message: 'Redis connection failed - anti-double minting compromised (security risk)',
+        hasRedis: false
+      };
+  }
+}
 
 /**
  * Generate unique transaction nonce for user

@@ -5,28 +5,43 @@ import { privateKeyToAccount } from "thirdweb/wallets";
 import { createBiconomySmartAccount, sendGaslessTransaction, validateBiconomyConfig } from "../../lib/biconomy";
 import { generateNeutralGiftAddressServer, isNeutralGiftAddressServer } from "../../lib/serverConstants";
 import { ethers } from "ethers";
+import { verifyJWT, extractTokenFromHeaders } from '../../lib/siweAuth';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  // 🚨 SECURITY: Require authentication for claim operations
-  const authToken = req.headers['x-api-token'] || req.body.apiToken;
-  const requiredToken = process.env.API_ACCESS_TOKEN;
-  
-  if (!requiredToken) {
-    return res.status(503).json({ 
-      error: 'Service temporarily unavailable',
-      message: 'API_ACCESS_TOKEN not configured'
+  // 🚨 SECURITY: Require SIWE JWT authentication for claim operations
+  try {
+    const authHeader = req.headers.authorization;
+    const token = extractTokenFromHeaders(authHeader);
+    
+    if (!token) {
+      return res.status(401).json({ 
+        error: 'Authentication required',
+        message: 'Please provide a valid JWT token.' 
+      });
+    }
+    
+    const payload = verifyJWT(token);
+    if (!payload) {
+      return res.status(401).json({ 
+        error: 'Invalid or expired authentication token',
+        message: 'Please sign in again.' 
+      });
+    }
+    
+    console.log('✅ Claim NFT JWT authentication successful:', {
+      address: payload.address.slice(0, 10) + '...',
+      exp: new Date(payload.exp * 1000).toISOString()
     });
-  }
-  
-  if (authToken !== requiredToken) {
-    console.log(`🚨 SECURITY: Unauthorized claim attempt from ${req.headers['x-forwarded-for'] || 'unknown'}`);
+    
+  } catch (authError: any) {
+    console.error('❌ Claim NFT authentication failed:', authError);
     return res.status(401).json({ 
-      error: 'Unauthorized access',
-      message: 'Valid API token required'
+      error: 'Authentication failed',
+      message: authError.message || 'Invalid authentication token'
     });
   }
 

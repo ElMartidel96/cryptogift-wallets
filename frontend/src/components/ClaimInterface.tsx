@@ -2,6 +2,9 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import { useAuth } from '../hooks/useAuth';
+import { makeAuthenticatedRequest } from '../lib/siweClient';
+import { ConnectAndAuthButton } from './ConnectAndAuthButton';
 
 interface ClaimInterfaceProps {
   nftData: any;
@@ -24,6 +27,7 @@ export const ClaimInterface: React.FC<ClaimInterfaceProps> = ({
   onClaimSuccess,
   onWalletOpen
 }) => {
+  const auth = useAuth();
   const [showGuardianSetup, setShowGuardianSetup] = useState(false);
   const [guardians, setGuardians] = useState(['', '', '']);
   const [isLoading, setIsLoading] = useState(false);
@@ -36,12 +40,12 @@ export const ClaimInterface: React.FC<ClaimInterfaceProps> = ({
     setError(null);
 
     try {
-      const apiToken = process.env.NEXT_PUBLIC_API_ACCESS_TOKEN;
-      console.log('🔍 DEBUG ClaimInterface: API Token check:', {
-        tokenExists: !!apiToken,
-        tokenLength: apiToken?.length || 0,
-        tokenPreview: apiToken?.substring(0, 10) || 'undefined'
-      });
+      // Check SIWE authentication
+      if (!auth.isAuthenticated) {
+        setError('Please authenticate with your wallet first to claim the NFT');
+        setIsLoading(false);
+        return;
+      }
       
       console.log('🔍 DEBUG ClaimInterface: Request params:', {
         tokenId,
@@ -50,11 +54,11 @@ export const ClaimInterface: React.FC<ClaimInterfaceProps> = ({
         claimerAddressValid: !!claimerAddress && claimerAddress !== '0x0000000000000000000000000000000000000000'
       });
       
-      const response = await fetch('/api/claim-nft', {
+      // Use authenticated request with JWT token
+      const response = await makeAuthenticatedRequest('/api/claim-nft', {
         method: 'POST',
         headers: { 
-          'Content-Type': 'application/json',
-          'X-API-Token': apiToken || ''
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({
           tokenId,
@@ -103,12 +107,12 @@ export const ClaimInterface: React.FC<ClaimInterfaceProps> = ({
     setError(null);
 
     try {
-      const apiToken = process.env.NEXT_PUBLIC_API_ACCESS_TOKEN;
-      console.log('🔍 DEBUG ClaimInterface: API Token check:', {
-        tokenExists: !!apiToken,
-        tokenLength: apiToken?.length || 0,
-        tokenPreview: apiToken?.substring(0, 10) || 'undefined'
-      });
+      // Check SIWE authentication
+      if (!auth.isAuthenticated) {
+        setError('Please authenticate with your wallet first to setup guardians');
+        setIsLoading(false);
+        return;
+      }
       
       console.log('🔍 DEBUG ClaimInterface: Request params:', {
         tokenId,
@@ -117,11 +121,11 @@ export const ClaimInterface: React.FC<ClaimInterfaceProps> = ({
         claimerAddressValid: !!claimerAddress && claimerAddress !== '0x0000000000000000000000000000000000000000'
       });
       
-      const response = await fetch('/api/claim-nft', {
+      // Use authenticated request with JWT token
+      const response = await makeAuthenticatedRequest('/api/claim-nft', {
         method: 'POST',
         headers: { 
-          'Content-Type': 'application/json',
-          'X-API-Token': apiToken || ''
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({
           tokenId,
@@ -160,6 +164,31 @@ export const ClaimInterface: React.FC<ClaimInterfaceProps> = ({
 
   return (
     <div className="space-y-6">
+      {/* Authentication Section */}
+      {!auth.isAuthenticated && (
+        <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-2xl p-6">
+          <div className="text-center mb-4">
+            <div className="text-4xl mb-2">🔐</div>
+            <h3 className="text-xl font-bold text-yellow-800 dark:text-yellow-400 mb-2">
+              Authentication Required
+            </h3>
+            <p className="text-yellow-700 dark:text-yellow-300">
+              Please connect and authenticate your wallet to claim this NFT gift securely.
+            </p>
+          </div>
+          
+          <ConnectAndAuthButton 
+            showAuthStatus={true}
+            className="w-full"
+            onAuthChange={(isAuthenticated) => {
+              if (isAuthenticated) {
+                console.log('✅ User authenticated, can now claim NFT');
+              }
+            }}
+          />
+        </div>
+      )}
+
       {/* Gift Message */}
       <div className="text-center bg-gradient-to-r from-pink-50 to-purple-50 rounded-2xl p-6">
         <div className="text-4xl mb-4">🎁</div>
@@ -327,7 +356,7 @@ export const ClaimInterface: React.FC<ClaimInterfaceProps> = ({
       )}
 
       {/* Claim Button */}
-      {!showGuardianSetup && !claimResult ? (
+      {!showGuardianSetup && !claimResult && auth.isAuthenticated ? (
         <div className="text-center">
           <button
             onClick={handleClaim}

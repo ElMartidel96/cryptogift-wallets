@@ -286,21 +286,64 @@ export function validateGiftMessage(message: string): { valid: boolean; message?
   return { valid: true };
 }
 
+/**
+ * Robust sanitization for gift messages to prevent XSS
+ * Implements comprehensive HTML/script filtering beyond basic character replacement
+ */
 export function sanitizeGiftMessage(message: string): string {
-  // Remove HTML tags and dangerous characters
-  return message
-    .replace(/<[^>]*>/g, '') // Remove HTML tags
-    .replace(/[<>\"'&]/g, (match) => {
-      const entities: { [key: string]: string } = {
-        '<': '&lt;',
-        '>': '&gt;',
-        '"': '&quot;',
-        "'": '&#x27;',
-        '&': '&amp;'
-      };
-      return entities[match] || match;
-    })
-    .trim();
+  if (!message || typeof message !== 'string') {
+    return '';
+  }
+
+  let sanitized = message;
+
+  // 1. Remove all HTML/XML tags completely
+  sanitized = sanitized.replace(/<[^>]*>/gi, '');
+  
+  // 2. Remove script-like patterns
+  sanitized = sanitized.replace(/javascript:/gi, '');
+  sanitized = sanitized.replace(/vbscript:/gi, '');
+  sanitized = sanitized.replace(/onload/gi, '');
+  sanitized = sanitized.replace(/onerror/gi, '');
+  sanitized = sanitized.replace(/onclick/gi, '');
+  sanitized = sanitized.replace(/onmouse/gi, '');
+  sanitized = sanitized.replace(/onfocus/gi, '');
+  sanitized = sanitized.replace(/onblur/gi, '');
+  sanitized = sanitized.replace(/onchange/gi, '');
+  sanitized = sanitized.replace(/onsubmit/gi, '');
+  
+  // 3. Remove data URIs and blob URLs
+  sanitized = sanitized.replace(/data:[^;]*;base64,/gi, '');
+  sanitized = sanitized.replace(/blob:/gi, '');
+  
+  // 4. Remove potentially dangerous characters and encode HTML entities
+  sanitized = sanitized.replace(/[<>\"'&]/g, (match) => {
+    const entities: { [key: string]: string } = {
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#x27;',
+      '&': '&amp;'
+    };
+    return entities[match] || match;
+  });
+  
+  // 5. Remove null bytes and control characters (except newlines and tabs)
+  sanitized = sanitized.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '');
+  
+  // 6. Limit consecutive whitespace
+  sanitized = sanitized.replace(/\s{4,}/g, '   '); // Max 3 consecutive spaces
+  sanitized = sanitized.replace(/\n{3,}/g, '\n\n'); // Max 2 consecutive newlines
+  
+  // 7. Trim and normalize whitespace
+  sanitized = sanitized.trim();
+  
+  // 8. Final validation - ensure it's still under length limit
+  if (sanitized.length > 200) {
+    sanitized = sanitized.substring(0, 197) + '...';
+  }
+  
+  return sanitized;
 }
 
 export function validateTokenId(tokenId: string): { valid: boolean; message?: string } {

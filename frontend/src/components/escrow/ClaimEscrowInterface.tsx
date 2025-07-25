@@ -10,6 +10,9 @@ import {
   parseEscrowError
 } from '../../lib/escrowUtils';
 import { type EscrowGift } from '../../lib/escrowABI';
+import { useAuth } from '../../hooks/useAuth';
+import { makeAuthenticatedRequest } from '../../lib/siweClient';
+import { ConnectAndAuthButton } from '../ConnectAndAuthButton';
 
 interface ClaimEscrowInterfaceProps {
   tokenId: string;
@@ -48,6 +51,7 @@ export const ClaimEscrowInterface: React.FC<ClaimEscrowInterfaceProps> = ({
   className = ''
 }) => {
   const account = useActiveAccount();
+  const auth = useAuth();
   const [formData, setFormData] = useState<ClaimFormData>({
     password: '',
     salt: '',
@@ -96,6 +100,12 @@ export const ClaimEscrowInterface: React.FC<ClaimEscrowInterfaceProps> = ({
       return;
     }
 
+    // Check SIWE authentication
+    if (!auth.isAuthenticated) {
+      setError('Please authenticate with your wallet first to claim the gift');
+      return;
+    }
+
     const validationError = validateForm();
     if (validationError) {
       setError(validationError);
@@ -109,11 +119,11 @@ export const ClaimEscrowInterface: React.FC<ClaimEscrowInterfaceProps> = ({
     try {
       console.log('🎁 CLAIM ESCROW: Starting claim process for token', tokenId);
 
-      const response = await fetch('/api/claim-escrow', {
+      // Use authenticated request with JWT token
+      const response = await makeAuthenticatedRequest('/api/claim-escrow', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
-          // SECURITY FIX: Authorization handled server-side via environment variables
         },
         body: JSON.stringify({
           tokenId,
@@ -252,8 +262,44 @@ export const ClaimEscrowInterface: React.FC<ClaimEscrowInterfaceProps> = ({
           </div>
         )}
 
+        {/* Authentication Section */}
+        {!auth.isAuthenticated ? (
+          <div className="mb-6">
+            <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4 mb-4">
+              <div className="flex items-start">
+                <div className="text-yellow-600 dark:text-yellow-400 text-xl mr-3">🔐</div>
+                <div>
+                  <h3 className="text-sm font-medium text-yellow-800 dark:text-yellow-400 mb-1">
+                    Authentication Required
+                  </h3>
+                  <p className="text-sm text-yellow-700 dark:text-yellow-300">
+                    You need to authenticate with your wallet to claim this gift securely.
+                  </p>
+                </div>
+              </div>
+            </div>
+            
+            <ConnectAndAuthButton 
+              showAuthStatus={true}
+              className="w-full"
+              onAuthChange={(isAuthenticated) => {
+                if (isAuthenticated) {
+                  console.log('✅ User authenticated, can now claim gift');
+                }
+              }}
+            />
+          </div>
+        ) : (
+          <div className="mb-4 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+            <div className="flex items-center text-green-800 dark:text-green-400">
+              <span className="text-green-600 dark:text-green-400 mr-2">✅</span>
+              <span className="text-sm font-medium">Wallet authenticated - Ready to claim</span>
+            </div>
+          </div>
+        )}
+
         {/* Claim Form */}
-        {canClaim ? (
+        {canClaim && auth.isAuthenticated ? (
           <div className="space-y-4">
             {/* Password Input */}
             <div>
@@ -348,7 +394,7 @@ export const ClaimEscrowInterface: React.FC<ClaimEscrowInterfaceProps> = ({
             {/* Claim Button */}
             <button
               onClick={handleClaimGift}
-              disabled={isLoading || !formData.password || !account}
+              disabled={isLoading || !formData.password || !account || !auth.isAuthenticated}
               className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
             >
               {isLoading ? (
