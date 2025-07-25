@@ -65,7 +65,7 @@ export function generateNonce(): string {
 export function createSiweMessage(
   address: string,
   nonce: string,
-  chainId: number = 11155111 // Ethereum Sepolia (more widely supported)
+  chainId: number = 1 // Ethereum Mainnet (universally recognized)
 ): SiweMessage {
   const now = new Date();
   const domain = getSiweDomain();

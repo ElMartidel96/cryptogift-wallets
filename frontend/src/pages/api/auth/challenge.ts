@@ -52,8 +52,11 @@ export default async function handler(
       origin: req.headers.origin
     });
 
-    // Parse and validate request
-    const { address, chainId = 11155111, domain }: ChallengeRequest = req.body;
+    // Parse and validate request  
+    const { address, domain }: ChallengeRequest = req.body;
+    
+    // FORCE Ethereum Mainnet for SIWE authentication to avoid wallet warnings
+    const chainId = 1; // Ethereum Mainnet - universally recognized
     
     // Use provided domain (from client) or determine from request headers
     const requestDomain = domain || req.headers.host || 'cryptogift-wallets.vercel.app';

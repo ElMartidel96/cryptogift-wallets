@@ -54,7 +54,10 @@ export default async function handler(
     });
 
     // Parse and validate request
-    const { address, signature, nonce, chainId = 11155111, domain }: VerifyRequest = req.body;
+    const { address, signature, nonce, domain }: VerifyRequest = req.body;
+    
+    // FORCE Ethereum Mainnet for SIWE authentication to avoid wallet warnings  
+    const chainId = 1; // Ethereum Mainnet - universally recognized
     
     // Use provided domain (from client) or determine from request headers
     const requestDomain = domain || req.headers.host || 'cryptogift-wallets.vercel.app';
@@ -128,9 +131,14 @@ export default async function handler(
     console.log('🔍 Verifying signature with:', {
       messageAddress: siweMessage.address.slice(0, 10) + '...',
       providedAddress: address.slice(0, 10) + '...',
-      chainId,
+      chainId: siweMessage.chainId,
+      domain: siweMessage.domain,
+      issuedAt: siweMessage.issuedAt,
       nonce: nonce.slice(0, 10) + '...'
     });
+    
+    console.log('🗋 Message that will be verified:');
+    console.log(formatSiweMessage(siweMessage));
 
     // Verify signature
     const isValidSignature = verifySiweSignature(siweMessage, signature);

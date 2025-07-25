@@ -170,20 +170,14 @@ export async function authenticateWithSiwe(address: string, account: any): Promi
   try {
     console.log('🚀 Starting SIWE authentication flow for:', address.slice(0, 10) + '...');
     
-    // Use Ethereum Sepolia (widely supported) instead of Base Sepolia to avoid warnings
-    let chainId = 11155111; // Ethereum Sepolia - widely supported by wallets
-    try {
-      // Try to get chain ID from account if available
-      if (account?.wallet?.getChain) {
-        const chain = await account.wallet.getChain();
-        // Only use wallet's chain if it's a well-known testnet
-        if ([1, 11155111, 5, 137, 84532].includes(chain.id)) {
-          chainId = chain.id;
-        }
-      }
-    } catch (error) {
-      console.warn('⚠️ Could not get chain ID from wallet, using Ethereum Sepolia:', chainId);
-    }
+    // FORCE Ethereum Mainnet for SIWE to avoid wallet warnings
+    // SIWE is just for authentication, doesn't need to match actual transaction network
+    const chainId = 1; // Ethereum Mainnet - universally recognized and trusted
+    
+    console.warn('🔗 FORCED Chain ID to Ethereum Mainnet (1) to prevent wallet security warnings');
+    console.warn('   - SIWE authentication is network-agnostic');
+    console.warn('   - Actual transactions will use correct network');
+    console.warn('   - This prevents "suspicious request" warnings');
     
     console.log('🔗 Using Chain ID:', chainId);
     
