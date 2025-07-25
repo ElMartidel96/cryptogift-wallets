@@ -127,23 +127,38 @@ const ConnectAndAuthButtonInner: React.FC<ConnectAndAuthButtonProps> = ({
             {isAuthenticating ? (
               <div className="flex items-center space-x-2">
                 <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                <span>Firmando Mensaje...</span>
+                <span>Autenticando... (unos segundos)</span>
               </div>
             ) : (
               '✍️ Firmar Mensaje de Autenticación'
             )}
           </button>
           
-          {/* Security info */}
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 max-w-sm">
-            <div className="flex items-start space-x-2">
-              <div className="text-blue-500 text-lg">🔒</div>
-              <div className="text-xs text-blue-700">
-                <p className="font-medium mb-1">¿Por qué esta firma?</p>
-                <p>Esta firma genera un token seguro que protege tus transacciones y previene ataques maliciosos.</p>
+          {/* Loading message during authentication */}
+          {isAuthenticating && (
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 max-w-sm">
+              <div className="flex items-start space-x-2">
+                <div className="text-yellow-500 text-lg">⏱️</div>
+                <div className="text-xs text-yellow-700">
+                  <p className="font-medium mb-1">Autenticación en proceso</p>
+                  <p>Este proceso toma unos segundos. Por favor, firma el mensaje en tu wallet cuando aparezca.</p>
+                </div>
               </div>
             </div>
-          </div>
+          )}
+
+          {/* Security info */}
+          {!isAuthenticating && (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 max-w-sm">
+              <div className="flex items-start space-x-2">
+                <div className="text-blue-500 text-lg">🔒</div>
+                <div className="text-xs text-blue-700">
+                  <p className="font-medium mb-1">¿Por qué esta firma?</p>
+                  <p>Esta firma genera un token seguro que protege tus transacciones y previene ataques maliciosos.</p>
+                </div>
+              </div>
+            </div>
+          )}
           
           {/* Error message */}
           {authError && (
