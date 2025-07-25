@@ -196,7 +196,7 @@ async function mintNFTEscrowGasless(
     const mintReceipt = await waitForReceipt({
       client,
       chain: baseSepolia,
-      transactionHash: mintResult.transactionHash
+      transactionHash: mintResult.transactionHash as `0x${string}`
     });
     
     // CRITICAL: Verify transaction succeeded
@@ -281,7 +281,7 @@ async function mintNFTEscrowGasless(
       const escrowReceipt = await waitForReceipt({
         client,
         chain: baseSepolia,
-        transactionHash: escrowResult.transactionHash
+        transactionHash: escrowResult.transactionHash as `0x${string}`
       });
       
       // CRITICAL: Verify escrow creation succeeded
@@ -440,7 +440,7 @@ async function mintNFTDirectly(
     const mintReceipt = await waitForReceipt({
       client,
       chain: baseSepolia,
-      transactionHash: mintResult.transactionHash
+      transactionHash: mintResult.transactionHash as `0x${string}`
     });
     
     // Verify transaction succeeded
