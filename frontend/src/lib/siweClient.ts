@@ -98,6 +98,9 @@ export async function requestChallenge(address: string, chainId?: number): Promi
 export async function signMessage(message: string, account: any): Promise<string> {
   try {
     console.log('✍️ Signing SIWE message...');
+    console.log('📝 Message to sign (frontend):');
+    console.log(message);
+    console.log('📏 Message length:', message.length);
     
     // For Thirdweb v5, we need to use signMessage with proper parameters
     if (!account?.signMessage) {
@@ -110,6 +113,7 @@ export async function signMessage(message: string, account: any): Promise<string
     });
     
     console.log('✅ Message signed successfully');
+    console.log('📝 Signature length:', signature.length);
     return signature;
     
   } catch (error: any) {

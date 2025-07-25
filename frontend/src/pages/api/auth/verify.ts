@@ -138,8 +138,16 @@ export default async function handler(
       nonce: nonce.slice(0, 10) + '...'
     });
     
+    const messageToVerify = formatSiweMessage(siweMessage);
     console.log('🗋 Message that will be verified:');
-    console.log(formatSiweMessage(siweMessage));
+    console.log(messageToVerify);
+    console.log('🗋 Raw message comparison:');
+    console.log('Expected message length:', messageToVerify.length);
+    console.log('Signature length:', signature.length);
+    console.log('Challenge domain:', challenge.domain);
+    console.log('Request domain:', requestDomain);
+    console.log('Message issuedAt:', siweMessage.issuedAt);
+    console.log('Challenge issuedAt:', challenge.issuedAt);
 
     // Verify signature
     const isValidSignature = verifySiweSignature(siweMessage, signature);
