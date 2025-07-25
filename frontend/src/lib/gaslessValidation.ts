@@ -35,7 +35,6 @@ try {
       token: process.env.UPSTASH_REDIS_REST_TOKEN,
       enableAutoPipelining: false, // Disable pipelining to prevent hanging in Vercel
       retry: false, // CRITICAL: Disable retry to prevent hanging in serverless functions
-      lazyConnect: true, // Connect only when needed
     });
     console.log('✅ Redis client initialized for anti-double minting (Vercel optimized)');
   } else {
