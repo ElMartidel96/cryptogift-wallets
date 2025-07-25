@@ -1,7 +1,6 @@
 "use client";
 
 import { ThirdwebProvider } from "thirdweb/react";
-import { client } from "../app/client";
 import { useEffect, useState } from "react";
 
 interface ThirdwebWrapperProps {
@@ -20,7 +19,7 @@ export function ThirdwebWrapper({ children }: ThirdwebWrapperProps) {
   }
 
   return (
-    <ThirdwebProvider client={client}>
+    <ThirdwebProvider>
       {children}
     </ThirdwebProvider>
   );
