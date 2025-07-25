@@ -584,8 +584,11 @@ export default async function handler(
   
   try {
     // Configuration
+    const testMode = (req.query.mode as string) || 'full';
     const config: EscrowFlowTestConfig = {
-      testMode: (req.query.mode as string) || 'full',
+      testMode: ['full', 'verification-only', 'contract-only'].includes(testMode) 
+        ? testMode as 'full' | 'verification-only' | 'contract-only'
+        : 'full',
       verbose: req.query.verbose === 'true'
     };
     
