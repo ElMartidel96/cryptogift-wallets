@@ -55,6 +55,15 @@ export default async function handler(
       origin: req.headers.origin
     });
 
+    // Check critical environment variables
+    if (!process.env.JWT_SECRET) {
+      console.error('❌ CRITICAL: JWT_SECRET not configured');
+      return res.status(500).json({
+        success: false,
+        error: 'Server configuration error: JWT_SECRET missing'
+      });
+    }
+
     // Parse and validate request
     const { address, signature, nonce, chainId = 84532, domain }: VerifyRequest = req.body;
     
