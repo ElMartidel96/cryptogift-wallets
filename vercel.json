@@ -3,5 +3,15 @@
   "buildCommand": "npm install --include=dev && npm run build",
   "installCommand": "npm install --include=dev",
   "devCommand": "npm run dev",
-  "outputDirectory": ".next"
+  "outputDirectory": ".next",
+  "crons": [
+    {
+      "path": "/api/cron/cleanup-transactions",
+      "schedule": "0 */6 * * *"
+    },
+    {
+      "path": "/api/cron/auto-return",
+      "schedule": "0 * * * *"
+    }
+  ]
 }

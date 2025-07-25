@@ -155,9 +155,9 @@ export function verifySiweSignature(
  * Generate simple JWT-like token for authenticated user (using native crypto)
  */
 export function generateJWT(address: string, nonce: string): string {
-  const secret = process.env.JWT_SECRET || process.env.API_ACCESS_TOKEN;
+  const secret = process.env.JWT_SECRET;
   if (!secret) {
-    throw new Error('JWT_SECRET or API_ACCESS_TOKEN not configured');
+    throw new Error('SECURITY CRITICAL: JWT_SECRET is required and must be configured separately from API_ACCESS_TOKEN');
   }
 
   const payload: AuthToken = {
@@ -183,9 +183,9 @@ export function generateJWT(address: string, nonce: string): string {
  */
 export function verifyJWT(token: string): AuthToken | null {
   try {
-    const secret = process.env.JWT_SECRET || process.env.API_ACCESS_TOKEN;
+    const secret = process.env.JWT_SECRET;
     if (!secret) {
-      throw new Error('JWT_SECRET or API_ACCESS_TOKEN not configured');
+      throw new Error('SECURITY CRITICAL: JWT_SECRET is required and must be configured separately from API_ACCESS_TOKEN');
     }
 
     const parts = token.split('.');

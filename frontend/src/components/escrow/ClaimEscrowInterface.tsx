@@ -64,13 +64,39 @@ export const ClaimEscrowInterface: React.FC<ClaimEscrowInterfaceProps> = ({
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [claimStep, setClaimStep] = useState<'password' | 'claiming' | 'success'>('password');
 
-  // Generate random salt when component mounts
+  // Fetch correct salt for this token when component mounts
   useEffect(() => {
-    setFormData(prev => ({
-      ...prev,
-      salt: Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)
-    }));
-  }, []);
+    const fetchSalt = async () => {
+      try {
+        console.log('🧂 Fetching salt for token:', tokenId);
+        const response = await fetch(`/api/escrow-salt/${tokenId}`);
+        
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success && data.salt) {
+            setFormData(prev => ({
+              ...prev,
+              salt: data.salt
+            }));
+            console.log('✅ Salt retrieved successfully for token:', tokenId);
+          } else {
+            console.warn('⚠️ Salt not found for token:', tokenId);
+            setError('Gift salt not available. This gift may not be claimable.');
+          }
+        } else {
+          console.error('❌ Failed to fetch salt:', response.status, response.statusText);
+          setError('Unable to load gift information. Please try again.');
+        }
+      } catch (error) {
+        console.error('❌ Error fetching salt:', error);
+        setError('Network error. Please check your connection.');
+      }
+    };
+    
+    if (tokenId) {
+      fetchSalt();
+    }
+  }, [tokenId]);
 
   // Reset error when form changes
   useEffect(() => {

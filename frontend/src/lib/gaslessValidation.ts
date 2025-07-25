@@ -26,9 +26,9 @@ interface TransactionAttempt {
 // Redis integration for persistent anti-double minting
 import { Redis } from '@upstash/redis';
 
-// Initialize Redis client if available with Vercel-optimized configuration
+// SECURITY ENHANCEMENT: Redis is now MANDATORY for anti-double minting
 let redis: any = null;
-let gaslessRedisStatus: 'connected' | 'fallback' | 'error' = 'fallback';
+let gaslessRedisStatus: 'connected' | 'error' = 'error';
 
 try {
   if (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN) {
@@ -39,19 +39,15 @@ try {
       retry: false, // CRITICAL: Disable retry to prevent hanging in serverless functions
     });
     gaslessRedisStatus = 'connected';
-    console.log('✅ Redis client initialized for anti-double minting (Vercel optimized)');
+    console.log('✅ Redis client initialized for anti-double minting (MANDATORY)');
   } else {
-    gaslessRedisStatus = 'fallback';
-    console.warn('⚠️ PRODUCTION WARNING: Redis not configured for gasless validation');
-    console.warn('   - Anti-double minting will use memory-only storage');
-    console.warn('   - Rate limits will be lost on server restart');
-    console.warn('   - This allows potential abuse in production');
-    console.warn('   - Configure UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN for production');
+    gaslessRedisStatus = 'error';
+    throw new Error('SECURITY CRITICAL: Redis configuration missing. Anti-double minting requires Redis for production security.');
   }
 } catch (error) {
   gaslessRedisStatus = 'error';
-  console.error('❌ CRITICAL: Redis initialization failed for gasless validation:', error);
-  console.warn('   - Falling back to memory-only storage with security risks');
+  console.error('❌ SECURITY CRITICAL: Redis initialization failed for gasless validation:', error);
+  throw new Error(`Redis is MANDATORY for anti-double minting security: ${error.message}`);
 }
 
 // Helper function to wrap Redis operations with timeout protection
@@ -63,10 +59,8 @@ async function redisWithTimeout<T>(operation: Promise<T>, timeoutMs: number = 30
   return Promise.race([operation, timeoutPromise]);
 }
 
-// Fallback in-memory store when Redis is not available
-const transactionAttempts = new Map<string, TransactionAttempt>();
-const completedTransactions = new Set<string>();
-const userNonces = new Map<string, number>();
+// REMOVED: Fallback in-memory stores eliminated for security
+// All anti-double minting now requires Redis for persistence
 
 /**
  * Get Redis connection status for gasless validation monitoring
@@ -76,37 +70,50 @@ export function getGaslessRedisStatus(): { status: string; message: string; hasR
     case 'connected':
       return {
         status: 'connected',
-        message: 'Redis connected for gasless validation',
+        message: 'Redis connected for gasless validation (MANDATORY)',
         hasRedis: true
-      };
-    case 'fallback':
-      return {
-        status: 'fallback',
-        message: 'Redis not configured - anti-double minting weakened (production risk)',
-        hasRedis: false
       };
     case 'error':
       return {
         status: 'error',
-        message: 'Redis connection failed - anti-double minting compromised (security risk)',
+        message: 'SECURITY CRITICAL: Redis connection failed - anti-double minting disabled',
+        hasRedis: false
+      };
+    default:
+      return {
+        status: 'error',
+        message: 'SECURITY CRITICAL: Redis status unknown',
         hasRedis: false
       };
   }
 }
 
 /**
- * Generate unique transaction nonce for user
+ * Generate unique transaction nonce for user (Redis-based for persistence)
  */
-export function generateUserNonce(userAddress: string): `0x${string}` {
-  const currentNonce = userNonces.get(userAddress.toLowerCase()) || 0;
-  const nextNonce = currentNonce + 1;
-  userNonces.set(userAddress.toLowerCase(), nextNonce);
+export async function generateUserNonce(userAddress: string): Promise<`0x${string}`> {
+  if (!redis) {
+    throw new Error('SECURITY CRITICAL: Redis required for nonce generation');
+  }
   
-  // Include timestamp for additional uniqueness
-  const timestamp = Date.now();
-  const nonceString = `${userAddress.toLowerCase()}_${nextNonce}_${timestamp}`;
+  const userKey = `user_nonce:${userAddress.toLowerCase()}`;
   
-  return ethers.keccak256(ethers.toUtf8Bytes(nonceString)) as `0x${string}`;
+  try {
+    // Atomic increment for reliable nonce generation
+    const currentNonce = await redis.incr(userKey);
+    
+    // Set expiration on the key (24 hours)
+    await redis.expire(userKey, 24 * 60 * 60);
+    
+    // Include timestamp for additional uniqueness
+    const timestamp = Date.now();
+    const nonceString = `${userAddress.toLowerCase()}_${currentNonce}_${timestamp}`;
+    
+    return ethers.keccak256(ethers.toUtf8Bytes(nonceString)) as `0x${string}`;
+  } catch (error) {
+    console.error('❌ Nonce generation failed:', error);
+    throw new Error(`Nonce generation failed: ${error.message}`);
+  }
 }
 
 /**
@@ -147,94 +154,55 @@ export async function validateTransactionAttempt(
   reason?: string;
   existingTxHash?: string;
 }> {
+  if (!redis) {
+    throw new Error('SECURITY CRITICAL: Redis required for transaction validation');
+  }
+  
   const metadataHash = generateMetadataHash(userAddress, metadataUri, amount, escrowConfig);
   
-  if (redis) {
-    // Use Redis for persistent validation with timeout protection
-    try {
-      const key = `tx_attempt:${userAddress.toLowerCase()}:${metadataHash}`;
+  try {
+    const key = `tx_attempt:${userAddress.toLowerCase()}:${metadataHash}`;
+    
+    const existing = await redisWithTimeout(redis.get(key));
+    
+    if (existing && typeof existing === 'string') {
+      const attemptData = JSON.parse(existing);
       
-      const existing = await redisWithTimeout(redis.get(key));
-      
-      if (existing && typeof existing === 'string') {
-        const attemptData = JSON.parse(existing);
-        
-        // Check if completed transaction exists
-        if (attemptData.status === 'completed') {
-          return {
-            valid: false,
-            nonce: '',
-            reason: 'Identical transaction already completed',
-            existingTxHash: attemptData.transactionHash
-          };
-        }
-        
-        // Check if recent pending transaction exists (< 2 minutes)
-        if (attemptData.status === 'pending' && 
-            Date.now() - attemptData.timestamp < (2 * 60 * 1000)) {
-          return {
-            valid: false,
-            nonce: '',
-            reason: 'Similar transaction already in progress'
-          };
-        }
+      // Check if completed transaction exists
+      if (attemptData.status === 'completed') {
+        return {
+          valid: false,
+          nonce: '',
+          reason: 'Identical transaction already completed',
+          existingTxHash: attemptData.transactionHash
+        };
       }
       
-      // Generate new nonce for valid transaction
-      const nonce = generateUserNonce(userAddress);
-      
-      console.log('✅ Redis validation passed for user:', userAddress.slice(0, 10) + '...');
-      return { valid: true, nonce };
-      
-    } catch (redisError) {
-      console.warn('⚠️ Redis validation failed, falling back to memory:', redisError);
-      // Temporarily disable redis to prevent future hangs in this request
-      redis = null;
-      // Fall through to memory-based validation
+      // Check if recent pending transaction exists (< 2 minutes)
+      if (attemptData.status === 'pending' && 
+          Date.now() - attemptData.timestamp < (2 * 60 * 1000)) {
+        return {
+          valid: false,
+          nonce: '',
+          reason: 'Similar transaction already in progress'
+        };
+      }
     }
+    
+    // Generate new nonce for valid transaction
+    const nonce = await generateUserNonce(userAddress);
+    
+    console.log('✅ Redis validation passed for user:', userAddress.slice(0, 10) + '...');
+    return { valid: true, nonce };
+    
+  } catch (error) {
+    console.error('❌ Transaction validation failed:', error);
+    throw new Error(`Transaction validation failed: ${error.message}`);
   }
-  
-  // Fallback to in-memory validation
-  const recentCutoff = Date.now() - (5 * 60 * 1000);
-  const existingAttempts = Array.from(transactionAttempts.values()).filter(attempt => 
-    attempt.userAddress.toLowerCase() === userAddress.toLowerCase() &&
-    attempt.metadataHash === metadataHash &&
-    attempt.timestamp > recentCutoff
-  );
-  
-  // If there's a completed transaction with same metadata
-  const completedAttempt = existingAttempts.find(attempt => attempt.status === 'completed');
-  if (completedAttempt) {
-    return {
-      valid: false,
-      nonce: '',
-      reason: 'Identical transaction already completed',
-      existingTxHash: completedAttempt.transactionHash
-    };
-  }
-  
-  // If there's a pending transaction with same metadata
-  const pendingAttempt = existingAttempts.find(attempt => 
-    attempt.status === 'pending' && 
-    Date.now() - attempt.timestamp < (2 * 60 * 1000) // 2-minute timeout
-  );
-  if (pendingAttempt) {
-    return {
-      valid: false,
-      nonce: '',
-      reason: 'Similar transaction already in progress'
-    };
-  }
-  
-  // Generate new nonce for valid transaction
-  const nonce = generateUserNonce(userAddress);
-  
-  console.log('✅ Memory validation passed for user:', userAddress.slice(0, 10) + '...');
-  return { valid: true, nonce };
 }
 
 /**
- * Register transaction attempt (Redis + fallback)
+ * Register transaction attempt (Redis MANDATORY)
  */
 export async function registerTransactionAttempt(
   userAddress: string,
@@ -243,6 +211,10 @@ export async function registerTransactionAttempt(
   amount: number,
   escrowConfig?: any
 ): Promise<void> {
+  if (!redis) {
+    throw new Error('SECURITY CRITICAL: Redis required for transaction registration');
+  }
+  
   const metadataHash = generateMetadataHash(userAddress, metadataUri, amount, escrowConfig);
   
   const attempt: TransactionAttempt = {
@@ -253,111 +225,105 @@ export async function registerTransactionAttempt(
     status: 'pending'
   };
   
-  if (redis) {
-    try {
-      const key = `tx_attempt:${userAddress.toLowerCase()}:${metadataHash}`;
-      
-      await redisWithTimeout(
-        redis.setex(key, 300, JSON.stringify(attempt)) // 5 minutes TTL
-      );
-      console.log('📝 Transaction attempt registered in Redis:', {
-        nonce: nonce.slice(0, 10) + '...',
-        user: userAddress.slice(0, 10) + '...',
-        metadataHash: metadataHash.slice(0, 10) + '...'
-      });
-      return;
-    } catch (redisError) {
-      console.warn('⚠️ Redis registration failed, using memory fallback:', redisError);
-    }
+  try {
+    const key = `tx_attempt:${userAddress.toLowerCase()}:${metadataHash}`;
+    
+    await redisWithTimeout(
+      redis.setex(key, 300, JSON.stringify(attempt)) // 5 minutes TTL
+    );
+    console.log('📝 Transaction attempt registered in Redis:', {
+      nonce: nonce.slice(0, 10) + '...',
+      user: userAddress.slice(0, 10) + '...',
+      metadataHash: metadataHash.slice(0, 10) + '...'
+    });
+  } catch (error) {
+    console.error('❌ Transaction registration failed:', error);
+    throw new Error(`Transaction registration failed: ${error.message}`);
   }
-  
-  // Fallback to in-memory storage
-  transactionAttempts.set(nonce, attempt);
-  
-  console.log('📝 Transaction attempt registered in memory:', {
-    nonce: nonce.slice(0, 10) + '...',
-    user: userAddress.slice(0, 10) + '...',
-    metadataHash: metadataHash.slice(0, 10) + '...'
-  });
 }
 
 /**
- * Mark transaction as completed (Redis + fallback)
+ * Mark transaction as completed (Redis MANDATORY)
  */
 export async function markTransactionCompleted(
   nonce: string,
   transactionHash: string
 ): Promise<void> {
-  if (redis) {
-    try {
-      // Find the attempt in Redis by scanning keys (not ideal, but necessary)
-      // In a real implementation, we'd store nonce->key mapping
-      // For now, we'll update in-memory and try to update Redis if found
-      console.log('✅ Transaction completed (Redis):', {
-        nonce: nonce.slice(0, 10) + '...',
-        txHash: transactionHash
-      });
-    } catch (redisError) {
-      console.warn('⚠️ Redis completion update failed:', redisError);
-    }
+  if (!redis) {
+    throw new Error('SECURITY CRITICAL: Redis required for transaction completion tracking');
   }
   
-  // Always update in-memory as well
-  const attempt = transactionAttempts.get(nonce);
-  if (attempt) {
-    attempt.status = 'completed';
-    attempt.transactionHash = transactionHash;
-    completedTransactions.add(attempt.metadataHash);
+  try {
+    // Store completion record with nonce mapping
+    const completionKey = `tx_completed:${nonce}`;
+    const completionData = {
+      nonce,
+      transactionHash,
+      timestamp: Date.now(),
+      status: 'completed'
+    };
     
-    console.log('✅ Transaction completed:', {
+    await redisWithTimeout(
+      redis.setex(completionKey, 24 * 60 * 60, JSON.stringify(completionData)) // 24 hours TTL
+    );
+    
+    console.log('✅ Transaction completed (Redis):', {
       nonce: nonce.slice(0, 10) + '...',
-      txHash: transactionHash,
-      metadataHash: attempt.metadataHash.slice(0, 10) + '...'
+      txHash: transactionHash
     });
+  } catch (error) {
+    console.error('❌ Transaction completion tracking failed:', error);
+    throw new Error(`Transaction completion tracking failed: ${error.message}`);
   }
 }
 
 /**
- * Mark transaction as failed (Redis + fallback)
+ * Mark transaction as failed (Redis MANDATORY)
  */
 export async function markTransactionFailed(nonce: string, reason?: string): Promise<void> {
-  if (redis) {
-    try {
-      console.log('❌ Transaction failed (Redis):', {
-        nonce: nonce.slice(0, 10) + '...',
-        reason: reason || 'Unknown error'
-      });
-    } catch (redisError) {
-      console.warn('⚠️ Redis failure update failed:', redisError);
-    }
+  if (!redis) {
+    throw new Error('SECURITY CRITICAL: Redis required for transaction failure tracking');
   }
   
-  // Always update in-memory as well
-  const attempt = transactionAttempts.get(nonce);
-  if (attempt) {
-    attempt.status = 'failed';
-    
-    console.log('❌ Transaction failed:', {
-      nonce: nonce.slice(0, 10) + '...',
+  try {
+    // Store failure record with nonce mapping
+    const failureKey = `tx_failed:${nonce}`;
+    const failureData = {
+      nonce,
       reason: reason || 'Unknown error',
-      metadataHash: attempt.metadataHash.slice(0, 10) + '...'
+      timestamp: Date.now(),
+      status: 'failed'
+    };
+    
+    await redisWithTimeout(
+      redis.setex(failureKey, 24 * 60 * 60, JSON.stringify(failureData)) // 24 hours TTL
+    );
+    
+    console.log('❌ Transaction failed (Redis):', {
+      nonce: nonce.slice(0, 10) + '...',
+      reason: reason || 'Unknown error'
     });
+  } catch (error) {
+    console.error('❌ Transaction failure tracking failed:', error);
+    throw new Error(`Transaction failure tracking failed: ${error.message}`);
   }
 }
 
 /**
- * Clean up old transaction attempts (run periodically)
+ * Clean up old transaction attempts (Redis-based, run periodically)
  */
-export function cleanupOldTransactions(): void {
-  const cutoff = Date.now() - (60 * 60 * 1000); // 1 hour ago
-  
-  for (const [nonce, attempt] of transactionAttempts.entries()) {
-    if (attempt.timestamp < cutoff) {
-      transactionAttempts.delete(nonce);
-    }
+export async function cleanupOldTransactions(): Promise<void> {
+  if (!redis) {
+    console.warn('⚠️ Cannot cleanup: Redis required for transaction cleanup');
+    return;
   }
   
-  console.log('🧹 Cleaned up old transaction attempts');
+  try {
+    // Note: Redis TTL handles automatic cleanup, this is for manual cleanup if needed
+    console.log('🧹 Redis TTL handles automatic cleanup of old transactions');
+  } catch (error) {
+    console.error('❌ Transaction cleanup failed:', error);
+  }
 }
 
 /**
@@ -693,7 +659,6 @@ export function checkRateLimit(userAddress: string): {
   };
 }
 
-// Cleanup interval (run every 10 minutes)
-if (typeof window !== 'undefined') {
-  setInterval(cleanupOldTransactions, 10 * 60 * 1000);
-}
+// REMOVED: Client-side cleanup eliminated
+// Server-side cleanup now handled by dedicated API endpoint
+// See /api/admin/cleanup-transactions.ts for programmatic cleanup

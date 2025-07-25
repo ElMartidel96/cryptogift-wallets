@@ -648,27 +648,43 @@ export const GiftWizard: React.FC<GiftWizardProps> = ({ isOpen, onClose, referre
       const actualImageCid = imageIpfsCid || ipfsCid;
 
       // Step 2: Mint NFT with GAS PAYMENT (user confirmed to pay gas)
+      // CRITICAL FIX: Use same logic as attemptGaslessMint but with gasless: false
+      const isEscrowEnabled = wizardData.escrowConfig?.enabled;
+      const apiEndpoint = '/api/mint-escrow'; // CORRECTED: Always use escrow API
+      
       addStep('GIFT_WIZARD', 'GAS_PAID_MINT_STARTED', {
-        endpoint: '/api/mint',
+        endpoint: apiEndpoint,
+        escrowEnabled: isEscrowEnabled,
         to: account?.address,
         imageFile: actualImageCid, // Use actual image CID instead of metadata CID
         initialBalance: netAmount,
         filter: wizardData.selectedFilter || 'Original'
       }, 'pending');
 
-      const mintResponse = await makeAuthenticatedRequest('/api/mint', {
+      // Prepare request body based on escrow configuration (same logic as gasless)
+      const requestBody = isEscrowEnabled ? {
+        metadataUri: `ipfs://${ipfsCid}`,
+        recipientAddress: wizardData.escrowConfig?.recipientAddress || undefined,
+        password: wizardData.escrowConfig?.password!,
+        timeframeDays: wizardData.escrowConfig?.timeframe!,
+        giftMessage: wizardData.escrowConfig?.giftMessage!,
+        creatorAddress: account?.address,
+        gasless: false // CRITICAL: Gas-paid fallback
+      } : {
+        // Direct mint (skip escrow) - use mint-escrow API but without password
+        metadataUri: `ipfs://${ipfsCid}`,
+        // No password = direct mint
+        giftMessage: wizardData.message || 'Un regalo cripto único creado con amor',
+        creatorAddress: account?.address,
+        gasless: false // CRITICAL: Gas-paid fallback
+      };
+
+      const mintResponse = await makeAuthenticatedRequest(apiEndpoint, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({
-          to: account?.address,
-          imageFile: actualImageCid, // Send actual image CID, not metadata CID
-          giftMessage: wizardData.message || 'Un regalo cripto único creado con amor',
-          initialBalance: netAmount, // Net amount after fees
-          filter: wizardData.selectedFilter || 'Original',
-          referrer: referrer
-        }),
+        body: JSON.stringify(requestBody),
       });
 
       addStep('GIFT_WIZARD', 'GAS_PAID_API_RESPONSE_RECEIVED', {
@@ -687,7 +703,16 @@ export const GiftWizard: React.FC<GiftWizardProps> = ({ isOpen, onClose, referre
       }
 
       const mintResult = await mintResponse.json();
-      const { tokenId, shareUrl, qrCode, gasless, message } = mintResult;
+      
+      // Handle different response formats for escrow vs regular minting (consistent with gasless)
+      const tokenId = mintResult.tokenId;
+      const shareUrl = mintResult.shareUrl || mintResult.giftLink;
+      const qrCode = mintResult.qrCode;
+      const gasless = mintResult.gasless;
+      const message = mintResult.message;
+      const escrowTransactionHash = mintResult.escrowTransactionHash;
+      const nonce = mintResult.nonce;
+      const isDirectMint = mintResult.directMint;
       
       addStep('GIFT_WIZARD', 'GAS_PAID_API_RESPONSE_PARSED', {
         tokenId,
@@ -695,6 +720,10 @@ export const GiftWizard: React.FC<GiftWizardProps> = ({ isOpen, onClose, referre
         hasQrCode: !!qrCode,
         gasless, // Should be false for gas-paid transactions
         message,
+        isEscrow: isEscrowEnabled,
+        isDirectMint: isDirectMint,
+        escrowTransactionHash,
+        nonce: nonce?.slice(0, 10) + '...',
         fullResponse: mintResult
       }, 'success');
       
@@ -770,7 +799,8 @@ export const GiftWizard: React.FC<GiftWizardProps> = ({ isOpen, onClose, referre
         nftTokenId: tokenId,
         shareUrl,
         qrCode,
-        wasGasless: gasless || false
+        wasGasless: gasless || false,
+        message: isDirectMint ? message : prev.message // Store direct mint message
       }));
       
       setCurrentStep(WizardStep.SUCCESS);

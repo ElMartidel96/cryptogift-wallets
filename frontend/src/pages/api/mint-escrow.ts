@@ -28,6 +28,7 @@ import {
   verifyGaslessTransaction,
   checkRateLimit
 } from '../../lib/gaslessValidation';
+import { Redis } from '@upstash/redis';
 import { ESCROW_CONTRACT_ADDRESS } from '../../lib/escrowABI';
 import { verifyJWT, extractTokenFromHeaders } from '../../lib/siweAuth';
 import { createBiconomySmartAccount, sendGaslessTransaction, validateBiconomyConfig } from '../../lib/biconomy';
@@ -65,6 +66,59 @@ interface MintEscrowResponse {
 const client = createThirdwebClient({
   clientId: process.env.NEXT_PUBLIC_TW_CLIENT_ID!
 });
+
+// Initialize Redis client for salt persistence
+let redis: any = null;
+try {
+  if (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN) {
+    redis = new Redis({
+      url: process.env.UPSTASH_REDIS_REST_URL,
+      token: process.env.UPSTASH_REDIS_REST_TOKEN,
+      enableAutoPipelining: false,
+      retry: false,
+    });
+    console.log('✅ Redis initialized for salt persistence');
+  } else {
+    console.warn('⚠️ Redis not configured for salt persistence');
+  }
+} catch (error) {
+  console.error('❌ Redis initialization failed:', error);
+}
+
+// Store salt for later retrieval during claim
+async function storeSalt(tokenId: string, salt: string): Promise<void> {
+  if (!redis) {
+    console.warn('⚠️ Cannot store salt: Redis not available');
+    return;
+  }
+  
+  try {
+    // Store salt with expiration (90 days max)
+    const key = `escrow:salt:${tokenId}`;
+    await redis.setex(key, 90 * 24 * 60 * 60, salt); // 90 days TTL
+    console.log('💾 Salt stored for token:', tokenId);
+  } catch (error) {
+    console.error('❌ Failed to store salt:', error);
+  }
+}
+
+// Retrieve salt for claim process
+async function getSalt(tokenId: string): Promise<string | null> {
+  if (!redis) {
+    console.warn('⚠️ Cannot retrieve salt: Redis not available');
+    return null;
+  }
+  
+  try {
+    const key = `escrow:salt:${tokenId}`;
+    const salt = await redis.get(key);
+    console.log('🔍 Salt retrieved for token:', tokenId, salt ? 'Found' : 'Not found');
+    return salt;
+  } catch (error) {
+    console.error('❌ Failed to retrieve salt:', error);
+    return null;
+  }
+}
 
 // JWT Authentication middleware
 function authenticate(req: NextApiRequest): { success: boolean; address?: string; error?: string } {
@@ -161,6 +215,7 @@ async function mintNFTEscrowGasless(
     const passwordHash = generatePasswordHash(password, salt);
     
     console.log('🔐 Password hash generated:', passwordHash.slice(0, 10) + '...');
+    console.log('🧂 Salt generated:', salt.slice(0, 10) + '...');
     
     // Step 5: Validate Biconomy configuration for gasless
     if (!validateBiconomyConfig()) {
@@ -344,7 +399,10 @@ async function mintNFTEscrowGasless(
       }
     }
     
-    // Step 14: Mark transaction as completed
+    // Step 14: Store salt for later claim process
+    await storeSalt(tokenId, salt);
+    
+    // Step 15: Mark transaction as completed
     await markTransactionCompleted(transactionNonce, escrowTransactionHash || mintResult.transactionHash);
     
     console.log('🎉 Enhanced gasless mint completed with verification');
