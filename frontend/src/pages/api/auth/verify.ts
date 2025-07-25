@@ -5,11 +5,13 @@
  */
 
 import type { NextApiRequest, NextApiResponse } from 'next';
+import { ethers } from 'ethers';
 import { 
   createSiweMessage, 
   verifySiweSignature, 
   generateJWT,
-  isValidEthereumAddress 
+  isValidEthereumAddress,
+  formatSiweMessage
 } from '../../../lib/siweAuth';
 import { getChallenge, removeChallenge } from '../../../lib/challengeStorage';
 import { checkRateLimit } from '../../../lib/gaslessValidation';
