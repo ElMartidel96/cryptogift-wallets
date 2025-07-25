@@ -14,7 +14,7 @@ import {
   SIWE_DOMAIN 
 } from '../../../lib/siweAuth';
 import { storeChallenge } from '../../../lib/challengeStorage';
-import { checkRateLimit } from '../../../lib/gaslessValidation';
+import { checkRateLimit } from '../../../lib/rateLimiting';
 
 interface ChallengeRequest {
   address: string;
