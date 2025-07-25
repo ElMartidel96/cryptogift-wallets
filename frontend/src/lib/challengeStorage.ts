@@ -11,24 +11,30 @@ import { SiweChallenge, CHALLENGE_EXPIRY } from './siweAuth';
 let redis: any = null;
 let redisStatus: 'connected' | 'fallback' | 'error' = 'fallback';
 
+// Initialize Redis immediately on module load
 try {
-  if (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN) {
+  const redisUrl = process.env.UPSTASH_REDIS_REST_URL;
+  const redisToken = process.env.UPSTASH_REDIS_REST_TOKEN;
+  
+  if (redisUrl && redisToken) {
     redis = new Redis({
-      url: process.env.UPSTASH_REDIS_REST_URL,
-      token: process.env.UPSTASH_REDIS_REST_TOKEN,
+      url: redisUrl,
+      token: redisToken,
       enableAutoPipelining: false, // Disable pipelining to prevent hanging in Vercel
       retry: false, // CRITICAL: Disable retry to prevent hanging in serverless functions
     });
     redisStatus = 'connected';
-    console.log('✅ Redis client initialized for SIWE challenges (Vercel optimized)');
+    console.log('✅ Redis client initialized for SIWE challenges (will test on first use)');
   } else {
     redisStatus = 'fallback';
     console.warn('⚠️ PRODUCTION WARNING: Redis not configured for SIWE challenges');
+    console.warn('   - UPSTASH_REDIS_REST_URL:', redisUrl ? 'CONFIGURED' : 'MISSING');
+    console.warn('   - UPSTASH_REDIS_REST_TOKEN:', redisToken ? 'CONFIGURED' : 'MISSING');
     console.warn('   - SIWE challenges will use memory-only storage');
     console.warn('   - Challenges will be lost on server restart');
-    console.warn('   - Configure UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN for production');
   }
 } catch (error) {
+  redis = null;
   redisStatus = 'error';
   console.error('❌ CRITICAL: Redis initialization failed for SIWE challenges:', error);
   console.warn('   - Falling back to memory-only storage with limited security');
@@ -78,24 +84,41 @@ export function getRedisStatus(): { status: string; message: string; hasRedis: b
 export async function storeChallenge(nonce: string, challenge: SiweChallenge): Promise<void> {
   const key = `siwe_challenge:${nonce}`;
   
-  if (redis) {
+  console.log('🔄 Attempting to store SIWE challenge:', {
+    nonce: nonce.slice(0, 10) + '...',
+    address: challenge.address.slice(0, 10) + '...',
+    redisStatus,
+    hasRedis: !!redis
+  });
+  
+  if (redis && redisStatus === 'connected') {
     try {
       // Store in Redis with TTL
-      await redisWithTimeout(
-        redis.setex(key, Math.floor(CHALLENGE_EXPIRY / 1000), JSON.stringify(challenge))
+      const ttlSeconds = Math.floor(CHALLENGE_EXPIRY / 1000);
+      const result = await redisWithTimeout(
+        redis.setex(key, ttlSeconds, JSON.stringify(challenge))
       );
       
-      console.log('📝 SIWE challenge stored in Redis:', {
+      console.log('📝 SIWE challenge stored in Redis successfully:', {
         nonce: nonce.slice(0, 10) + '...',
         address: challenge.address.slice(0, 10) + '...',
-        ttl: Math.floor(CHALLENGE_EXPIRY / 1000) + 's'
+        ttl: ttlSeconds + 's',
+        redisResult: result
       });
       
-      return;
+      // Verify the storage by immediately retrieving it
+      const verification = await redisWithTimeout(redis.get(key));
+      if (verification) {
+        console.log('✅ Challenge storage verified in Redis');
+        return;
+      } else {
+        console.error('❌ Challenge storage verification failed - not found immediately after storage');
+        throw new Error('Challenge storage verification failed');
+      }
     } catch (redisError) {
-      console.warn('⚠️ Redis challenge storage failed, falling back to memory:', redisError);
-      // Temporarily disable redis to prevent future hangs in this request
-      redis = null;
+      console.error('❌ Redis challenge storage failed:', redisError);
+      // Don't disable redis permanently, just fall back for this request
+      redisStatus = 'error';
     }
   }
   
@@ -119,12 +142,26 @@ export async function storeChallenge(nonce: string, challenge: SiweChallenge): P
 export async function getChallenge(nonce: string): Promise<SiweChallenge | null> {
   const key = `siwe_challenge:${nonce}`;
   
-  if (redis) {
+  console.log('🔍 Attempting to retrieve SIWE challenge:', {
+    nonce: nonce.slice(0, 10) + '...',
+    redisStatus,
+    hasRedis: !!redis
+  });
+  
+  if (redis && redisStatus !== 'error') {
     try {
       const stored = await redisWithTimeout(redis.get(key));
       
-      if (stored && typeof stored === 'string') {
-        const challenge = JSON.parse(stored) as SiweChallenge;
+      console.log('🔍 Redis get result:', {
+        nonce: nonce.slice(0, 10) + '...',
+        found: !!stored,
+        type: typeof stored,
+        redisStatus
+      });
+      
+      if (stored) {
+        // Upstash Redis automatically parses JSON, so handle both string and object responses
+        const challenge = typeof stored === 'string' ? JSON.parse(stored) : stored as SiweChallenge;
         
         // Validate expiration
         if (Date.now() - challenge.timestamp > CHALLENGE_EXPIRY) {
@@ -142,9 +179,10 @@ export async function getChallenge(nonce: string): Promise<SiweChallenge | null>
         return challenge;
       }
     } catch (redisError) {
-      console.warn('⚠️ Redis challenge retrieval failed, falling back to memory:', redisError);
-      // Temporarily disable redis to prevent future hangs in this request
-      redis = null;
+      console.error('❌ Redis challenge retrieval failed:', redisError);
+      console.log('🔄 Falling back to memory storage for this request');
+      // Mark redis as having errors but don't disable it completely
+      redisStatus = 'error';
     }
   }
   
