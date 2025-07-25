@@ -170,14 +170,25 @@ export async function authenticateWithSiwe(address: string, account: any): Promi
   try {
     console.log('🚀 Starting SIWE authentication flow for:', address.slice(0, 10) + '...');
     
-    // FORCE Ethereum Mainnet for SIWE to avoid wallet warnings
-    // SIWE is just for authentication, doesn't need to match actual transaction network
-    const chainId = 1; // Ethereum Mainnet - universally recognized and trusted
+    // DYNAMIC Chain ID detection to match wallet's current network
+    // This prevents "Chain ID mismatch" warnings in wallets
+    let chainId = 84532; // Default to Base Sepolia
     
-    console.warn('🔗 FORCED Chain ID to Ethereum Mainnet (1) to prevent wallet security warnings');
-    console.warn('   - SIWE authentication is network-agnostic');
-    console.warn('   - Actual transactions will use correct network');
-    console.warn('   - This prevents "suspicious request" warnings');
+    try {
+      // Get the actual chain ID from the connected wallet
+      if (window.ethereum && window.ethereum.chainId) {
+        chainId = parseInt(window.ethereum.chainId, 16);
+        console.log('🔗 Using wallet\'s current Chain ID:', chainId);
+      } else if (account?.wallet?.getChain) {
+        const chain = await account.wallet.getChain();
+        chainId = chain.id;
+        console.log('🔗 Using chain from Thirdweb account:', chainId);
+      }
+    } catch (error) {
+      console.warn('⚠️ Could not detect wallet chain, using Base Sepolia default:', chainId);
+    }
+    
+    console.log('🔗 SIWE will use Chain ID:', chainId, '(matches wallet to prevent warnings)');
     
     console.log('🔗 Using Chain ID:', chainId);
     
