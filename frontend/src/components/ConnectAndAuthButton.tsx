@@ -64,14 +64,13 @@ export const ConnectAndAuthButton: React.FC<ConnectAndAuthButtonProps> = ({
     try {
       console.log('🔐 Starting SIWE authentication for:', account.address.slice(0, 10) + '...');
       
-      // Get wallet signer for signing messages
-      const signer = account;
-      if (!signer.signMessage) {
+      // Verify account supports message signing
+      if (!account.signMessage) {
         throw new Error('Wallet does not support message signing');
       }
 
       // Perform SIWE authentication
-      const authState = await authenticateWithSiwe(account.address, signer);
+      const authState = await authenticateWithSiwe(account.address, account);
       
       if (authState.isAuthenticated) {
         setIsAuthenticated(true);

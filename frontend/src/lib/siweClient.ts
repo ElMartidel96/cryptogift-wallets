@@ -80,12 +80,19 @@ export async function requestChallenge(address: string): Promise<ChallengeRespon
 /**
  * Sign SIWE message with wallet
  */
-export async function signMessage(message: string, signer: any): Promise<string> {
+export async function signMessage(message: string, account: any): Promise<string> {
   try {
     console.log('✍️ Signing SIWE message...');
     
-    // Sign the message using the wallet's signer
-    const signature = await signer.signMessage(message);
+    // For Thirdweb v5, we need to use signMessage with proper parameters
+    if (!account?.signMessage) {
+      throw new Error('Wallet does not support message signing');
+    }
+    
+    // Sign the message using Thirdweb v5 API
+    const signature = await account.signMessage({
+      message: message
+    });
     
     console.log('✅ Message signed successfully');
     return signature;
@@ -150,7 +157,7 @@ export async function verifySignature(
  * Complete SIWE authentication flow
  * This is the main function components should use
  */
-export async function authenticateWithSiwe(address: string, signer: any): Promise<SiweAuthState> {
+export async function authenticateWithSiwe(address: string, account: any): Promise<SiweAuthState> {
   try {
     console.log('🚀 Starting SIWE authentication flow for:', address.slice(0, 10) + '...');
     
@@ -161,7 +168,7 @@ export async function authenticateWithSiwe(address: string, signer: any): Promis
     }
     
     // Step 2: Sign challenge message
-    const signature = await signMessage(challengeResponse.message, signer);
+    const signature = await signMessage(challengeResponse.message, account);
     
     // Step 3: Verify signature and get JWT
     const verifyResponse = await verifySignature(address, signature, challengeResponse.nonce);
