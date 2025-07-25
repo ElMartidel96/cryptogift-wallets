@@ -14,7 +14,7 @@ import {
   formatSiweMessage
 } from '../../../lib/siweAuth';
 import { getChallenge, removeChallenge } from '../../../lib/challengeStorage';
-import { checkRateLimit } from '../../../lib/gaslessValidation';
+import { checkRateLimit } from '../../../lib/rateLimiting';
 
 interface VerifyRequest {
   address: string;
