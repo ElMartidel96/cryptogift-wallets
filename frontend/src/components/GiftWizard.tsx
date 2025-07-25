@@ -18,7 +18,9 @@ import { GasEstimationModal } from './GasEstimationModal';
 import { startTrace, addStep, addDecision, addError, finishTrace } from '../lib/flowTracker';
 import { storeNFTMetadataClient, getNFTMetadataClient, NFTMetadata, getDeviceWalletInfo } from '../lib/clientMetadataStore';
 import { DeviceLimitModal } from './DeviceLimitModal';
-import { authenticateWithSiwe, getAuthState, isAuthValid, makeAuthenticatedRequest, clearAuth } from '../lib/siweClient';
+import { getAuthState, isAuthValid, makeAuthenticatedRequest, clearAuth } from '../lib/siweClient';
+import { useAuth } from '../hooks/useAuth';
+import { ConnectAndAuthButton } from './ConnectAndAuthButton';
 
 // Image compression utility to prevent HTTP 413 errors
 async function compressImage(file: File, quality: number = 0.8): Promise<File> {
@@ -88,16 +90,15 @@ enum WizardStep {
 export const GiftWizard: React.FC<GiftWizardProps> = ({ isOpen, onClose, referrer }) => {
   const [mounted, setMounted] = useState(false);
   const account = useActiveAccount();
+  const auth = useAuth();
   const [currentStep, setCurrentStep] = useState<WizardStep>(WizardStep.CONNECT);
-  const [isAuthenticating, setIsAuthenticating] = useState(false);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
   useEffect(() => {
-    if (mounted && account) {
+    if (mounted && auth.isConnected) {
       // CRITICAL: Check device wallet limits when user connects
       const deviceInfo = getDeviceWalletInfo();
       console.log('🔍 Device wallet check:', deviceInfo);
@@ -109,7 +110,7 @@ export const GiftWizard: React.FC<GiftWizardProps> = ({ isOpen, onClose, referre
       }
       
       // Only move to UPLOAD if authenticated
-      if (isAuthenticated) {
+      if (auth.isAuthenticated) {
         setCurrentStep(WizardStep.UPLOAD);
       } else {
         setCurrentStep(WizardStep.CONNECT);
@@ -117,29 +118,7 @@ export const GiftWizard: React.FC<GiftWizardProps> = ({ isOpen, onClose, referre
     } else if (mounted) {
       setCurrentStep(WizardStep.CONNECT);
     }
-  }, [mounted, account, isAuthenticated]);
-  
-  // Handle authentication when account is connected
-  useEffect(() => {
-    if (account && mounted) {
-      // Check if we already have valid authentication
-      if (isAuthValid()) {
-        const authState = getAuthState();
-        if (authState.address?.toLowerCase() === account.address.toLowerCase()) {
-          setIsAuthenticated(true);
-          return;
-        }
-      }
-      
-      // Clear previous auth state and require new authentication
-      clearAuth();
-      setIsAuthenticated(false);
-    } else {
-      // No account connected, clear auth
-      clearAuth();
-      setIsAuthenticated(false);
-    }
-  }, [account, mounted]);
+  }, [mounted, auth.isConnected, auth.isAuthenticated, account?.address]);
   
   const [wizardData, setWizardData] = useState({
     imageFile: null as File | null,
@@ -190,59 +169,6 @@ export const GiftWizard: React.FC<GiftWizardProps> = ({ isOpen, onClose, referre
     }
   };
 
-  // SIWE Authentication function
-  const handleAuthenticate = async () => {
-    if (!account?.address) {
-      setError(new Error('No wallet connected'));
-      return;
-    }
-
-    setIsAuthenticating(true);
-    setError(null);
-
-    try {
-      console.log('🔐 Starting SIWE authentication for:', account.address.slice(0, 10) + '...');
-      
-      // Get wallet signer for signing messages
-      const signer = account;
-      if (!signer.signMessage) {
-        throw new Error('Wallet does not support message signing');
-      }
-
-      // Perform SIWE authentication
-      const authState = await authenticateWithSiwe(account.address, signer);
-      
-      if (authState.isAuthenticated) {
-        setIsAuthenticated(true);
-        console.log('✅ Authentication successful!');
-        
-        addStep('GIFT_WIZARD', 'SIWE_AUTHENTICATION_SUCCESS', {
-          address: account.address.slice(0, 10) + '...',
-          expiresAt: authState.expiresAt ? new Date(authState.expiresAt * 1000).toISOString() : 'unknown'
-        }, 'success');
-      } else {
-        throw new Error('Authentication failed');
-      }
-
-    } catch (error: any) {
-      console.error('❌ SIWE authentication failed:', error);
-      setError(new CryptoGiftError(
-        ErrorType.API_KEY,
-        `Please sign the message with your wallet to continue: ${error.message}`,
-        {
-          code: 'AUTHENTICATION_ERROR',
-          userMessage: 'Authentication failed'
-        }
-      ));
-      setIsAuthenticated(false);
-      
-      addError('GIFT_WIZARD', 'SIWE_AUTHENTICATION_FAILED', error.message, {
-        address: account.address.slice(0, 10) + '...'
-      });
-    } finally {
-      setIsAuthenticating(false);
-    }
-  };
 
   const handleImageUpload = (file: File, url: string) => {
     setWizardData(prev => ({ ...prev, imageFile: file, imageUrl: url }));
@@ -280,22 +206,18 @@ export const GiftWizard: React.FC<GiftWizardProps> = ({ isOpen, onClose, referre
     }
 
     // Check authentication before proceeding
-    if (!isAuthenticated || !isAuthValid()) {
+    if (!auth.isAuthenticated) {
       console.log('⚠️ Authentication required before minting');
-      await handleAuthenticate();
-      
-      // Check again after authentication attempt
-      if (!isAuthenticated || !isAuthValid()) {
-        setError(new CryptoGiftError(
-          ErrorType.API_KEY,
-          'Please sign the authentication message with your wallet to continue',
-          {
-            code: 'AUTHENTICATION_REQUIRED',
-            userMessage: 'Authentication Required'
-          }
-        ));
-        return;
-      }
+      setError(new CryptoGiftError(
+        ErrorType.API_KEY,
+        'Please connect and authenticate your wallet first',
+        {
+          code: 'AUTHENTICATION_REQUIRED',
+          userMessage: 'Authentication Required'
+        }
+      ));
+      setCurrentStep(WizardStep.CONNECT);
+      return;
     }
     
     // Start flow trace
@@ -889,55 +811,32 @@ export const GiftWizard: React.FC<GiftWizardProps> = ({ isOpen, onClose, referre
       case WizardStep.CONNECT:
         return (
           <div className="text-center py-12">
-            <h2 className="text-2xl font-bold mb-6">Conecta tu Wallet</h2>
-            <p className="text-gray-600 mb-8">
-              Necesitamos conectar tu wallet para crear el NFT-wallet regalo
+            <h2 className="text-2xl font-bold mb-6">Conecta y Autentica tu Wallet</h2>
+            <p className="text-gray-600 dark:text-gray-400 mb-8">
+              Necesitamos conectar tu wallet y autenticarte de forma segura para crear el NFT-wallet regalo
             </p>
+            
             {mounted && (
-              <>
-                <ConnectButton
-                  client={client}
-                  appMetadata={{
-                    name: "CryptoGift Wallets",
-                    url: "https://cryptogift-wallets.vercel.app",
+              <div className="max-w-md mx-auto">
+                <ConnectAndAuthButton
+                  showAuthStatus={true}
+                  onAuthChange={(isAuthenticated, address) => {
+                    console.log('🔄 Auth state changed:', { isAuthenticated, address });
+                    if (isAuthenticated) {
+                      addStep('GIFT_WIZARD', 'SIWE_AUTHENTICATION_SUCCESS', {
+                        address: address?.slice(0, 10) + '...'
+                      }, 'success');
+                    }
                   }}
+                  className="w-full"
                 />
                 
-                {/* Show authentication status if wallet is connected */}
-                {account && (
-                  <div className="mt-8">
-                    <div className="border rounded-lg p-6 bg-gray-50">
-                      <h3 className="font-semibold mb-4">🔐 Autenticación Requerida</h3>
-                      <p className="text-sm text-gray-600 mb-4">
-                        Para mayor seguridad, necesitas firmar un mensaje de autenticación
-                      </p>
-                      
-                      {isAuthenticated ? (
-                        <div className="text-green-600">
-                          <div className="flex items-center justify-center gap-2">
-                            <span>✅</span>
-                            <span>Autenticado correctamente</span>
-                          </div>
-                          <button
-                            onClick={() => setCurrentStep(WizardStep.UPLOAD)}
-                            className="mt-4 bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-                          >
-                            Continuar
-                          </button>
-                        </div>
-                      ) : (
-                        <button
-                          onClick={handleAuthenticate}
-                          disabled={isAuthenticating}
-                          className="bg-purple-600 text-white px-6 py-2 rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50"
-                        >
-                          {isAuthenticating ? 'Autenticando...' : 'Firmar Mensaje de Autenticación'}
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                )}
-              </>
+                {/* Additional info */}
+                <div className="mt-6 text-sm text-gray-500 dark:text-gray-400">
+                  <p>🔒 Tu wallet se conectará de forma segura usando el estándar SIWE (Sign-In With Ethereum)</p>
+                  <p className="mt-2">✅ Todos los datos se mantienen privados y seguros</p>
+                </div>
+              </div>
             )}
           </div>
         );

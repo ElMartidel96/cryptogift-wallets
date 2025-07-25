@@ -3,9 +3,9 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useActiveAccount, ConnectButton } from 'thirdweb/react';
-import { client } from '../app/client';
+import { useActiveAccount } from 'thirdweb/react';
 import { WalletSwitcher } from './WalletSwitcher';
+import { ConnectAndAuthButton } from './ConnectAndAuthButton';
 import { ThemeToggle } from './ui/ThemeToggle';
 
 export const Navbar: React.FC = () => {
@@ -90,15 +90,7 @@ export const Navbar: React.FC = () => {
               account ? (
                 <WalletSwitcher className="min-w-[160px] scale-90" />
               ) : (
-                <div className="scale-90">
-                  <ConnectButton
-                    client={client}
-                    appMetadata={{
-                      name: "CryptoGift Wallets",
-                      url: "https://cryptogift-wallets.vercel.app",
-                    }}
-                  />
-                </div>
+                <ConnectAndAuthButton className="scale-90" />
               )
             )}
           </div>
@@ -174,13 +166,7 @@ export const Navbar: React.FC = () => {
                 {account ? (
                   <WalletSwitcher className="w-full" />
                 ) : (
-                  <ConnectButton
-                    client={client}
-                    appMetadata={{
-                      name: "CryptoGift Wallets",
-                      url: "https://cryptogift-wallets.vercel.app",
-                    }}
-                  />
+                  <ConnectAndAuthButton className="w-full" />
                 )}
               </div>
             </div>
