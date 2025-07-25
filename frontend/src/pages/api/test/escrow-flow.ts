@@ -107,7 +107,7 @@ async function testContractFunctions(): Promise<TestResult> {
     const functionTests: { [key: string]: boolean } = {};
     
     // Test time constants
-    const timeConstants = ['FIFTEEN_MINUTES', 'SEVEN_DAYS', 'FIFTEEN_DAYS', 'THIRTY_DAYS'];
+    const timeConstants = ['FIFTEEN_MINUTES', 'SEVEN_DAYS', 'FIFTEEN_DAYS', 'THIRTY_DAYS'] as const;
     
     for (const constant of timeConstants) {
       try {
@@ -125,7 +125,7 @@ async function testContractFunctions(): Promise<TestResult> {
     }
     
     // Test core functions (expect revert for non-existent data)
-    const coreFunctions = ['getGift', 'canClaimGift', 'isGiftExpired'];
+    const coreFunctions = ['getGift', 'canClaimGift', 'isGiftExpired'] as const;
     
     for (const func of coreFunctions) {
       try {
@@ -464,7 +464,7 @@ async function testCronConfiguration(): Promise<TestResult> {
     try {
       const fs = require('fs');
       const path = require('path');
-      const vercelPath = path.join(process.cwd(), 'vercel.json');
+      const vercelPath = path.join(process.cwd(), '../../vercel.json');
       
       if (fs.existsSync(vercelPath)) {
         const vercelConfig = JSON.parse(fs.readFileSync(vercelPath, 'utf8'));
