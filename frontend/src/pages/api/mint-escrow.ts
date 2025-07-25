@@ -30,6 +30,7 @@ import {
 } from '../../lib/gaslessValidation';
 import { ESCROW_CONTRACT_ADDRESS } from '../../lib/escrowABI';
 import { verifyJWT, extractTokenFromHeaders } from '../../lib/siweAuth';
+import { createBiconomySmartAccount, sendGaslessTransaction, validateBiconomyConfig } from '../../lib/biconomy';
 
 // Types
 interface MintEscrowRequest {
@@ -161,31 +162,33 @@ async function mintNFTEscrowGasless(
     
     console.log('🔐 Password hash generated:', passwordHash.slice(0, 10) + '...');
     
-    // Step 5: Get deployer account for minting and transfers
-    const deployerAccount = privateKeyToAccount({
-      client,
-      privateKey: process.env.PRIVATE_KEY_DEPLOY!
-    });
+    // Step 5: Validate Biconomy configuration for gasless
+    if (!validateBiconomyConfig()) {
+      throw new Error('Biconomy gasless configuration is incomplete. Check environment variables.');
+    }
     
-    // Step 6: Get NFT contract
+    // Step 6: Create Biconomy smart account for true gasless transactions
+    console.log('🔧 Creating Biconomy smart account for gasless minting...');
+    const smartAccount = await createBiconomySmartAccount(process.env.PRIVATE_KEY_DEPLOY!);
+    
+    // Step 7: Get NFT contract
     const nftContract = getContract({
       client,
       chain: baseSepolia,
       address: process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS!
     });
     
-    // Step 7: Mint NFT to correct recipient (escrow contract or user for skip-escrow)
-    console.log(`🎨 Minting NFT to: ${to}...`);
+    // Step 8: Prepare mint transaction for gasless execution
+    console.log(`🎨 Preparing gasless mint NFT to: ${to}...`);
     const mintTransaction = prepareContractCall({
       contract: nftContract,
       method: "function mintTo(address to, string memory tokenURI) external",
       params: [to, tokenURI] // ← FIX: Use the actual 'to' parameter
     });
     
-    const mintResult = await sendTransaction({
-      transaction: mintTransaction,
-      account: deployerAccount
-    });
+    // Step 9: Execute gasless mint transaction through Biconomy
+    console.log('🚀 Executing gasless mint transaction...');
+    const mintResult = await sendGaslessTransaction(smartAccount, mintTransaction);
     
     console.log('✅ NFT minted, transaction hash:', mintResult.transactionHash);
     
@@ -272,10 +275,8 @@ async function mintNFTEscrowGasless(
         giftMessage
       );
       
-      const escrowResult = await sendTransaction({
-        transaction: createGiftTransaction,
-        account: deployerAccount
-      });
+      console.log('🚀 Executing gasless escrow gift creation...');
+      const escrowResult = await sendGaslessTransaction(smartAccount, createGiftTransaction);
       
       const escrowReceipt = await waitForReceipt({
         client,
@@ -405,11 +406,14 @@ async function mintNFTDirectly(
     console.log('🎯 DIRECT MINT: Starting direct mint to creator wallet (skip escrow)');
     console.log('🎯 Target address:', to);
     
-    // Get deployer account for minting
-    const deployerAccount = privateKeyToAccount({
-      client,
-      privateKey: process.env.PRIVATE_KEY_DEPLOY!
-    });
+    // Validate Biconomy configuration for gasless
+    if (!validateBiconomyConfig()) {
+      throw new Error('Biconomy gasless configuration is incomplete. Check environment variables.');
+    }
+    
+    // Create Biconomy smart account for gasless direct minting
+    console.log('🔧 Creating Biconomy smart account for gasless direct minting...');
+    const smartAccount = await createBiconomySmartAccount(process.env.PRIVATE_KEY_DEPLOY!);
     
     // Get NFT contract
     const nftContract = getContract({
@@ -418,18 +422,17 @@ async function mintNFTDirectly(
       address: process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS!
     });
     
-    // Mint NFT directly to creator (skip escrow entirely)
-    console.log(`🎨 Direct minting NFT to creator: ${to}...`);
+    // Prepare mint transaction for gasless execution
+    console.log(`🎨 Preparing gasless direct mint NFT to creator: ${to}...`);
     const mintTransaction = prepareContractCall({
       contract: nftContract,
       method: "function mintTo(address to, string memory tokenURI) external",
       params: [to, tokenURI]
     });
     
-    const mintResult = await sendTransaction({
-      transaction: mintTransaction,
-      account: deployerAccount
-    });
+    // Execute gasless direct mint transaction
+    console.log('🚀 Executing gasless direct mint transaction...');
+    const mintResult = await sendGaslessTransaction(smartAccount, mintTransaction);
     
     console.log('✅ NFT minted directly, transaction hash:', mintResult.transactionHash);
     

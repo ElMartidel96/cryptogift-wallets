@@ -170,22 +170,61 @@ export async function authenticateWithSiwe(address: string, account: any): Promi
   try {
     console.log('🚀 Starting SIWE authentication flow for:', address.slice(0, 10) + '...');
     
-    // SIMPLIFIED: Use Base Sepolia for SIWE but detect if wallet is on different network
-    // This prevents "Chain ID mismatch" warnings by adapting to wallet's network
+    // ENHANCED: Better wallet compatibility for TrustWallet and MetaMask
     let chainId = 84532; // Default to Base Sepolia
     
     try {
-      // Try to get chain from Thirdweb account first (most reliable)
+      // Try multiple methods to detect wallet chain (TrustWallet compatibility)
+      let detectedChainId = null;
+      
+      // Method 1: Thirdweb account chain detection (MetaMask works well)
       if (account?.wallet?.getChain) {
-        const chain = await account.wallet.getChain();
-        chainId = chain.id;
-        console.log('🔗 Using chain from connected wallet:', chainId);
+        try {
+          const chain = await account.wallet.getChain();
+          detectedChainId = chain.id;
+          console.log('🔗 Chain detected via Thirdweb getChain():', detectedChainId);
+        } catch (chainError) {
+          console.warn('⚠️ Thirdweb getChain() failed:', chainError);
+        }
       }
+      
+      // Method 2: Direct window.ethereum check (TrustWallet fallback)
+      if (!detectedChainId && typeof window !== 'undefined' && window.ethereum) {
+        try {
+          const hexChainId = await window.ethereum.request({ method: 'eth_chainId' });
+          detectedChainId = parseInt(hexChainId, 16);
+          console.log('🔗 Chain detected via window.ethereum:', detectedChainId);
+        } catch (ethError) {
+          console.warn('⚠️ window.ethereum chain detection failed:', ethError);
+        }
+      }
+      
+      // Method 3: Use account connection info if available
+      if (!detectedChainId && account?.wallet?.getConfig) {
+        try {
+          const config = await account.wallet.getConfig();
+          if (config?.chain?.id) {
+            detectedChainId = config.chain.id;
+            console.log('🔗 Chain detected via wallet config:', detectedChainId);
+          }
+        } catch (configError) {
+          console.warn('⚠️ Wallet config detection failed:', configError);
+        }
+      }
+      
+      // Use detected chain or keep default
+      if (detectedChainId && detectedChainId > 0) {
+        chainId = detectedChainId;
+        console.log('✅ Using detected chain ID:', chainId);
+      } else {
+        console.log('🔄 Using default Base Sepolia chain ID:', chainId);
+      }
+      
     } catch (error) {
-      console.warn('⚠️ Could not detect wallet chain, using Base Sepolia default:', chainId);
+      console.warn('⚠️ All chain detection methods failed, using Base Sepolia default:', chainId);
     }
     
-    console.log('🔗 SIWE will use Chain ID:', chainId, '(matches wallet to prevent warnings)');
+    console.log('🔗 SIWE will use Chain ID:', chainId, '(optimized for wallet compatibility)');
     
     console.log('🔗 Using Chain ID:', chainId);
     
