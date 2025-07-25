@@ -16,14 +16,8 @@ export const ConnectAndAuthButton: React.FC<ConnectAndAuthButtonProps> = ({
   className = "",
   showAuthStatus = false
 }) => {
-  // Add try-catch to handle ThirdwebProvider context issues
-  let account: any = null;
-  try {
-    account = useActiveAccount();
-  } catch (error) {
-    console.warn('⚠️ ThirdwebProvider context error:', error);
-  }
-  
+  // Always call useActiveAccount - hooks must be called in same order
+  const account = useActiveAccount();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isAuthenticating, setIsAuthenticating] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
