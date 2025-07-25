@@ -5,6 +5,17 @@
 
 import { ethers } from 'ethers';
 
+// TypeScript declarations for window.ethereum
+declare global {
+  interface Window {
+    ethereum?: {
+      request: (args: { method: string; params?: any[] }) => Promise<any>;
+      isMetaMask?: boolean;
+      isTrust?: boolean;
+    };
+  }
+}
+
 export interface SiweAuthState {
   isAuthenticated: boolean;
   address?: string;
