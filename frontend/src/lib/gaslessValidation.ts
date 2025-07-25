@@ -120,7 +120,7 @@ export async function validateTransactionAttempt(
       
       const existing = await redisWithTimeout(redis.get(key));
       
-      if (existing) {
+      if (existing && typeof existing === 'string') {
         const attemptData = JSON.parse(existing);
         
         // Check if completed transaction exists
