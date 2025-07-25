@@ -67,10 +67,11 @@ export function createSiweMessage(
 }
 
 /**
- * Format SIWE message for signing
+ * Format SIWE message for signing (strict EIP-4361 compliance)
  */
 export function formatSiweMessage(message: SiweMessage): string {
-  return `${message.domain} wants you to sign in with your Ethereum account:
+  // EIP-4361 requires exact formatting - no deviation allowed
+  const formattedMessage = `${message.domain} wants you to sign in with your Ethereum account:
 ${message.address}
 
 ${message.statement}
@@ -80,6 +81,16 @@ Version: ${message.version}
 Chain ID: ${message.chainId}
 Nonce: ${message.nonce}
 Issued At: ${message.issuedAt}`;
+  
+  console.log('📝 SIWE message formatted:', {
+    domain: message.domain,
+    address: message.address.slice(0, 10) + '...',
+    chainId: message.chainId,
+    nonce: message.nonce.slice(0, 10) + '...',
+    messageLength: formattedMessage.length
+  });
+  
+  return formattedMessage;
 }
 
 /**
@@ -91,11 +102,32 @@ export function verifySiweSignature(
 ): boolean {
   try {
     const formattedMessage = formatSiweMessage(message);
-    const recoveredAddress = ethers.verifyMessage(formattedMessage, signature);
+    
+    console.log('🔍 Verifying SIWE signature:', {
+      messageLength: formattedMessage.length,
+      signatureLength: signature.length,
+      expectedAddress: message.address.slice(0, 10) + '...',
+      chainId: message.chainId
+    });
+    
+    // Clean up signature format - some wallets add extra characters
+    let cleanSignature = signature.trim();
+    if (!cleanSignature.startsWith('0x')) {
+      cleanSignature = '0x' + cleanSignature;
+    }
+    
+    const recoveredAddress = ethers.verifyMessage(formattedMessage, cleanSignature);
+    
+    console.log('🔍 Signature verification result:', {
+      recoveredAddress: recoveredAddress.slice(0, 10) + '...',
+      expectedAddress: message.address.slice(0, 10) + '...',
+      match: recoveredAddress.toLowerCase() === message.address.toLowerCase()
+    });
     
     return recoveredAddress.toLowerCase() === message.address.toLowerCase();
   } catch (error) {
-    console.error('SIWE signature verification failed:', error);
+    console.error('❌ SIWE signature verification failed:', error);
+    console.error('Message that was supposed to be signed:', formatSiweMessage(message));
     return false;
   }
 }

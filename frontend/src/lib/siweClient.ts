@@ -36,9 +36,12 @@ let authState: SiweAuthState = {
 /**
  * Request authentication challenge from server
  */
-export async function requestChallenge(address: string): Promise<ChallengeResponse> {
+export async function requestChallenge(address: string, chainId?: number): Promise<ChallengeResponse> {
   try {
     console.log('🎯 Requesting SIWE challenge for:', address.slice(0, 10) + '...');
+    
+    // Use provided chainId or default to Base Sepolia
+    const targetChainId = chainId || 84532;
     
     const response = await fetch('/api/auth/challenge', {
       method: 'POST',
@@ -47,7 +50,7 @@ export async function requestChallenge(address: string): Promise<ChallengeRespon
       },
       body: JSON.stringify({
         address,
-        chainId: 84532 // Base Sepolia
+        chainId: targetChainId
       })
     });
     
@@ -109,10 +112,14 @@ export async function signMessage(message: string, account: any): Promise<string
 export async function verifySignature(
   address: string,
   signature: string,
-  nonce: string
+  nonce: string,
+  chainId?: number
 ): Promise<VerifyResponse> {
   try {
     console.log('🔐 Verifying signature for:', address.slice(0, 10) + '...');
+    
+    // Use provided chainId or default to Base Sepolia
+    const targetChainId = chainId || 84532;
     
     const response = await fetch('/api/auth/verify', {
       method: 'POST',
@@ -123,7 +130,7 @@ export async function verifySignature(
         address,
         signature,
         nonce,
-        chainId: 84532 // Base Sepolia
+        chainId: targetChainId
       })
     });
     
@@ -161,8 +168,22 @@ export async function authenticateWithSiwe(address: string, account: any): Promi
   try {
     console.log('🚀 Starting SIWE authentication flow for:', address.slice(0, 10) + '...');
     
+    // Get current chain ID from wallet or use default
+    let chainId = 84532; // Default to Base Sepolia
+    try {
+      // Try to get chain ID from account if available
+      if (account?.wallet?.getChain) {
+        const chain = await account.wallet.getChain();
+        chainId = chain.id;
+      }
+    } catch (error) {
+      console.warn('⚠️ Could not get chain ID from wallet, using default:', chainId);
+    }
+    
+    console.log('🔗 Using Chain ID:', chainId);
+    
     // Step 1: Request challenge
-    const challengeResponse = await requestChallenge(address);
+    const challengeResponse = await requestChallenge(address, chainId);
     if (!challengeResponse.success || !challengeResponse.message || !challengeResponse.nonce) {
       throw new Error(challengeResponse.error || 'Failed to get challenge');
     }
@@ -171,7 +192,7 @@ export async function authenticateWithSiwe(address: string, account: any): Promi
     const signature = await signMessage(challengeResponse.message, account);
     
     // Step 3: Verify signature and get JWT
-    const verifyResponse = await verifySignature(address, signature, challengeResponse.nonce);
+    const verifyResponse = await verifySignature(address, signature, challengeResponse.nonce, chainId);
     if (!verifyResponse.success || !verifyResponse.token) {
       throw new Error(verifyResponse.error || 'Failed to verify signature');
     }

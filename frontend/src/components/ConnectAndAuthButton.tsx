@@ -16,7 +16,14 @@ export const ConnectAndAuthButton: React.FC<ConnectAndAuthButtonProps> = ({
   className = "",
   showAuthStatus = false
 }) => {
-  const account = useActiveAccount();
+  // Add try-catch to handle ThirdwebProvider context issues
+  let account: any = null;
+  try {
+    account = useActiveAccount();
+  } catch (error) {
+    console.warn('⚠️ ThirdwebProvider context error:', error);
+  }
+  
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isAuthenticating, setIsAuthenticating] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
@@ -27,13 +34,6 @@ export const ConnectAndAuthButton: React.FC<ConnectAndAuthButtonProps> = ({
       const authState = getAuthState();
       const isValid = isAuthValid();
       
-      console.log('🔍 Checking auth status:', {
-        isAuthenticated: authState.isAuthenticated,
-        isValid,
-        address: authState.address,
-        accountAddress: account?.address
-      });
-      
       const authenticated = authState.isAuthenticated && isValid && 
                           authState.address?.toLowerCase() === account?.address?.toLowerCase();
       
@@ -43,9 +43,6 @@ export const ConnectAndAuthButton: React.FC<ConnectAndAuthButtonProps> = ({
 
     if (account?.address) {
       checkAuthStatus();
-      // Check auth status every 30 seconds
-      const interval = setInterval(checkAuthStatus, 30000);
-      return () => clearInterval(interval);
     } else {
       setIsAuthenticated(false);
       onAuthChange?.(false);
@@ -110,27 +107,48 @@ export const ConnectAndAuthButton: React.FC<ConnectAndAuthButtonProps> = ({
   if (!isAuthenticated) {
     return (
       <div className={className}>
-        <div className="flex flex-col items-center space-y-3">
+        <div className="flex flex-col items-center space-y-4">
+          {/* Header with security emphasis */}
+          <div className="text-center">
+            <h3 className="text-lg font-semibold text-gray-800 mb-1">🔐 Firma de Seguridad Requerida</h3>
+            <p className="text-sm text-gray-600">Genera tu token temporal de autenticación para proteger tus transacciones</p>
+          </div>
+          
           {/* Show connected wallet */}
-          <div className="text-sm text-gray-600 dark:text-gray-400">
-            Connected: {account.address.slice(0, 6)}...{account.address.slice(-4)}
+          <div className="flex items-center space-x-2 bg-green-50 px-3 py-2 rounded-lg">
+            <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+            <span className="text-sm text-green-700 font-medium">
+              {account.address.slice(0, 6)}...{account.address.slice(-4)}
+            </span>
+            <span className="text-xs text-green-600">0 ETH</span>
           </div>
           
           {/* Authentication button */}
           <button
             onClick={handleAuthenticate}
             disabled={isAuthenticating}
-            className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="bg-gradient-to-r from-purple-600 to-blue-600 text-white px-6 py-3 rounded-lg hover:from-purple-700 hover:to-blue-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed font-medium"
           >
             {isAuthenticating ? (
               <div className="flex items-center space-x-2">
                 <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                <span>Autenticando...</span>
+                <span>Firmando Mensaje...</span>
               </div>
             ) : (
-              'Firmar Mensaje de Autenticación'
+              '✍️ Firmar Mensaje de Autenticación'
             )}
           </button>
+          
+          {/* Security info */}
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 max-w-sm">
+            <div className="flex items-start space-x-2">
+              <div className="text-blue-500 text-lg">🔒</div>
+              <div className="text-xs text-blue-700">
+                <p className="font-medium mb-1">¿Por qué esta firma?</p>
+                <p>Esta firma genera un token seguro que protege tus transacciones y previene ataques maliciosos.</p>
+              </div>
+            </div>
+          </div>
           
           {/* Error message */}
           {authError && (

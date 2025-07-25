@@ -111,10 +111,24 @@ export default async function handler(
 
     // Recreate the SIWE message that should have been signed
     const siweMessage = createSiweMessage(challenge.address, nonce, chainId);
+    
+    console.log('🔍 Verifying signature with:', {
+      messageAddress: siweMessage.address.slice(0, 10) + '...',
+      providedAddress: address.slice(0, 10) + '...',
+      chainId,
+      nonce: nonce.slice(0, 10) + '...'
+    });
 
     // Verify signature
     const isValidSignature = verifySiweSignature(siweMessage, signature);
     if (!isValidSignature) {
+      console.error('❌ Signature verification failed for:', {
+        address: address.slice(0, 10) + '...',
+        expectedAddress: siweMessage.address.slice(0, 10) + '...',
+        chainId,
+        signatureLength: signature.length
+      });
+      
       await removeChallenge(nonce); // Clean up failed challenge
       return res.status(400).json({
         success: false,
