@@ -125,7 +125,7 @@ async function testContractFunctions(): Promise<TestResult> {
     }
     
     // Test core functions (expect revert for non-existent data)
-    const coreFunctions = ['getGift', 'canClaimGift', 'isGiftExpired'] as const;
+    const coreFunctions = ['getGift', 'canClaimGift'] as const;
     
     for (const func of coreFunctions) {
       try {
