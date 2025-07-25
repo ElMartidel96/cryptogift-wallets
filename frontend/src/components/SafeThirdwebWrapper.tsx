@@ -64,16 +64,4 @@ export class SafeThirdwebWrapper extends Component<Props, State> {
   }
 }
 
-/**
- * Hook version for use in functional components
- */
-export function useSafeActiveAccount() {
-  try {
-    // Dynamically import to avoid issues during SSR
-    const { useActiveAccount } = require('thirdweb/react');
-    return useActiveAccount();
-  } catch (error) {
-    console.warn('⚠️ useActiveAccount failed, returning null:', error.message);
-    return null;
-  }
-}
+// Note: No custom hook needed - just use Error Boundary to catch context errors

@@ -1,10 +1,10 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { ConnectButton } from 'thirdweb/react';
+import { ConnectButton, useActiveAccount } from 'thirdweb/react';
 import { client } from '../app/client';
 import { authenticateWithSiwe, getAuthState, isAuthValid } from '../lib/siweClient';
-import { SafeThirdwebWrapper, useSafeActiveAccount } from './SafeThirdwebWrapper';
+import { SafeThirdwebWrapper } from './SafeThirdwebWrapper';
 
 interface ConnectAndAuthButtonProps {
   onAuthChange?: (isAuthenticated: boolean, address?: string) => void;
@@ -17,8 +17,8 @@ const ConnectAndAuthButtonInner: React.FC<ConnectAndAuthButtonProps> = ({
   className = "",
   showAuthStatus = false
 }) => {
-  // Use safe version of useActiveAccount to handle context errors
-  const account = useSafeActiveAccount();
+  // Always call useActiveAccount - Error Boundary will handle context errors
+  const account = useActiveAccount();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isAuthenticating, setIsAuthenticating] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
