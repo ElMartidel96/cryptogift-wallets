@@ -469,14 +469,15 @@ async function testCronConfiguration(): Promise<TestResult> {
       if (fs.existsSync(vercelPath)) {
         const vercelConfig = JSON.parse(fs.readFileSync(vercelPath, 'utf8'));
         cronConfigured = !!(vercelConfig.crons && vercelConfig.crons.length > 0);
+        const cronCount = vercelConfig.crons?.length || 0;
         cronDetails = {
           hasCrons: cronConfigured,
-          cronCount: vercelConfig.crons?.length || 0,
+          cronCount,
           crons: vercelConfig.crons || []
         };
         
         console.log(`✅ Vercel cron jobs configured: ${cronConfigured}`);
-        console.log(`📊 Cron job count: ${cronDetails.cronCount}`);
+        console.log(`📊 Cron job count: ${cronCount}`);
       } else {
         cronDetails = { error: 'vercel.json not found' };
       }
@@ -491,7 +492,7 @@ async function testCronConfiguration(): Promise<TestResult> {
       success: cronConfigured && hasCronSecret,
       testName: 'Cron Configuration',
       details: {
-        ...cronDetails,
+        ...cronDetails as any,
         hasCronSecret,
         configured: cronConfigured && hasCronSecret,
         automationLevel: cronConfigured && hasCronSecret ? 'AUTOMATED' : 'MANUAL'
