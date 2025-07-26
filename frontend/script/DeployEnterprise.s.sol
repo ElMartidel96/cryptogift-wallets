@@ -5,11 +5,12 @@ import "forge-std/Script.sol";
 import "../contracts/GiftEscrow.sol";
 
 contract DeployEnterprise is Script {
-    // Base Sepolia Biconomy forwarder
-    address constant TRUSTED_FORWARDER = 0x69015912AA33720b842dCD6aC059Ed623F28d9f7;
+    // Base Sepolia OpenZeppelin ERC2771Forwarder (NUEVO)
+    address constant TRUSTED_FORWARDER = 0x8e7975c85a3cD434918D15C3461c620B0400FFf9;
     
     function run() external {
-        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY_DEPLOY");
+        string memory pkHex = vm.envString("PRIVATE_KEY_DEPLOY");
+        uint256 deployerPrivateKey = vm.parseUint(pkHex);
         address deployer = vm.addr(deployerPrivateKey);
         
         console.log("=== GIFTESCROW ENTERPRISE DEPLOYMENT ===");
@@ -19,7 +20,7 @@ contract DeployEnterprise is Script {
         console.log("Trusted Forwarder:", TRUSTED_FORWARDER);
         
         require(block.chainid == 84532, "Must deploy on Base Sepolia");
-        require(deployer.balance > 0.01 ether, "Insufficient balance for deployment");
+        require(deployer.balance > 0.005 ether, "Insufficient balance for deployment");
         
         vm.startBroadcast(deployerPrivateKey);
         

@@ -7,7 +7,8 @@ import "@openzeppelin/contracts/metatx/ERC2771Forwarder.sol";
 contract DeployForwarder is Script {
     
     function run() external {
-        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY_DEPLOY");
+        string memory pkHex = vm.envString("PRIVATE_KEY_DEPLOY");
+        uint256 deployerPrivateKey = vm.parseUint(pkHex);
         address deployer = vm.addr(deployerPrivateKey);
         
         console.log("=== ERC2771FORWARDER DEPLOYMENT ===");
@@ -16,7 +17,7 @@ contract DeployForwarder is Script {
         console.log("Balance:", deployer.balance / 1e18, "ETH");
         
         require(block.chainid == 84532, "Must deploy on Base Sepolia");
-        require(deployer.balance > 0.01 ether, "Insufficient balance for deployment");
+        require(deployer.balance > 0.005 ether, "Insufficient balance for deployment");
         
         vm.startBroadcast(deployerPrivateKey);
         
