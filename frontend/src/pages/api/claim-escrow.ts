@@ -280,7 +280,7 @@ async function claimEscrowGasless(
   }
 }
 
-// Execute gas-paid claim
+// Execute gas-paid claim - Real implementation without Biconomy
 async function claimEscrowGasPaid(
   tokenId: string,
   password: string,
@@ -293,20 +293,99 @@ async function claimEscrowGasPaid(
   nonce?: string;
   error?: string;
 }> {
+  let transactionNonce = '';
+  
   try {
-    console.log('💰 CLAIM ESCROW GAS-PAID: Starting claim process');
+    console.log('💰 CLAIM ESCROW GAS-PAID: Starting gas-paid claim process (deployer pays)');
     
-    // For gas-paid claims, the user would typically pay with their own wallet
-    // For now, we'll use the same implementation as gasless but note the difference
-    const result = await claimEscrowGasless(tokenId, password, salt, claimerAddress, recipientAddress);
+    // Step 1: Rate limiting check
+    const rateLimit = checkRateLimit(claimerAddress);
+    if (!rateLimit.allowed) {
+      throw new Error(`Rate limit exceeded. Try again in ${Math.ceil((rateLimit.resetTime - Date.now()) / 1000)} seconds.`);
+    }
     
-    return result;
+    console.log('✅ Claim rate limit check passed. Remaining:', rateLimit.remaining);
+    
+    // Step 2: Anti-double claiming validation
+    const claimConfig = { tokenId, password, recipient: recipientAddress };
+    const validation = await validateTransactionAttempt(claimerAddress, `claim_${tokenId}`, 0, claimConfig);
+    
+    if (!validation.valid) {
+      throw new Error(validation.reason || 'Claim validation failed');
+    }
+    
+    transactionNonce = validation.nonce;
+    console.log('✅ Anti-double claiming validation passed. Nonce:', transactionNonce.slice(0, 10) + '...');
+    
+    // Step 3: Register claim attempt
+    await registerTransactionAttempt(claimerAddress, transactionNonce, `claim_${tokenId}`, 0, claimConfig);
+    
+    // Step 4: Get deployer account for gas-paid transactions
+    const deployerAccount = privateKeyToAccount({
+      client,
+      privateKey: process.env.PRIVATE_KEY_DEPLOY!
+    });
+    
+    console.log('🔑 Using deployer account for gas-paid claim:', deployerAccount.address.slice(0, 10) + '...');
+    
+    // Step 5: Prepare claim transaction (regular transaction with gas)
+    const claimTransaction = recipientAddress 
+      ? prepareClaimGiftForCall(tokenId, password, salt, recipientAddress)
+      : prepareClaimGiftCall(tokenId, password, salt);
+    
+    console.log('📝 Executing gas-paid claim transaction...');
+    const result = await sendTransaction({
+      transaction: claimTransaction,
+      account: deployerAccount
+    });
+    
+    const receipt = await waitForReceipt({
+      client,
+      chain: baseSepolia,
+      transactionHash: result.transactionHash
+    });
+    
+    // CRITICAL: Verify transaction succeeded
+    if (receipt.status !== 'success') {
+      throw new Error(`Claim transaction failed with status: ${receipt.status}`);
+    }
+    
+    console.log('✅ Gas-paid claim successful, transaction hash:', result.transactionHash);
+    
+    // Step 6: Verify transaction on-chain
+    const verification = await verifyGaslessTransaction(
+      result.transactionHash,
+      claimerAddress,
+      tokenId
+    );
+    
+    if (!verification.verified) {
+      console.warn('⚠️ Transaction verification failed but claim succeeded:', verification.error);
+    }
+    
+    // Step 7: Mark transaction as completed
+    await markTransactionCompleted(transactionNonce, result.transactionHash);
+    
+    console.log('🎉 Gas-paid claim completed successfully');
+    
+    return {
+      success: true,
+      transactionHash: result.transactionHash,
+      nonce: transactionNonce
+    };
     
   } catch (error: any) {
     console.error('❌ Gas-paid claim failed:', error);
+    
+    // Mark transaction as failed if nonce was generated
+    if (transactionNonce) {
+      await markTransactionFailed(transactionNonce, error.message);
+    }
+    
     return {
       success: false,
-      error: parseEscrowError(error)
+      error: parseEscrowError(error),
+      nonce: transactionNonce
     };
   }
 }

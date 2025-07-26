@@ -174,7 +174,7 @@ async function returnExpiredGiftGasless(
   }
 }
 
-// Execute gas-paid return
+// Execute gas-paid return - Real implementation without Biconomy
 async function returnExpiredGiftGasPaid(
   tokenId: string
 ): Promise<{
@@ -183,13 +183,42 @@ async function returnExpiredGiftGasPaid(
   error?: string;
 }> {
   try {
-    console.log('💰 RETURN EXPIRED GAS-PAID: Starting return process for token', tokenId);
+    console.log('💰 RETURN EXPIRED GAS-PAID: Starting gas-paid return process (deployer pays)');
     
-    // For gas-paid returns, the creator would typically pay with their own wallet
-    // For now, we'll use the same implementation as gasless but note the difference
-    const result = await returnExpiredGiftGasless(tokenId);
+    // Get deployer account for gas-paid transactions
+    const deployerAccount = privateKeyToAccount({
+      client,
+      privateKey: process.env.PRIVATE_KEY_DEPLOY!
+    });
     
-    return result;
+    console.log('🔑 Using deployer account for gas-paid return:', deployerAccount.address.slice(0, 10) + '...');
+    
+    // Prepare return transaction (regular transaction with gas)
+    const returnTransaction = prepareReturnExpiredGiftCall(tokenId);
+    
+    console.log('📝 Executing gas-paid return transaction...');
+    const result = await sendTransaction({
+      transaction: returnTransaction,
+      account: deployerAccount
+    });
+    
+    const receipt = await waitForReceipt({
+      client,
+      chain: baseSepolia,
+      transactionHash: result.transactionHash
+    });
+    
+    // CRITICAL: Verify transaction succeeded
+    if (receipt.status !== 'success') {
+      throw new Error(`Return transaction failed with status: ${receipt.status}`);
+    }
+    
+    console.log('✅ Gas-paid return successful, transaction hash:', result.transactionHash);
+    
+    return {
+      success: true,
+      transactionHash: result.transactionHash
+    };
     
   } catch (error: any) {
     console.error('❌ Gas-paid return failed:', error);

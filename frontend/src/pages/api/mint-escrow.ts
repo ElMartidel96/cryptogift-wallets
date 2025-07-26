@@ -575,7 +575,7 @@ async function mintNFTDirectly(
   }
 }
 
-// Gas-paid fallback for escrow minting
+// Gas-paid fallback for escrow minting - Real implementation without Biconomy
 async function mintNFTEscrowGasPaid(
   to: string,
   tokenURI: string,
@@ -593,27 +593,248 @@ async function mintNFTEscrowGasPaid(
   error?: string;
   details?: string;
 }> {
+  let transactionNonce = '';
+  
   try {
-    console.log('💰 MINT ESCROW GAS-PAID: Starting atomic operation');
+    console.log('💰 MINT ESCROW GAS-PAID: Starting atomic operation (deployer pays gas)');
     
-    // Similar implementation to gasless but without Biconomy
-    // For now, we'll use the deployer account for gas-paid transactions
-    // In production, this would use the user's wallet
+    // Step 1: Rate limiting check
+    const rateLimit = checkRateLimit(creatorAddress);
+    if (!rateLimit.allowed) {
+      throw new Error(`Rate limit exceeded. Try again in ${Math.ceil((rateLimit.resetTime - Date.now()) / 1000)} seconds.`);
+    }
     
-    const result = await mintNFTEscrowGasless(to, tokenURI, password, timeframeDays, giftMessage, creatorAddress);
+    console.log('✅ Rate limit check passed. Remaining: ', rateLimit.remaining);
+    
+    // Step 2: Anti-double minting validation
+    const escrowConfig = { password, timeframe: timeframeDays, giftMessage };
+    const validation = await validateTransactionAttempt(creatorAddress, tokenURI, 0, escrowConfig);
+    
+    if (!validation.valid) {
+      throw new Error(validation.reason || 'Transaction validation failed');
+    }
+    
+    transactionNonce = validation.nonce;
+    console.log('✅ Anti-double minting validation passed. Nonce:', transactionNonce.slice(0, 10) + '...');
+    
+    // Step 3: Register transaction attempt
+    await registerTransactionAttempt(creatorAddress, transactionNonce, tokenURI, 0, escrowConfig);
+    
+    // Step 4: Generate salt and password hash
+    const salt = generateSalt();
+    const passwordHash = generatePasswordHash(password, salt);
+    
+    console.log('🔐 Password hash generated:', passwordHash.slice(0, 10) + '...');
+    console.log('🧂 Salt generated:', salt.slice(0, 10) + '...');
+    
+    // Step 5: Create deployer account for gas-paid transactions
+    const deployerAccount = privateKeyToAccount({
+      client,
+      privateKey: process.env.PRIVATE_KEY_DEPLOY!
+    });
+    
+    console.log('🔑 Using deployer account for gas-paid transactions:', deployerAccount.address.slice(0, 10) + '...');
+    
+    // Step 6: Get NFT contract
+    const nftContract = getContract({
+      client,
+      chain: baseSepolia,
+      address: process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS!
+    });
+    
+    // Step 7: Prepare mint transaction (regular transaction with gas)
+    console.log(`🎨 Preparing gas-paid mint NFT to: ${to}...`);
+    const mintTransaction = prepareContractCall({
+      contract: nftContract,
+      method: "function mintTo(address to, string memory tokenURI) external",
+      params: [to, tokenURI]
+    });
+    
+    // Step 8: Execute gas-paid mint transaction using deployer account
+    console.log('🚀 Executing gas-paid mint transaction (deployer pays)...');
+    const mintResult = await sendTransaction({
+      transaction: mintTransaction,
+      account: deployerAccount
+    });
+    
+    console.log('✅ NFT minted with gas-paid transaction:', mintResult.transactionHash);
+    
+    // Step 9: Wait for mint confirmation
+    const mintReceipt = await waitForReceipt({
+      client,
+      chain: baseSepolia,
+      transactionHash: mintResult.transactionHash
+    });
+    
+    // CRITICAL: Verify transaction succeeded
+    if (mintReceipt.status !== 'success') {
+      throw new Error(`Mint transaction failed with status: ${mintReceipt.status}`);
+    }
+    
+    console.log('✅ Mint transaction confirmed successful');
+    let tokenId: string | null = null;
+    
+    // Parse Transfer event to get exact token ID from mint transaction
+    const transferEventSignature = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef";
+    
+    // Try to parse Transfer events using ethers for precise tokenId extraction
+    try {
+      const provider = new ethers.JsonRpcProvider(process.env.NEXT_PUBLIC_RPC_URL);
+      const receipt = await provider.getTransactionReceipt(mintResult.transactionHash);
+      
+      if (receipt) {
+        for (const log of receipt.logs) {
+          if (
+            log.address.toLowerCase() === process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS!.toLowerCase() &&
+            log.topics[0] === transferEventSignature &&
+            log.topics.length >= 4
+          ) {
+            // Third topic (index 3) contains the tokenId for Transfer(from, to, tokenId)
+            tokenId = BigInt(log.topics[3]).toString();
+            console.log('🎯 Token ID extracted from Transfer event:', tokenId);
+            break;
+          }
+        }
+      }
+    } catch (error) {
+      console.warn('Failed to parse Transfer events, trying totalSupply fallback:', error);
+    }
+    
+    // Fallback to totalSupply if Transfer event parsing failed
+    if (!tokenId) {
+      try {
+        const provider = new ethers.JsonRpcProvider(process.env.NEXT_PUBLIC_RPC_URL);
+        const nftContractABI = ["function totalSupply() public view returns (uint256)"];
+        const nftContract = new ethers.Contract(
+          process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS!,
+          nftContractABI,
+          provider
+        );
+        
+        const totalSupply = await nftContract.totalSupply();
+        tokenId = totalSupply.toString();
+        console.log('🎯 Token ID extracted from totalSupply (fallback):', tokenId);
+      } catch (error) {
+        console.error('Both Transfer event parsing and totalSupply failed:', error);
+        throw new Error('Failed to extract token ID from mint transaction');
+      }
+    }
+    
+    if (!tokenId) {
+      throw new Error('Failed to extract token ID from mint transaction');
+    }
+    
+    // Initialize escrow transaction hash variable
+    let escrowTransactionHash: string | undefined;
+    
+    // CRITICAL: Handle escrow creation if NFT was minted to escrow contract
+    if (to === ESCROW_CONTRACT_ADDRESS) {
+      // ESCROW MINT: NFT is in escrow contract, create the gift record
+      console.log('🔒 ESCROW MINT: NFT minted to escrow, creating gift record...');
+      
+      // Get escrow contract
+      const escrowContract = getEscrowContract();
+      
+      // Prepare create gift transaction
+      const createGiftTransaction = prepareCreateGiftCall(
+        tokenId,
+        process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS!,
+        password,
+        salt,
+        timeframeDays,
+        giftMessage
+      );
+      
+      console.log('🚀 Executing gas-paid escrow gift creation...');
+      const escrowResult = await sendTransaction({
+        transaction: createGiftTransaction,
+        account: deployerAccount
+      });
+      
+      const escrowReceipt = await waitForReceipt({
+        client,
+        chain: baseSepolia,
+        transactionHash: escrowResult.transactionHash
+      });
+      
+      // CRITICAL: Verify escrow creation succeeded
+      if (escrowReceipt.status !== 'success') {
+        throw new Error(`Escrow gift creation failed with status: ${escrowReceipt.status}`);
+      }
+      
+      console.log('✅ Escrow gift created successfully with gas-paid transaction');
+      
+      // Step: Verify NFT is correctly owned by escrow contract
+      console.log('🔍 Verifying NFT ownership by escrow contract...');
+      const provider = new ethers.JsonRpcProvider(process.env.NEXT_PUBLIC_RPC_URL);
+      const nftContractABI = ["function ownerOf(uint256 tokenId) view returns (address)"];
+      const nftContractCheck = new ethers.Contract(
+        process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS!,
+        nftContractABI,
+        provider
+      );
+      
+      const actualOwner = await nftContractCheck.ownerOf(tokenId);
+      console.log('🔍 Actual NFT owner:', actualOwner);
+      console.log('🔍 Expected escrow address:', ESCROW_CONTRACT_ADDRESS);
+      
+      if (actualOwner.toLowerCase() !== ESCROW_CONTRACT_ADDRESS?.toLowerCase()) {
+        throw new Error(`CRITICAL: NFT ownership verification failed. Expected: ${ESCROW_CONTRACT_ADDRESS}, Got: ${actualOwner}`);
+      }
+      
+      console.log('✅ VERIFIED: NFT is correctly owned by escrow contract');
+      
+      // Set escrow transaction hash for response
+      escrowTransactionHash = escrowResult.transactionHash;
+      
+    } else {
+      // DIRECT MINT: NFT was minted directly to user, no escrow needed
+      console.log('🎯 DIRECT MINT: NFT minted directly to user, no escrow');
+      escrowTransactionHash = undefined;
+    }
+    
+    // Step: Store salt for later claim process
+    await storeSalt(tokenId, salt);
+    
+    // Step: Mark transaction as completed
+    await markTransactionCompleted(transactionNonce, escrowTransactionHash || mintResult.transactionHash);
+    
+    console.log('🎉 Gas-paid escrow mint completed successfully');
+    console.log('📊 Final result:', {
+      tokenId,
+      mintTxHash: mintResult.transactionHash,
+      escrowTxHash: escrowTransactionHash,
+      isEscrow: !!escrowTransactionHash,
+      nftOwner: to === ESCROW_CONTRACT_ADDRESS ? 'ESCROW_CONTRACT' : 'DIRECT_USER'
+    });
     
     return {
-      ...result,
-      // Note: In gas-paid version, user would pay for their own transactions
-      // This is a simplified implementation using deployer account
+      success: true,
+      tokenId,
+      transactionHash: mintResult.transactionHash,
+      escrowTransactionHash: escrowTransactionHash,
+      salt,
+      passwordHash
     };
     
   } catch (error: any) {
     console.error('❌ Gas-paid escrow mint failed:', error);
+    console.error('❌ Full error details:', {
+      message: error.message,
+      stack: error.stack,
+      cause: error.cause,
+      step: 'mintNFTEscrowGasPaid'
+    });
+    
+    // Mark transaction as failed if nonce was generated
+    if (transactionNonce) {
+      await markTransactionFailed(transactionNonce, error.message);
+    }
+    
     return {
       success: false,
-      error: error.message || 'Gas-paid escrow mint failed',
-      details: error.stack?.substring(0, 500) // Debugging info for gas-paid failures
+      error: `Gas-paid escrow mint failed: ${error.message || 'Unknown error'}`,
+      details: error.stack?.substring(0, 500)
     };
   }
 }
