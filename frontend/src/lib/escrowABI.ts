@@ -1,6 +1,6 @@
 /**
  * CRYPTOGIFT ESCROW CONTRACT ABI
- * Contract: 0x17a8296c2AE7212acC5E25Dd7f832E4B8A184b45
+ * Contract: 0x8b5182b0072f6A7e956FD22D61Ef0Fa6cB937086
  * Network: Base Sepolia
  */
 
@@ -13,9 +13,11 @@ export const ESCROW_ABI = [
     inputs: [
       { name: "tokenId", type: "uint256" },
       { name: "nftContract", type: "address" },
-      { name: "passwordHash", type: "bytes32" },
-      { name: "timeframeDays", type: "uint256" },
-      { name: "giftMessage", type: "string" }
+      { name: "password", type: "string" },
+      { name: "salt", type: "bytes32" },
+      { name: "timeframe", type: "uint256" },
+      { name: "giftMessage", type: "string" },
+      { name: "gate", type: "address" }
     ],
     outputs: []
   },
@@ -24,9 +26,10 @@ export const ESCROW_ABI = [
     type: "function",
     stateMutability: "nonpayable",
     inputs: [
-      { name: "tokenId", type: "uint256" },
+      { name: "giftId", type: "uint256" },
       { name: "password", type: "string" },
-      { name: "salt", type: "string" }
+      { name: "salt", type: "bytes32" },
+      { name: "gateData", type: "bytes" }
     ],
     outputs: []
   },

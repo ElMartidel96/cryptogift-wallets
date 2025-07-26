@@ -107,10 +107,10 @@ export function prepareCreateGiftCall(
   password: string,
   salt: string,
   timeframeDays: number,
-  giftMessage: string
+  giftMessage: string,
+  gate: string = '0x0000000000000000000000000000000000000000'
 ) {
   const contract = getEscrowContract();
-  const passwordHash = generatePasswordHash(password, salt);
   
   return prepareContractCall({
     contract,
@@ -118,9 +118,11 @@ export function prepareCreateGiftCall(
     params: [
       BigInt(tokenId),
       nftContract,
-      passwordHash,
+      password,           // ← FIX: Password as string, not hash
+      salt,               // ← FIX: Add salt parameter
       BigInt(timeframeDays),
-      giftMessage
+      giftMessage,
+      gate                // ← FIX: Add gate parameter (defaults to zero address)
     ]
   });
 }
@@ -128,7 +130,8 @@ export function prepareCreateGiftCall(
 export function prepareClaimGiftCall(
   tokenId: string | number,
   password: string,
-  salt: string
+  salt: string,
+  gateData: string = '0x'
 ) {
   const contract = getEscrowContract();
   
@@ -138,7 +141,8 @@ export function prepareClaimGiftCall(
     params: [
       BigInt(tokenId),
       password,
-      salt
+      salt,
+      gateData
     ]
   });
 }
