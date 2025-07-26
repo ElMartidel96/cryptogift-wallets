@@ -315,12 +315,14 @@ async function mintNFTEscrowGasless(
     // Initialize escrow transaction hash variable
     let escrowTransactionHash: string | undefined;
     
-    // CRITICAL DECISION: ¿El NFT ya está en el escrow contract?
-    if (to === ESCROW_CONTRACT_ADDRESS) {
-      // ESCROW MINT: NFT ya está en el escrow contract, solo crear el gift
-      console.log('🔒 ESCROW MINT: NFT minteado directamente al escrow, creando registro de gift...');
+    // Check if this is an escrow mint (password provided) or direct mint (no password)
+    const isEscrowMint = !!password;
+    
+    if (isEscrowMint) {
+      // ESCROW MINT: NFT is with creator, need to transfer to escrow via createGift
+      console.log('🔒 ESCROW MINT: NFT minted to creator, creating escrow gift (will transfer to escrow)...');
       
-      // Solo crear el registro del gift (no transferir, ya está ahí)
+      // Create the escrow gift (this will transfer NFT from creator to escrow contract)
       const createGiftTransaction = prepareCreateGiftCall(
         tokenId,
         process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS!,
@@ -330,7 +332,7 @@ async function mintNFTEscrowGasless(
         giftMessage
       );
       
-      console.log('🚀 Executing gasless escrow gift creation...');
+      console.log('🚀 Executing gasless escrow gift creation (transfers NFT to escrow)...');
       const escrowResult = await sendGaslessTransaction(smartAccount, createGiftTransaction);
       
       const escrowReceipt = await waitForReceipt({
@@ -344,10 +346,10 @@ async function mintNFTEscrowGasless(
         throw new Error(`Escrow gift creation failed with status: ${escrowReceipt.status}`);
       }
       
-      console.log('✅ Escrow gift created successfully, NFT already in escrow contract');
+      console.log('✅ Escrow gift created successfully, NFT transferred to escrow contract');
       
-      // Step 11: Verify NFT is correctly owned by escrow contract
-      console.log('🔍 Verifying NFT ownership by escrow contract...');
+      // Step 11: Verify NFT is now correctly owned by escrow contract
+      console.log('🔍 Verifying NFT was transferred to escrow contract...');
       const provider = new ethers.JsonRpcProvider(process.env.NEXT_PUBLIC_RPC_URL);
       const nftContractABI = ["function ownerOf(uint256 tokenId) view returns (address)"];
       const nftContractCheck = new ethers.Contract(
@@ -357,21 +359,21 @@ async function mintNFTEscrowGasless(
       );
       
       const actualOwner = await nftContractCheck.ownerOf(tokenId);
-      console.log('🔍 Actual NFT owner:', actualOwner);
+      console.log('🔍 Actual NFT owner after escrow creation:', actualOwner);
       console.log('🔍 Expected escrow address:', ESCROW_CONTRACT_ADDRESS);
       
       if (actualOwner.toLowerCase() !== ESCROW_CONTRACT_ADDRESS?.toLowerCase()) {
-        throw new Error(`CRITICAL: NFT ownership verification failed. Expected: ${ESCROW_CONTRACT_ADDRESS}, Got: ${actualOwner}`);
+        throw new Error(`CRITICAL: NFT was not transferred to escrow contract. Expected: ${ESCROW_CONTRACT_ADDRESS}, Got: ${actualOwner}`);
       }
       
-      console.log('✅ VERIFIED: NFT is correctly owned by escrow contract');
+      console.log('✅ VERIFIED: NFT successfully transferred to escrow contract');
       
       // Set escrow transaction hash for response
       escrowTransactionHash = escrowResult.transactionHash;
       
     } else {
-      // DIRECT MINT: NFT fue minteado directamente al usuario, no hay escrow
-      console.log('🎯 DIRECT MINT: NFT minteado directamente al usuario, sin escrow');
+      // DIRECT MINT: NFT was minted directly to creator, no escrow needed
+      console.log('🎯 DIRECT MINT: NFT minted directly to creator, no escrow transfer needed');
       escrowTransactionHash = undefined; // No escrow transaction for direct mints
     }
     
@@ -411,7 +413,7 @@ async function mintNFTEscrowGasless(
       mintTxHash: mintResult.transactionHash,
       escrowTxHash: escrowTransactionHash,
       isEscrow: !!escrowTransactionHash,
-      nftOwner: to === ESCROW_CONTRACT_ADDRESS ? 'ESCROW_CONTRACT' : 'DIRECT_USER'
+      nftOwner: escrowTransactionHash ? 'ESCROW_CONTRACT' : 'CREATOR_WALLET'
     });
     
     return {
@@ -727,15 +729,14 @@ async function mintNFTEscrowGasPaid(
     // Initialize escrow transaction hash variable
     let escrowTransactionHash: string | undefined;
     
-    // CRITICAL: Handle escrow creation if NFT was minted to escrow contract
-    if (to === ESCROW_CONTRACT_ADDRESS) {
-      // ESCROW MINT: NFT is in escrow contract, create the gift record
-      console.log('🔒 ESCROW MINT: NFT minted to escrow, creating gift record...');
+    // Check if this is an escrow mint (password provided) or direct mint (no password)
+    const isEscrowMint = !!password;
+    
+    if (isEscrowMint) {
+      // ESCROW MINT: NFT is with creator, need to transfer to escrow via createGift
+      console.log('🔒 ESCROW MINT: NFT minted to creator, creating escrow gift (will transfer to escrow)...');
       
-      // Get escrow contract
-      const escrowContract = getEscrowContract();
-      
-      // Prepare create gift transaction
+      // Prepare create gift transaction (this will transfer NFT from creator to escrow contract)
       const createGiftTransaction = prepareCreateGiftCall(
         tokenId,
         process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS!,
@@ -745,7 +746,7 @@ async function mintNFTEscrowGasPaid(
         giftMessage
       );
       
-      console.log('🚀 Executing gas-paid escrow gift creation...');
+      console.log('🚀 Executing gas-paid escrow gift creation (transfers NFT to escrow)...');
       const escrowResult = await sendTransaction({
         transaction: createGiftTransaction,
         account: deployerAccount
@@ -764,8 +765,8 @@ async function mintNFTEscrowGasPaid(
       
       console.log('✅ Escrow gift created successfully with gas-paid transaction');
       
-      // Step: Verify NFT is correctly owned by escrow contract
-      console.log('🔍 Verifying NFT ownership by escrow contract...');
+      // Step: Verify NFT was transferred to escrow contract
+      console.log('🔍 Verifying NFT was transferred to escrow contract...');
       const provider = new ethers.JsonRpcProvider(process.env.NEXT_PUBLIC_RPC_URL);
       const nftContractABI = ["function ownerOf(uint256 tokenId) view returns (address)"];
       const nftContractCheck = new ethers.Contract(
@@ -775,21 +776,21 @@ async function mintNFTEscrowGasPaid(
       );
       
       const actualOwner = await nftContractCheck.ownerOf(tokenId);
-      console.log('🔍 Actual NFT owner:', actualOwner);
+      console.log('🔍 Actual NFT owner after escrow creation:', actualOwner);
       console.log('🔍 Expected escrow address:', ESCROW_CONTRACT_ADDRESS);
       
       if (actualOwner.toLowerCase() !== ESCROW_CONTRACT_ADDRESS?.toLowerCase()) {
-        throw new Error(`CRITICAL: NFT ownership verification failed. Expected: ${ESCROW_CONTRACT_ADDRESS}, Got: ${actualOwner}`);
+        throw new Error(`CRITICAL: NFT was not transferred to escrow contract. Expected: ${ESCROW_CONTRACT_ADDRESS}, Got: ${actualOwner}`);
       }
       
-      console.log('✅ VERIFIED: NFT is correctly owned by escrow contract');
+      console.log('✅ VERIFIED: NFT successfully transferred to escrow contract');
       
       // Set escrow transaction hash for response
       escrowTransactionHash = escrowResult.transactionHash;
       
     } else {
-      // DIRECT MINT: NFT was minted directly to user, no escrow needed
-      console.log('🎯 DIRECT MINT: NFT minted directly to user, no escrow');
+      // DIRECT MINT: NFT was minted directly to creator, no escrow needed
+      console.log('🎯 DIRECT MINT: NFT minted directly to creator, no escrow transfer needed');
       escrowTransactionHash = undefined;
     }
     
@@ -805,7 +806,7 @@ async function mintNFTEscrowGasPaid(
       mintTxHash: mintResult.transactionHash,
       escrowTxHash: escrowTransactionHash,
       isEscrow: !!escrowTransactionHash,
-      nftOwner: to === ESCROW_CONTRACT_ADDRESS ? 'ESCROW_CONTRACT' : 'DIRECT_USER'
+      nftOwner: escrowTransactionHash ? 'ESCROW_CONTRACT' : 'CREATOR_WALLET'
     });
     
     return {
@@ -980,14 +981,15 @@ export default async function handler(
       timeframeIndex = undefined; // No timeframe needed for direct mints
       console.log('🎯 DIRECT MINT TARGET:', targetAddress.slice(0, 10) + '...');
     } else {
-      // CRITICAL FIX: Escrow mint debe ir DIRECTAMENTE al escrow contract
+      // CRITICAL FIX: Escrow mint should go to CREATOR first, then transfer to escrow
+      // This avoids "ERC721: transfer to non ERC721Receiver implementer" error
+      targetAddress = creatorAddress; // ← FIX: Mint to creator first, then transfer in escrow creation
+      timeframeIndex = TIMEFRAME_OPTIONS[timeframeDays];
+      console.log('🔒 ESCROW MINT TARGET (FIXED - mint to creator, transfer in escrow):', targetAddress.slice(0, 10) + '...');
+      
       if (!ESCROW_CONTRACT_ADDRESS) {
         throw new Error('ESCROW_CONTRACT_ADDRESS not configured');
       }
-      
-      targetAddress = ESCROW_CONTRACT_ADDRESS; // ← FIX PRINCIPAL: NFT va directo al escrow
-      timeframeIndex = TIMEFRAME_OPTIONS[timeframeDays];
-      console.log('🔒 ESCROW MINT TARGET (CORRECTED - direct to escrow contract):', targetAddress.slice(0, 10) + '...');
       console.log('✅ ESCROW CONTRACT ADDRESS:', ESCROW_CONTRACT_ADDRESS);
     }
     
