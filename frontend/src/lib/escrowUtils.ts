@@ -142,7 +142,7 @@ export function prepareClaimGiftCall(
       BigInt(tokenId),
       password,
       salt as `0x${string}`,  // ← FIX: Type assertion for salt parameter
-      gateData
+      gateData as `0x${string}`  // ← FIX: Type assertion for gateData parameter
     ]
   });
 }
