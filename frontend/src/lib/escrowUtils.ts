@@ -119,7 +119,7 @@ export function prepareCreateGiftCall(
       BigInt(tokenId),
       nftContract,
       password,           // ← FIX: Password as string, not hash
-      salt,               // ← FIX: Add salt parameter
+      salt as `0x${string}`,  // ← FIX: Type assertion for salt parameter
       BigInt(timeframeDays),
       giftMessage,
       gate                // ← FIX: Add gate parameter (defaults to zero address)
@@ -141,7 +141,7 @@ export function prepareClaimGiftCall(
     params: [
       BigInt(tokenId),
       password,
-      salt,
+      salt as `0x${string}`,  // ← FIX: Type assertion for salt parameter
       gateData
     ]
   });
