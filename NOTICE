@@ -1,0 +1,36 @@
+CryptoGift Wallets
+Copyright (c) 2024-2026 MBXarts - The Moon in a Box. All rights reserved.
+Co-Author: Godez22
+
+Licensed under the PolyForm Noncommercial License 1.0.0.
+See LICENSE for full terms.
+Commercial use requires a separate license. See COMMERCIAL.md.
+
+================================================================================
+
+This product includes third-party software with separate license terms:
+
+--------------------------------------------------------------------------------
+OpenZeppelin Contracts
+License: MIT
+Copyright (c) 2016-2024 zOS Global Limited and contributors
+https://github.com/OpenZeppelin/openzeppelin-contracts
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+forge-std (Foundry Standard Library)
+License: MIT / Apache-2.0 (dual-licensed)
+Copyright (c) 2022 Foundry Contributors
+https://github.com/foundry-rs/forge-std
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+ERC-6551 Reference Implementation
+License: MIT
+Copyright (c) 2023 ERC-6551 Authors
+https://github.com/erc6551/reference
+Registry: 0x000000006551c19487814612e58FE06813775758
+--------------------------------------------------------------------------------
+
+All other code in this repository is proprietary and subject to the
+PolyForm Noncommercial License 1.0.0 as described in the LICENSE file.
