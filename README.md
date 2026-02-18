@@ -1,5 +1,9 @@
 # CryptoGift Wallets - Regala el Futuro 🎁
 
+> **Source-Available | Noncommercial Use Only**
+> This software is licensed under the [PolyForm Noncommercial License 1.0.0](LICENSE).
+> Commercial use requires a separate license. See [COMMERCIAL.md](COMMERCIAL.md) for details.
+
 Una plataforma revolucionaria para crear y regalar NFT-wallets con criptomonedas reales usando tecnología ERC-6551 (Token Bound Accounts).
 
 ## 🌟 Características Principales
@@ -346,6 +350,10 @@ npx hardhat coverage
 
 ## 🤝 Contribuir
 
+Este proyecto es source-available bajo PolyForm Noncommercial. Las contribuciones
+son bienvenidas bajo los mismos términos de licencia. Al contribuir, aceptas que
+tus contribuciones quedan bajo la misma licencia PolyForm NC 1.0.0.
+
 1. Fork el proyecto
 2. Crear una rama feature (`git checkout -b feature/AmazingFeature`)
 3. Commit los cambios (`git commit -m 'Add some AmazingFeature'`)
@@ -374,7 +382,16 @@ npx hardhat coverage
 
 ## 📄 Licencia
 
-MIT License - ver [LICENSE](LICENSE) para más detalles.
+This project is source-available under the **[PolyForm Noncommercial License 1.0.0](LICENSE)**.
+
+- **Permitido**: Uso personal, investigación, evaluación, uso educativo, uso sin fines de lucro
+- **Requiere licencia comercial**: Despliegue en producción, oferta como SaaS, generación de ingresos, reventa
+- **Contacto**: admin@mbxart.com para licencia comercial
+
+See [COMMERCIAL.md](COMMERCIAL.md) for full commercial terms and [NOTICE](NOTICE) for third-party attributions.
+
+**Copyright (c) 2024-2026 MBXarts - The Moon in a Box. All rights reserved.**
+**Co-Author: Godez22**
 
 ## 🚨 Errores Conocidos y Soluciones
 
